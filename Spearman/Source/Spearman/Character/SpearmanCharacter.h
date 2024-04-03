@@ -5,10 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Spearman/SpearmanTypes/TurnInPlace.h"
+#include "Spearman/Interfaces/WeaponHitInterface.h"
 #include "SpearmanCharacter.generated.h"
 
 UCLASS()
-class SPEARMAN_API ASpearmanCharacter : public ACharacter
+class SPEARMAN_API ASpearmanCharacter : public ACharacter, public IWeaponHitInterface
 {
 	GENERATED_BODY()
 
@@ -28,6 +29,8 @@ public:
 
 	void ShowHitDamage(bool bShowHitDamageWidget);
 	void HideHitDamage();
+
+	virtual void WeaponHit_Implementation(FHitResult HitResult) override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -74,6 +77,9 @@ private:
 
 	FTimerHandle HitDamageTimerHandle;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	class UParticleSystem* HitParticles;
+
 	/*
 	* Spearman Components
 	*/
@@ -115,10 +121,10 @@ private:
 
 	// HP Stat
 
-	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	UPROPERTY(EditAnywhere, Category = Combat)
 	float MaxHp = 100.f;
 
-	UPROPERTY(ReplicatedUsing = OnRep_Hp, VisibleAnywhere, Category = "Player Stats")
+	UPROPERTY(ReplicatedUsing = OnRep_Hp, VisibleAnywhere, Category = Combat)
 	float Hp = 100.f;
 
 	UFUNCTION()

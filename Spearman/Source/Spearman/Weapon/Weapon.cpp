@@ -9,18 +9,18 @@
 #include "Net/UnrealNetwork.h"
 #include "Spearman/Spearman.h"
 #include "Kismet/GameplayStatics.h"
+#include "Spearman/Interfaces/WeaponHitInterface.h"
 
 AWeapon::AWeapon()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
-
-	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
-	// Drop된 상태로 시작할 것이므로 NoCollision
+	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
@@ -31,15 +31,19 @@ AWeapon::AWeapon()
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
 	PickupWidget->SetupAttachment(RootComponent);
 
-	AttackCollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("AttackCollisionBox"));
-	AttackCollisionBox->SetupAttachment(RootComponent);
-	AttackCollisionBox->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
-	AttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	AttackCollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	AttackCollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
-	AttackCollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
-	//AttackCollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Block);
-	AttackCollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Block);
+	TraceStartBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TraceStartBox"));
+	TraceStartBox->SetupAttachment(RootComponent);
+	TraceStartBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	TraceEndBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TraceEndBox"));
+	TraceEndBox->SetupAttachment(RootComponent);
+	TraceEndBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AWeapon, WeaponState);
 }
 
 void AWeapon::BeginPlay()
@@ -52,19 +56,9 @@ void AWeapon::BeginPlay()
 		AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap);
 		AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
-		// 공격 충돌체, TODO : 지형 충돌
-		AttackCollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
-		AttackCollisionBox->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnHit);
 	}
 
 	ShowPickupWidget(false);
-}
-
-void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(AWeapon, WeaponState);
 }
 
 void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -85,36 +79,70 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	}
 }
 
-void AWeapon::OnHit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{ // in server, // TODO : 몬스터가 추가될 경우 Cast 변경
-	if (GetOwner() == OtherActor) return;
+void AWeapon::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
 
-	if (!HitSet.Contains(OtherActor))
-	{ // TODO : Capsule and SkeletalMesh Collision + self collision
-		ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner());
-		if (OwnerCharacter)
+	if (bAttackCollisionTrace)
+	{
+		AttackCollisionCheckByTrace();
+	}
+}
+
+void AWeapon::AttackCollisionCheckByTrace()
+{ // client and server
+	FVector Start = TraceStartBox->GetComponentLocation();
+	FVector End = TraceEndBox->GetComponentLocation();
+
+	TArray<FHitResult> HitResults;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(GetOwner());
+
+	if (GetWorld()->LineTraceMultiByChannel(HitResults, Start, End, ECC_Visibility, Params))
+	{ // hit true
+
+		for (const FHitResult& HitResult : HitResults)
 		{
-			AController* OwnerController = OwnerCharacter->GetController();
-			if (OwnerController)
+			if (!HitSet.Contains(HitResult.GetActor()))
 			{
-				const float Dist = FVector::Distance(OwnerCharacter->GetActorLocation(), OtherActor->GetActorLocation());
-				// Dist (60, 240) -> Damage (10, 30)
-				FVector2D InRange(60.f, 240.f);
-				FVector2D OutRange(Damage / 3.f, Damage);
-				const float Dmg = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
-				
-				UGameplayStatics::ApplyDamage(OtherActor, FMath::RoundToFloat(Dmg), OwnerController, this, UDamageType::StaticClass());
+				if (HitResult.GetActor())
+				{
+					HitSet.Add(HitResult.GetActor());
 
-				//ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
-				//if (HitSpearmanCharacter)
-				//{
-				//	HitSpearmanCharacter->ShowHitDamageWidget(true);
-				//}
+					IWeaponHitInterface* WeaponHitInterface = Cast<IWeaponHitInterface>(HitResult.GetActor());
+					if (WeaponHitInterface)
+					{ // Cast will succeed if BasicMonster, since BasicMonster inherits from WeaponHitInterface
+						WeaponHitInterface->WeaponHit_Implementation(HitResult);
+					}
+					else
+					{ // TODO : 여기로 들어옴
+						UE_LOG(LogTemp, Warning, TEXT("Not inherit Interface"));
+					}
+
+					if (HasAuthority())
+					{ // server only
+						OwnerCharacter = OwnerCharacter == nullptr ? Cast<ACharacter>(GetOwner()) : OwnerCharacter;
+						if (OwnerCharacter)
+						{
+							OwnerController = OwnerController == nullptr ? OwnerCharacter->GetController() : OwnerController;
+							if (OwnerController)
+							{
+								const float Dist = FVector::Distance(OwnerCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
+								// Dist (60, 240) -> Damage (10, 30)
+								FVector2D InRange(60.f, 240.f);
+								FVector2D OutRange(Damage / 3.f, Damage);
+								const float Dmg = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
+
+								UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(Dmg), OwnerController, this, UDamageType::StaticClass());
+							}
+						}
+					}
+				}
 			}
 		}
-
-		HitSet.Add(OtherActor);
 	}
+
+	// DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 5.f, 0, 5.f);
 }
 
 void AWeapon::SetWeaponState(EWeaponState State)
@@ -160,12 +188,6 @@ void AWeapon::OnRep_WeaponState()
 	}
 }
 
-void AWeapon::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
 void AWeapon::ShowPickupWidget(bool bShowPickupWidget)
 {
 	if (PickupWidget)
@@ -182,19 +204,13 @@ void AWeapon::Dropped()
 	SetOwner(nullptr);
 }
 
-void AWeapon::TurnOnAttackCollisionBox()
+void AWeapon::TurnOnAttackCollision()
 {
-	if (HasAuthority())
-	{
-		AttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	}
+	bAttackCollisionTrace = true;
 }
 
-void AWeapon::TurnOffAttackCollisionBox()
+void AWeapon::TurnOffAttackCollision()
 {
-	if (HasAuthority())
-	{
-		AttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		HitSet.Empty();
-	}
+	bAttackCollisionTrace = false;
+	HitSet.Empty();
 }

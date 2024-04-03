@@ -28,11 +28,8 @@ public:
 	void ShowPickupWidget(bool bShowPickupWidget);
 	void Dropped();
 
-	UFUNCTION()
-	void TurnOnAttackCollisionBox();
-	
-	UFUNCTION()
-	void TurnOffAttackCollisionBox();
+	void TurnOnAttackCollision();
+	void TurnOffAttackCollision();
 	
 protected:
 	virtual void BeginPlay() override;
@@ -55,20 +52,13 @@ protected:
 		int32 OtherBodyIndex
 		);
 
-	UFUNCTION()
-	virtual void OnHit(
-		UPrimitiveComponent* OverlappedComponent,
-		AActor* OtherActor,
-		UPrimitiveComponent* OtherComp,
-		int32 OtherBodyIndex,
-		bool bFromSweep,
-		const FHitResult& SweepResult
-		//FVector NormalImpulse,
-		//const FHitResult& Hit
-		);
+	void AttackCollisionCheckByTrace();
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float Damage = 30.f;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	float HeadShotDamage = 50.f;
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
@@ -79,6 +69,12 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	class UBoxComponent* AttackCollisionBox;
+	
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	UBoxComponent* TraceStartBox;
+
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	UBoxComponent* TraceEndBox;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponState, VisibleAnywhere, Category = "Weapon Properties")
 	EWeaponState WeaponState;
@@ -97,7 +93,12 @@ private:
 	UPROPERTY(EditAnywhere, Category = Crosshair)
 	UTexture2D* CrosshairDot;
 
+	bool bAttackCollisionTrace = false;
+
 	TSet<AActor*> HitSet;
+
+	ACharacter* OwnerCharacter;
+	AController* OwnerController;
 	
 public:
 	// 드랍되거나, 장착될 때마다 변경해줘야 함
@@ -107,4 +108,7 @@ public:
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE UTexture2D* GetCrosshairCircle() const { return CrosshairCircle; }
 	FORCEINLINE UTexture2D* GetCrosshairDot() const { return CrosshairDot; }
+
+	FORCEINLINE float GetDamage() const { return Damage; }
+	FORCEINLINE float GetHeadShotDamage() const { return HeadShotDamage; }
 };

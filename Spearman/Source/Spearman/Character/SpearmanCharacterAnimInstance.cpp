@@ -71,7 +71,7 @@ void USpearmanCharacterAnimInstance::AnimNotify_AttackCollisionOn()
 {
 	if (EquippedWeapon)
 	{
-		EquippedWeapon->TurnOnAttackCollisionBox();
+		EquippedWeapon->TurnOnAttackCollision();
 	}
 }
 
@@ -79,17 +79,17 @@ void USpearmanCharacterAnimInstance::AnimNotify_AttackCollisionOff()
 {
 	if (EquippedWeapon)
 	{
-		EquippedWeapon->TurnOffAttackCollisionBox();
+		EquippedWeapon->TurnOffAttackCollision();
 	}
 }
 
 void USpearmanCharacterAnimInstance::AnimNotify_SetCanAttack()
 {
-	if (SpearmanCharacter->IsLocallyControlled())
-		UE_LOG(LogTemp, Warning, TEXT("InClientSetCanAttack"));
+	/*if (SpearmanCharacter->IsLocallyControlled())
+		UE_LOG(LogTemp, Warning, TEXT("InClientSetCanAttack"));*/
 	if (SpearmanCharacter && SpearmanCharacter->HasAuthority())
 	{
 		SpearmanCharacter->GetCombat()->SetCanAttack();
-		UE_LOG(LogTemp, Warning, TEXT("InServerSetCanAttack"));
+		//UE_LOG(LogTemp, Warning, TEXT("InServerSetCanAttack"));
 	}
 }

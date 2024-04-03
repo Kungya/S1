@@ -17,6 +17,7 @@
 #include "Spearman/GameMode/SpearmanGameMode.h"
 #include "Components/WidgetComponent.h"
 #include "Spearman/HUD/HitDamageWidget.h"
+#include "Kismet/GamePlayStatics.h"
 
 
 ASpearmanCharacter::ASpearmanCharacter()
@@ -150,6 +151,14 @@ void ASpearmanCharacter::OnRep_Hp(float LastHp)
 	if (!FMath::IsNearlyZero(Hp))
 	{
 		PlayHitReactMontage();
+	}
+}
+
+void ASpearmanCharacter::WeaponHit_Implementation(FHitResult HitResult)
+{
+	if (HitParticles)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, HitResult.Location, FRotator(0.f), true);
 	}
 }
 
@@ -325,7 +334,7 @@ void ASpearmanCharacter::AttackButtonPressed()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("!@#"));
+		UE_LOG(LogTemp, Warning, TEXT("Can't Attack"));
 	}
 }
 
