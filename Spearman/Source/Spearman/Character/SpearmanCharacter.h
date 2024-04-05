@@ -27,9 +27,6 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastDeath();
 
-	void ShowHitDamage(bool bShowHitDamageWidget);
-	void HideHitDamage();
-
 	virtual void WeaponHit_Implementation(FHitResult HitResult) override;
 
 protected:
@@ -55,6 +52,12 @@ protected:
 	
 	void UpdateHUDHp();
 
+	void ShowHitDamage(bool bShowHitDamageWidget);
+	void HideHitDamage();
+
+	void ShowHpBar();
+	void HideHpBar();
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	class USpringArmComponent* CameraBoom;
@@ -69,6 +72,10 @@ private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
 
+	/* 
+	* Widget
+	*/
+
 	UPROPERTY(VisibleAnywhere, Category = Widget)
 	class UWidgetComponent* HitDamage;
 
@@ -77,9 +84,18 @@ private:
 
 	FTimerHandle HitDamageTimerHandle;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	class UParticleSystem* HitParticles;
+	// Overhead HpBar; on Enemy
+	UPROPERTY(VisibleAnywhere, Category = Widget)
+	class UWidgetComponent* HpBar;
 
+	UPROPERTY(VisibleAnywhere, Category = Widget)
+	class UHpBarWidget* HpBarWidget;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	float HpBarDisplayTime = 4.f;
+
+	FTimerHandle HpBarTimer;
+	
 	/*
 	* Spearman Components
 	*/
@@ -130,6 +146,9 @@ private:
 	UFUNCTION()
 	void OnRep_Hp(float LastHp);
 
+	UPROPERTY(EditAnywhere, Category = Combat)
+	FString HeadBone;
+
 	UPROPERTY()
 	class ASpearmanPlayerController* SpearmanPlayerController;
 
@@ -142,6 +161,9 @@ private:
 
 	void DeathTimerFinished();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	class UParticleSystem* HitParticles;
+
 
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);
@@ -153,4 +175,7 @@ public:
 	FORCEINLINE bool IsDead() const { return bDeath; }
 	FORCEINLINE float GetHp() const { return Hp; }
 	FORCEINLINE float GetMaxHp() const { return MaxHp; }
+	FORCEINLINE float GetHpRatio() const { return Hp / MaxHp; }
+	FORCEINLINE FString GetHeadBone() const { return HeadBone; }
+
 };

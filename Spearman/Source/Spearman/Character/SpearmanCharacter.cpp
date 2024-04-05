@@ -18,6 +18,8 @@
 #include "Components/WidgetComponent.h"
 #include "Spearman/HUD/HitDamageWidget.h"
 #include "Kismet/GamePlayStatics.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "Spearman/HUD/HpBarWidget.h"
 
 
 ASpearmanCharacter::ASpearmanCharacter()
@@ -45,10 +47,15 @@ ASpearmanCharacter::ASpearmanCharacter()
 	HitDamage->SetupAttachment(GetMesh());
 	HitDamage->SetWidgetSpace(EWidgetSpace::Screen);
 
+	HpBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("HpBarWidget"));
+	HpBar->SetupAttachment(GetMesh());
+	HpBar->SetWidgetSpace(EWidgetSpace::Screen);
+	HpBar->SetDrawSize(FVector2D(125.f, 20.f));
+
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionObjectType(ECC_SkeletalMesh);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Overlap);
 
 	TIPState = ETurnInPlace::ETIP_NotTurn;
 	NetUpdateFrequency = 66.f;
@@ -77,9 +84,13 @@ void ASpearmanCharacter::PostInitializeComponents()
 
 	GetMesh()->HideBoneByName(TEXT("weapon"), EPhysBodyOp::PBO_None);
 
+	// TODO : if statement IsLocallyControleld
 	HitDamage->InitWidget();
-
 	HitDamageWidget = Cast<UHitDamageWidget>(HitDamage->GetUserWidgetObject());
+
+	
+	HpBar->InitWidget();
+	HpBarWidget = Cast<UHpBarWidget>(HpBar->GetUserWidgetObject());
 }
 
 void ASpearmanCharacter::PlaySpearAttackMontage()
@@ -144,11 +155,16 @@ void ASpearmanCharacter::OnRep_Hp(float LastHp)
 		const float Damage = LastHp - Hp;
 		HitDamageWidget->SetHitDamageText(Damage);
 		ShowHitDamage(true);
+		HpBarWidget->SetHpBar(GetHpRatio());
 
 		GetWorldTimerManager().SetTimer(HitDamageTimerHandle, this, &ASpearmanCharacter::HideHitDamage, 2.f, false);
 	}
 	UpdateHUDHp();
-	if (!FMath::IsNearlyZero(Hp))
+	if (FMath::IsNearlyZero(Hp))
+	{ // TODO : Die client widget
+		HideHpBar();
+	}
+	else
 	{
 		PlayHitReactMontage();
 	}
@@ -160,6 +176,11 @@ void ASpearmanCharacter::WeaponHit_Implementation(FHitResult HitResult)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, HitResult.Location, FRotator(0.f), true);
 	}
+
+	if (!IsLocallyControlled())
+	{
+		ShowHpBar();
+	}
 }
 
 void ASpearmanCharacter::UpdateHUDHp()
@@ -169,6 +190,31 @@ void ASpearmanCharacter::UpdateHUDHp()
 	{
 		SpearmanPlayerController->SetHUDHp(Hp, MaxHp);
 	}
+}
+void ASpearmanCharacter::ShowHitDamage(bool bShowHitDamage)
+{
+	if (HitDamage)
+	{
+		HitDamage->SetVisibility(bShowHitDamage);
+		// TODO : Animation
+	}
+}
+
+void ASpearmanCharacter::HideHitDamage()
+{
+	HitDamage->SetVisibility(false);
+}
+
+void ASpearmanCharacter::ShowHpBar()
+{
+	HpBar->SetVisibility(true);
+	GetWorldTimerManager().ClearTimer(HpBarTimer);
+	GetWorldTimerManager().SetTimer(HpBarTimer, this, &ASpearmanCharacter::HideHpBar, HpBarDisplayTime);
+}
+
+void ASpearmanCharacter::HideHpBar()
+{
+	HpBar->SetVisibility(false);
 }
 
 void ASpearmanCharacter::OnRep_ReplicatedMovement()
@@ -186,12 +232,7 @@ void ASpearmanCharacter::Death()
 		Combat->EquippedWeapon->Dropped();
 	}
 	MulticastDeath();
-	GetWorldTimerManager().SetTimer(
-		DeathTimer,
-		this,
-		&ASpearmanCharacter::DeathTimerFinished,
-		DeathDelay
-	);
+	GetWorldTimerManager().SetTimer(DeathTimer, this, &ASpearmanCharacter::DeathTimerFinished, DeathDelay);
 }
 
 void ASpearmanCharacter::MulticastDeath_Implementation()
@@ -219,20 +260,6 @@ void ASpearmanCharacter::DeathTimerFinished()
 	}
 }
 
-void ASpearmanCharacter::ShowHitDamage(bool bShowHitDamage)
-{
-	if (HitDamage)
-	{
-		HitDamage->SetVisibility(bShowHitDamage);
-		// TODO : Add Location per tick
-	}
-}
-
-void ASpearmanCharacter::HideHitDamage()
-{
-	HitDamage->SetVisibility(false);
-}
-
 void ASpearmanCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -253,6 +280,14 @@ void ASpearmanCharacter::BeginPlay()
 
 	UpdateHUDHp();
 
+	HpBarWidget->SetHpBar(GetHpRatio());
+	HpBar->SetVisibility(false);
+
+	if (IsLocallyControlled())
+	{
+		HpBar->SetVisibility(false);
+	}
+	
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ASpearmanCharacter::OnAttacked);

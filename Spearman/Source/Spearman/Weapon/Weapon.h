@@ -60,6 +60,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float HeadShotDamage = 50.f;
 
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	float FinalDamage;
+	
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
@@ -95,6 +98,7 @@ private:
 
 	bool bAttackCollisionTrace = false;
 
+	UPROPERTY()
 	TSet<AActor*> HitSet;
 
 	ACharacter* OwnerCharacter;
@@ -108,7 +112,6 @@ public:
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE UTexture2D* GetCrosshairCircle() const { return CrosshairCircle; }
 	FORCEINLINE UTexture2D* GetCrosshairDot() const { return CrosshairDot; }
-
 	FORCEINLINE float GetDamage() const { return Damage; }
 	FORCEINLINE float GetHeadShotDamage() const { return HeadShotDamage; }
 };

@@ -5,11 +5,17 @@
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Components/WidgetComponent.h"
+#include "Spearman/HUD/HpBarWidget.h"
 
 ABasicMonster::ABasicMonster()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	HpBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("HpBarWidget"));
+	HpBar->SetupAttachment(GetMesh());
+	HpBar->SetWidgetSpace(EWidgetSpace::Screen);
+	HpBar->SetDrawSize(FVector2D(125.f, 20.f));
 }
 
 void ABasicMonster::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -19,11 +25,20 @@ void ABasicMonster::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ABasicMonster, Hp);
 }
 
+void ABasicMonster::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	HpBar->InitWidget();
+	HpBarWidget = Cast<UHpBarWidget>(HpBar->GetUserWidgetObject());
+}
+
 void ABasicMonster::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	//GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+
+	HpBarWidget->SetHpBar(GetHpRatio());
+	HpBar->SetVisibility(false);
 
 	if (HasAuthority())
 	{
@@ -47,6 +62,8 @@ void ABasicMonster::WeaponHit_Implementation(FHitResult HitResult)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, HitResult.Location, FRotator(0.f), true);
 	}
+
+	ShowHpBar();
 }
 
 void ABasicMonster::OnAttacked(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
@@ -56,7 +73,9 @@ void ABasicMonster::OnAttacked(AActor* DamagedActor, float Damage, const UDamage
 	if (FMath::IsNearlyZero(Hp))
 	{ // Death
 		// TODO : GameMode, SpearmanCharacter->GameState?
-		Destroy();
+		
+		//Destroy();
+		SetLifeSpan(2.f);
 	}
 	else
 	{ // HitReact
@@ -64,7 +83,30 @@ void ABasicMonster::OnAttacked(AActor* DamagedActor, float Damage, const UDamage
 	}
 }
 
-void ABasicMonster::OnRep_Hp()
+void ABasicMonster::ShowHpBar()
 {
+	HpBar->SetVisibility(true);
+	GetWorldTimerManager().ClearTimer(HpBarTimer);
+	GetWorldTimerManager().SetTimer(HpBarTimer, this, &ABasicMonster::HideHpBar, HpBarDisplayTime);
+}
 
+void ABasicMonster::HideHpBar()
+{
+	HpBar->SetVisibility(false);
+}
+
+void ABasicMonster::Die()
+{
+	HideHpBar();
+
+	// TODO : many thing,
+}
+
+void ABasicMonster::OnRep_Hp()
+{ // client only
+	HpBarWidget->SetHpBar(GetHpRatio());
+	if (FMath::IsNearlyZero(Hp))
+	{
+		Die();
+	}
 }

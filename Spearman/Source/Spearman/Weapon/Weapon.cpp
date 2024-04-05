@@ -10,6 +10,7 @@
 #include "Spearman/Spearman.h"
 #include "Kismet/GameplayStatics.h"
 #include "Spearman/Interfaces/WeaponHitInterface.h"
+#include "Spearman/Monster/BasicMonster.h"
 
 AWeapon::AWeapon()
 {
@@ -33,9 +34,11 @@ AWeapon::AWeapon()
 
 	TraceStartBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TraceStartBox"));
 	TraceStartBox->SetupAttachment(RootComponent);
+	TraceStartBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	TraceStartBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	TraceEndBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TraceEndBox"));
 	TraceEndBox->SetupAttachment(RootComponent);
+	TraceEndBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	TraceEndBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
@@ -93,19 +96,21 @@ void AWeapon::AttackCollisionCheckByTrace()
 { // client and server
 	FVector Start = TraceStartBox->GetComponentLocation();
 	FVector End = TraceEndBox->GetComponentLocation();
-
 	TArray<FHitResult> HitResults;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
 
-	if (GetWorld()->LineTraceMultiByChannel(HitResults, Start, End, ECC_Visibility, Params))
-	{ // hit true
-
+	// TODO : FCollisionShape DrawDebugHelpers Check
+	FCollisionShape CollisionSphere = FCollisionShape::MakeCapsule(FVector(8.f, 8.f, 8.f));
+	GetWorld()->SweepMultiByChannel(HitResults, Start, End, FQuat::Identity, ECC_Visibility, CollisionSphere, Params);
+	
+	if (HitResults.Num() > 0)
+	{
 		for (const FHitResult& HitResult : HitResults)
 		{
-			if (!HitSet.Contains(HitResult.GetActor()))
+			if (HitResult.GetActor())
 			{
-				if (HitResult.GetActor())
+				if (!HitSet.Contains(HitResult.GetActor()))
 				{
 					HitSet.Add(HitResult.GetActor());
 
@@ -113,10 +118,6 @@ void AWeapon::AttackCollisionCheckByTrace()
 					if (WeaponHitInterface)
 					{ // Cast will succeed if BasicMonster, since BasicMonster inherits from WeaponHitInterface
 						WeaponHitInterface->WeaponHit_Implementation(HitResult);
-					}
-					else
-					{ // TODO : 여기로 들어옴
-						UE_LOG(LogTemp, Warning, TEXT("Not inherit Interface"));
 					}
 
 					if (HasAuthority())
@@ -126,13 +127,45 @@ void AWeapon::AttackCollisionCheckByTrace()
 						{
 							OwnerController = OwnerController == nullptr ? OwnerCharacter->GetController() : OwnerController;
 							if (OwnerController)
-							{
+							{						
+								if (HitResult.GetActor()->IsA<ASpearmanCharacter>())
+								{ // Hit SpearmanCharacter
+									ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(HitResult.GetActor());
+									if (HitSpearmanCharacter)
+									{
+										if (HitResult.BoneName.ToString() == HitSpearmanCharacter->GetHeadBone())
+										{ // Head Damage
+											FinalDamage = HeadShotDamage;
+										}
+										else
+										{ // Body Damage
+											FinalDamage = Damage;
+										}
+									}
+								}
+								else if (HitResult.GetActor()->IsA<ABasicMonster>())
+								{ // Hit BasicMonster
+									ABasicMonster* HitMonster = Cast<ABasicMonster>(HitResult.GetActor());
+									if (HitMonster)
+									{
+										if (HitResult.BoneName.ToString() == HitMonster->GetHeadBone())
+										{ // Head Damage
+											FinalDamage = HeadShotDamage;
+										}
+										else
+										{ // Body Damage
+											FinalDamage = Damage;
+										}
+									}
+								}
+								UE_LOG(LogTemp, Warning, TEXT("Hit Component : %s"), *HitResult.BoneName.ToString());
 								const float Dist = FVector::Distance(OwnerCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
 								// Dist (60, 240) -> Damage (10, 30)
 								FVector2D InRange(60.f, 240.f);
-								FVector2D OutRange(Damage / 3.f, Damage);
+								FVector2D OutRange(FinalDamage / 3.f, FinalDamage);
 								const float Dmg = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
 
+								UE_LOG(LogTemp, Warning, TEXT("Damage : %f"), Dmg);
 								UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(Dmg), OwnerController, this, UDamageType::StaticClass());
 							}
 						}
@@ -141,8 +174,6 @@ void AWeapon::AttackCollisionCheckByTrace()
 			}
 		}
 	}
-
-	// DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 5.f, 0, 5.f);
 }
 
 void AWeapon::SetWeaponState(EWeaponState State)
