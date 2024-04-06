@@ -7,6 +7,8 @@
 #include "Spearman/Interfaces/WeaponHitInterface.h"
 #include "BasicMonster.generated.h"
 
+class UHitDamageWidget;
+
 UCLASS()
 class SPEARMAN_API ABasicMonster : public ACharacter, public IWeaponHitInterface
 {
@@ -21,6 +23,16 @@ protected:
 
 	UFUNCTION()
 	void OnAttacked(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
+
+	void PlayHitMontage(FName Section, float PlayRate = 1.f);
+
+	UFUNCTION()
+	void StoreHitDamage(UHitDamageWidget* HitDamageToStore, FVector Location);
+
+	UFUNCTION()
+	void DestroyHitDamage(UHitDamageWidget* HitDamageToDestroy);
+
+	void UpdateHitDamages();
 
 	void ShowHpBar();
 	void HideHpBar();
@@ -39,10 +51,19 @@ private:
 
 	UFUNCTION()
 	void OnRep_Hp();
+	
+	UPROPERTY(EditAnywhere, Category = Combat)
+	FString HeadBone;
 
 	/*
 	* Widget
 	*/
+
+	UPROPERTY(VisibleAnywhere, Category = Widget)
+	class UWidgetComponent* HitDamage;
+
+	UPROPERTY(VisibleAnywhere, Category = Widget)
+	UHitDamageWidget* HitDamageWidget;
 
 	UPROPERTY(VisibleAnywhere, Category = Widget)
 	class UWidgetComponent* HpBar;
@@ -50,13 +71,31 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Widget)
 	class UHpBarWidget* HpBarWidget;
 
-	UPROPERTY(EditAnywhere, Category = Combat)
-	FString HeadBone;
+	// Map to store HitDamage Widgets and locations
+	UPROPERTY(VisibleAnywhere, Category = Widget)
+	TMap<UHitDamageWidget*, FVector> HitDamages;
+
+	UPROPERTY(EditAnywhere, Category = Widget)
+	float HitDamageDestroyTime = 1.f;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	float HpBarDisplayTime = 4.f;
 
 	FTimerHandle HpBarTimer;
+
+	/*
+	* Montage
+	*/
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* HitMontage;
+
+	/*
+	* Behavior Tree
+	*/
+
+	UPROPERTY(EditAnywhere, Category = "Behavior Tree")
+	class UBehaviorTree* BehaviorTree;
 
 public:	
 	virtual void Tick(float DeltaTime) override;
@@ -64,7 +103,10 @@ public:
 
 	virtual void WeaponHit_Implementation(FHitResult HitResult) override;
 
+	void ShowHitDamage(int32 Damage, FVector HitLocation, bool bHeadShot);
+
 public:
 	FORCEINLINE FString GetHeadBone() const { return HeadBone; }
 	FORCEINLINE float GetHpRatio() const { return Hp / MaxHp; }
+	FORCEINLINE UBehaviorTree* GetBehaviorTree() const { return BehaviorTree; }
 };

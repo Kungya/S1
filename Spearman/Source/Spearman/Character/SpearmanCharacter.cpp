@@ -87,7 +87,6 @@ void ASpearmanCharacter::PostInitializeComponents()
 	// TODO : if statement IsLocallyControleld
 	HitDamage->InitWidget();
 	HitDamageWidget = Cast<UHitDamageWidget>(HitDamage->GetUserWidgetObject());
-
 	
 	HpBar->InitWidget();
 	HpBarWidget = Cast<UHpBarWidget>(HpBar->GetUserWidgetObject());
@@ -202,7 +201,10 @@ void ASpearmanCharacter::ShowHitDamage(bool bShowHitDamage)
 
 void ASpearmanCharacter::HideHitDamage()
 {
-	HitDamage->SetVisibility(false);
+	if (HitDamage)
+	{
+		HitDamage->SetVisibility(false);
+	}
 }
 
 void ASpearmanCharacter::ShowHpBar()
