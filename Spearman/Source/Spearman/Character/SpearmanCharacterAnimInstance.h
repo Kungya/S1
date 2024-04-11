@@ -18,7 +18,7 @@ public:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaTime) override;
 
-	// 공격시 충돌체 On, Off
+	// LineTrace On, Off
 
 	UFUNCTION()
 	void AnimNotify_AttackCollisionOn();

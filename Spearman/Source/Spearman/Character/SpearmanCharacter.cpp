@@ -36,7 +36,7 @@ ASpearmanCharacter::ASpearmanCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
-	// ¸¶¿ì½º È¸Àü
+	// ë§ˆìš°ìŠ¤ íšŒì „
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
@@ -122,7 +122,7 @@ void ASpearmanCharacter::PlayDeathMontage()
 	if (AnimInstance && DeathMontage)
 	{
 		AnimInstance->Montage_Play(DeathMontage);
-		// TODO : ÇÇ°Ý ¹æÇâ¿¡ µû¸¥ JumpToSection
+		// TODO : ê¸°ëŠ¥ì„ ì¶”ê°€í•œë‹¤ë©´ í”¼ê²© ë°©í–¥ì— ë”°ë¥¸ JumpToSection
 	}
 }
 
@@ -150,7 +150,7 @@ void ASpearmanCharacter::OnAttacked(AActor* DamagedActor, float Damage, const UD
 void ASpearmanCharacter::OnRep_Hp(float LastHp)
 {
 	if (!IsLocallyControlled())
-	{ // TODO : ÇÇ°ÝÀÚ°¡ ÀÔÀº µ¥¹ÌÁö¸¸ °ø°ÝÀÚ ÀÔÀå¿¡¼­ Ç¥½Ã -> ¿ì¼±Àº ÇÇ°ÝÀÚ, ¼­¹ö¸¦ Á¦¿ÜÇÏ°í ÀüºÎ Ç¥½Ã
+	{ // TODO : í”¼ê²©ìžê°€ ìž…ì€ ë°ë¯¸ì§€ë§Œ ê³µê²©ìž ìž…ìž¥ì—ì„œ í‘œì‹œ -> ìš°ì„ ì€ í”¼ê²©ìž, ì„œë²„ë¥¼ ì œì™¸í•˜ê³  ì „ë¶€ í‘œì‹œ
 		const float Damage = LastHp - Hp;
 		HitDamageWidget->SetHitDamageText(Damage);
 		ShowHitDamage(true);
@@ -318,7 +318,7 @@ void ASpearmanCharacter::CalculateAO_Pitch()
 		// [270, 360) -> [-90, 0)
 		AO_Pitch -= 360.f;
 	}
-	// »óÇÏ Weapon°¢ Á¦ÇÑ
+	// ìƒí•˜ Weaponê° ì œí•œ
 	AO_Pitch = FMath::ClampAngle(AO_Pitch, -45.f, 45.f);
 }
 
@@ -366,7 +366,7 @@ void ASpearmanCharacter::ServerEquipButtonPressed_Implementation()
 void ASpearmanCharacter::AttackButtonPressed()
 {
 	if (Combat && Combat->bCanAttack)
-	{ // ClientÃø bCanAttackÀÌ º¯Á¶µÇ´õ¶óµµ Server³» ¿¡¼­ bCanAttack Àç°Ë»ç ÈÄ ½ÇÇà °áÁ¤
+	{ // Clientì¸¡ bCanAttackì´ ë³€ì¡°ë˜ë”ë¼ë„ Serverë‚´ ì—ì„œ bCanAttack ìž¬ê²€ì‚¬ í›„ ì‹¤í–‰ ê²°ì •
 		Combat->ServerSpearAttack();
 	}
 	else
@@ -383,7 +383,7 @@ void ASpearmanCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 	}
 	OverlappingWeapon = Weapon;
 	if (IsLocallyControlled())
-	{ // Server¿¡¼­ Á÷Á¢ Á¶Á¾ÇÏ´Â ÄÉÀÌ½º Ã³¸®
+	{ // Serverì—ì„œ ì§ì ‘ ì¡°ì¢…í•˜ëŠ” ì¼€ì´ìŠ¤ ì²˜ë¦¬
 		if (OverlappingWeapon)
 		{
 			OverlappingWeapon->ShowPickupWidget(true);
@@ -392,7 +392,7 @@ void ASpearmanCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 }
 
 bool ASpearmanCharacter::IsWeaponEquipped()
-{ // bool·Î AnimInstance¿¡¼­ »ç¿ë, AnimBP¸¦ À§ÇÔÀÓ
+{ // boolë¡œ AnimInstanceì—ì„œ ì‚¬ìš©, AnimBPë¥¼ ìœ„í•¨ìž„
 	return (Combat && Combat->EquippedWeapon);
 }
 
@@ -403,7 +403,7 @@ void ASpearmanCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 		OverlappingWeapon->ShowPickupWidget(true);
 	}
 	if (LastWeapon)
-	{ // OverlappingWeaponÀÌ ´Ù½Ã nullptr·Î replicated µÇ±â Á÷Àü ¸¶Áö¸· °ª
+	{  // OverlappingWeaponì´ ë‹¤ì‹œ nullptrë¡œ replicated ë˜ê¸° ì§ì „ ë§ˆì§€ë§‰ ê°’
 		LastWeapon->ShowPickupWidget(false);
 	}
 }
@@ -490,7 +490,7 @@ void ASpearmanCharacter::EquipButtonPressed()
 	if (Combat)
 	{
 		if (HasAuthority())
-		{ // ¼­¹ö¿¡¼­ Á¶Á¾ÇÒ ¶§ Ã³¸®
+		{ // ì„œë²„ì—ì„œ ì¡°ì¢…í•  ë•Œ ì²˜ë¦¬
 			Combat->EquipWeapon(OverlappingWeapon);
 		}
 		else

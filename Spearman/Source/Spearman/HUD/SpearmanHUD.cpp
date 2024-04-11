@@ -23,7 +23,7 @@ void ASpearmanHUD::AddCharacterOverlay()
 }
 
 void ASpearmanHUD::DrawHUD()
-{ // -> DrawHUD´Â ¿£ÁøÀÌ ¸Å ÇÁ·¹ÀÓ¸¶´Ù ÀÚµ¿À¸·Î callÀ» ÇØÁÖ±â ¶§¹®¿¡ overrideÇØ¼­ ÄÚµå¸¦ ³Ö¾îÁÖ±â¸¸ ÇÏ¸é µÈ´Ù
+{ // -> DrawHUDï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ó¸ï¿½ï¿½ï¿½ ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ callï¿½ï¿½ ï¿½ï¿½ï¿½Ö±ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ overrideï¿½Ø¼ï¿½ ï¿½Úµå¸¦ ï¿½Ö¾ï¿½ï¿½Ö±â¸¸ ï¿½Ï¸ï¿½ ï¿½È´ï¿½
 	Super::DrawHUD();
 
 	FVector2D ViewportSize;
@@ -44,7 +44,7 @@ void ASpearmanHUD::DrawCrosshair(UTexture2D* Texture, FVector2D CenterInViewport
 	const float Width = Texture->GetSizeX();
 	const float Height = Texture->GetSizeY();
 	
-	// 1/2¾¿ ¹Ð¾î¼­ Áß¾Ó¿¡ Á¤·Ä  
+	// 1/2ï¿½ï¿½ ï¿½Ð¾î¼­ ï¿½ß¾Ó¿ï¿½ ï¿½ï¿½ï¿½ï¿½  
 	const FVector2D CorrectedCenter(CenterInViewport.X - Width / 2.f, CenterInViewport.Y - Height / 2.f);
 
 	AHUD::DrawTexture(Texture, CorrectedCenter.X, CorrectedCenter.Y, Width, Height, 0.f, 0.f, 1.f, 1.f, FLinearColor::Black);

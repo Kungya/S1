@@ -2,4 +2,35 @@
 
 
 #include "BasicMonsterAnimInstance.h"
+#include "BasicMonster.h"
 
+void UBasicMonsterAnimInstance::NativeInitializeAnimation()
+{
+	Super::NativeInitializeAnimation();
+
+	BasicMonster = Cast<ABasicMonster>(TryGetPawnOwner());
+}
+
+void UBasicMonsterAnimInstance::NativeUpdateAnimation(float DeltaTime)
+{
+	Super::NativeUpdateAnimation(DeltaTime);
+
+	if (BasicMonster == nullptr)
+	{
+		BasicMonster = Cast<ABasicMonster>(TryGetPawnOwner());
+	}
+	if (BasicMonster == nullptr) return;
+
+	FVector Velocity = BasicMonster->GetVelocity();
+	Velocity.Z = 0.f;
+	Speed = Velocity.Size();
+}
+
+void UBasicMonsterAnimInstance::AnimNotify_StunFinish()
+{
+	if (BasicMonster && BasicMonster->HasAuthority())
+	{
+		BasicMonster->SetStunned(false);
+		UE_LOG(LogTemp, Warning, TEXT("Stun Finish"));
+	}
+}

@@ -105,7 +105,7 @@ private:
 	AController* OwnerController;
 	
 public:
-	// µå¶øµÇ°Å³ª, ÀåÂøµÉ ¶§¸¶´Ù º¯°æÇØÁà¾ß ÇÔ
+	// ë“œëžë˜ê±°ë‚˜, ìž¥ì°©ë  ë•Œë§ˆë‹¤ ë³€ê²½í•´ì¤˜ì•¼ í•¨
 	void SetWeaponState(EWeaponState State);
 	FORCEINLINE void SetWeaponVisibility(bool bNewVisibility) const { WeaponMesh->SetVisibility(bNewVisibility); }
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }

@@ -24,8 +24,6 @@ protected:
 	UFUNCTION()
 	void OnAttacked(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
 
-	void PlayHitMontage(FName Section, float PlayRate = 1.f);
-
 	UFUNCTION()
 	void StoreHitDamage(UHitDamageWidget* HitDamageToStore, FVector Location);
 
@@ -38,6 +36,31 @@ protected:
 	void HideHpBar();
 
 	void Die();
+
+	UFUNCTION()
+	void AggroSphereBeginOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void CombatRangeBeginOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void CombatRangeEndOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex);
 
 private:
 	UPROPERTY(EditAnywhere, Category = Combat)
@@ -90,6 +113,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* HitMontage;
 
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* AttackMontage;
+
 	/*
 	* Behavior Tree
 	*/
@@ -97,6 +123,36 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Behavior Tree")
 	class UBehaviorTree* BehaviorTree;
 
+	// Point for the monster to move to, in local space
+	UPROPERTY(EditAnywhere, Category = "Behavior Tree", meta = (AllowPrivateAccess = "true", MakeEditWidget = "true"))
+	FVector PatrolPoint;
+
+	UPROPERTY(EditAnywhere, Category = "Behavior Tree", meta = (AllowPrivateAccess = "true", MakeEditWidget = "true"))
+	FVector PatrolPoint2;
+
+	class ABasicMonsterAIController* BasicMonsterAIController;
+
+	/*
+	* Combat
+	*/
+	
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	class USphereComponent* AggroSphere;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat")
+	bool bStunned = false;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float StunChance = 1.f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat")
+	bool bInCombatRange;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	USphereComponent* CombatRangeSphere;
+
+	
+	
 public:	
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -104,6 +160,14 @@ public:
 	virtual void WeaponHit_Implementation(FHitResult HitResult) override;
 
 	void ShowHitDamage(int32 Damage, FVector HitLocation, bool bHeadShot);
+
+	void SetStunned(bool Stunned);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayHitMontage(FName Section);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayAttackMontage(FName Section);
 
 public:
 	FORCEINLINE FString GetHeadBone() const { return HeadBone; }

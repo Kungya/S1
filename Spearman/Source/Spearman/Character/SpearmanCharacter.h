@@ -21,7 +21,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 	virtual void OnRep_ReplicatedMovement() override;
-	// TODO : ±â´ÉÀÌ ´õ Ãß°¡µÈ´Ù¸é Rep¿¡¼­ Multicast·Î º¯°æ
+	// TODO : ê¸°ëŠ¥ì´ ë” ì¶”ê°€ëœë‹¤ë©´ Repì—ì„œ Multicastë¡œ ë³€ê²½
 	void Death();
 
 	UFUNCTION(NetMulticast, Reliable)
@@ -65,7 +65,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	class UCameraComponent* FollowCamera;
 
-	// ¶¥¿¡ ¶³¾îÁø ¹«±â¿Í °ãÃÆÀ» ¶§ÀÇ Weapon
+	// ë•…ì— ë–¨ì–´ì§„ ë¬´ê¸°ì™€ ê²¹ì³¤ì„ ë•Œì˜ Weapon
 	UPROPERTY (ReplicatedUsing = OnRep_OverlappingWeapon)
 	class AWeapon* OverlappingWeapon;
 
@@ -117,7 +117,7 @@ private:
 	float AO_Pitch;
 	FRotator StartingAimRotation;
 
-	// AnimBP¿¡¼­ ÀÏÁ¤ Æ½¸¶´Ù TurnInPlace ¾Ö´Ï¸ŞÀÌ¼ÇÀ» ½ÇÇàÇÒ°ÇÁö »óÅÂ¸¦ ³ªÅ¸³¿
+	// AnimBPì—ì„œ ì¼ì • í‹±ë§ˆë‹¤ TurnInPlace ì• ë‹ˆë©”ì´ì…˜ì„ ì‹¤í–‰í• ê±´ì§€ ìƒíƒœë¥¼ ë‚˜íƒ€ëƒ„
 	ETurnInPlace TIPState;
 
 	UPROPERTY(EditAnywhere, Category = Combat)

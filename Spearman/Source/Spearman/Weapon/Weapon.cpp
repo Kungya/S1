@@ -99,89 +99,87 @@ void AWeapon::AttackCollisionCheckByTrace()
 	TArray<FHitResult> HitResults;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
-
+	
 	GetWorld()->LineTraceMultiByChannel(HitResults, Start, End, ECC_Visibility, Params);
+	
+	if (HitResults.Num() == 0) return;
 
-	if (HitResults.Num() > 0)
+	for (const FHitResult& HitResult : HitResults)
 	{
-		for (const FHitResult& HitResult : HitResults)
+		if (HitResult.GetActor() == nullptr) continue;
+
+		if (!HitSet.Contains(HitResult.GetActor()))
 		{
-			if (HitResult.GetActor())
+			HitSet.Add(HitResult.GetActor());
+			IWeaponHitInterface* WeaponHitInterface = Cast<IWeaponHitInterface>(HitResult.GetActor());
+			if (WeaponHitInterface)
+			{ // Cast will succeed if BasicMonster, since BasicMonster inherits from WeaponHitInterface
+				WeaponHitInterface->WeaponHit_Implementation(HitResult);
+			}
+			OwnerCharacter = OwnerCharacter == nullptr ? Cast<ACharacter>(GetOwner()) : OwnerCharacter;
+			if (OwnerCharacter)
 			{
-				if (!HitSet.Contains(HitResult.GetActor()))
+				OwnerController = OwnerController == nullptr ? OwnerCharacter->GetController() : OwnerController;
+				if (OwnerController)
 				{
-					HitSet.Add(HitResult.GetActor());
-
-					IWeaponHitInterface* WeaponHitInterface = Cast<IWeaponHitInterface>(HitResult.GetActor());
-					if (WeaponHitInterface)
-					{ // Cast will succeed if BasicMonster, since BasicMonster inherits from WeaponHitInterface
-						WeaponHitInterface->WeaponHit_Implementation(HitResult);
-					}
-
-					/* Calculate Damage in server */
-					OwnerCharacter = OwnerCharacter == nullptr ? Cast<ACharacter>(GetOwner()) : OwnerCharacter;
-					if (OwnerCharacter)
-					{
-						OwnerController = OwnerController == nullptr ? OwnerCharacter->GetController() : OwnerController;
-						if (OwnerController)
+					if (HitResult.GetActor()->IsA<ASpearmanCharacter>())
+					{ // Hit SpearmanCharacter
+						ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(HitResult.GetActor());
+						if (HitSpearmanCharacter)
 						{
-							if (HitResult.GetActor()->IsA<ASpearmanCharacter>())
-							{ // Hit SpearmanCharacter
-								ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(HitResult.GetActor());
-								if (HitSpearmanCharacter)
-								{
-									if (HitResult.BoneName.ToString() == HitSpearmanCharacter->GetHeadBone())
-									{ // Head Damage
-										FinalDamage = HeadShotDamage;
-									}
-									else
-									{ // Body Damage
-										FinalDamage = Damage;
-									}
-									UE_LOG(LogTemp, Warning, TEXT("Hit Component : %s"), *HitResult.BoneName.ToString());
-									const float Dist = FVector::Distance(OwnerCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
-									// Dist (60, 240) -> Damage (10, 30)
-									FVector2D InRange(60.f, 240.f);
-									FVector2D OutRange(FinalDamage / 3.f, FinalDamage);
-									const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
-									UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerController, this, UDamageType::StaticClass());
-									// HitDamage Widget
-									// TODO : HitSpearmanCharacter->ShowHitDamage();
-								}
+							if (HitResult.BoneName.ToString() == HitSpearmanCharacter->GetHeadBone())
+							{ // Head Damage
+								FinalDamage = HeadShotDamage;
 							}
-							else if (HitResult.GetActor()->IsA<ABasicMonster>())
-							{ // Hit BasicMonster
-								ABasicMonster* HitMonster = Cast<ABasicMonster>(HitResult.GetActor());
-								if (HitMonster)
-								{
-									bool bHeadShot = false;
-									if (HitResult.BoneName.ToString() == HitMonster->GetHeadBone())
-									{ // Head Damage
-										bHeadShot = true;
-										FinalDamage = HeadShotDamage;
-									}
-									else
-									{ // Body Damage
-										bHeadShot = false;
-										FinalDamage = Damage;
-									}
-									UE_LOG(LogTemp, Warning, TEXT("Hit Component : %s"), *HitResult.BoneName.ToString());
-									const float Dist = FVector::Distance(OwnerCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
-									// Dist (60, 240) -> Damage (10, 30)
-									FVector2D InRange(60.f, 240.f);
-									FVector2D OutRange(FinalDamage / 3.f, FinalDamage);
-									const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
-									UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerController, this, UDamageType::StaticClass());
-									// HitDamage Widget
-									if (OwnerCharacter->IsLocallyControlled())
-									{
-										HitMonster->ShowHitDamage(InDamage, HitResult.Location, bHeadShot);
-									}
-								}
+							else
+							{ // Body Damage
+								FinalDamage = Damage;
 							}
-							
-
-							
+							UE_LOG(LogTemp, Warning, TEXT("Hit Spearman Component : %s"), *HitResult.BoneName.ToString());
+							const float Dist = FVector::Distance(OwnerCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
+							FVector2D InRange(60.f, 240.f);
+							FVector2D OutRange(FinalDamage / 3.f, FinalDamage);
+							const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
+							UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerController, this, UDamageType::StaticClass());
+							// TODO : HitDamage Widget, HitSpearmanCharacter->ShowHitDamage();
+						}
+					}
+					else if (HitResult.GetActor()->IsA<ABasicMonster>())
+					{ // Hit BasicMonster
+						ABasicMonster* HitMonster = Cast<ABasicMonster>(HitResult.GetActor());
+						if (HitMonster)
+						{
+							bool bHeadShot = false;
+							if (HitResult.BoneName.ToString() == HitMonster->GetHeadBone())
+							{ // Head Damage
+								bHeadShot = true;
+								FinalDamage = HeadShotDamage;
+							}
+							else
+							{ // Body Damage
+								bHeadShot = false;
+								FinalDamage = Damage;
+							}
+							if (HasAuthority())
+							{ // TOOD : 간헐적 피격 데미지 처리되지 않는 현상 디버깅
+								UE_LOG(LogTemp, Warning, TEXT("Server Hit BasicMonster Component : %s"), *HitResult.BoneName.ToString());
+							}
+							else
+							{
+								UE_LOG(LogTemp, Warning, TEXT("Client Hit BasicMonster Component : %s"), *HitResult.BoneName.ToString());
+							}
+							const float Dist = FVector::Distance(OwnerCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
+							FVector2D InRange(60.f, 240.f);
+							FVector2D OutRange(FinalDamage / 3.f, FinalDamage);
+							const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
+							if (HasAuthority())
+							{
+								UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerController, this, UDamageType::StaticClass());
+							}
+							if (OwnerCharacter->IsLocallyControlled())
+							{ // HitDamage Widget
+								HitMonster->ShowHitDamage(InDamage, HitResult.Location, bHeadShot);
+							}
 						}
 					}
 				}
@@ -197,7 +195,7 @@ void AWeapon::SetWeaponState(EWeaponState State)
 	switch (WeaponState)
 	{
 	case EWeaponState::EWS_Equipped:
-		// ���� �� �浹 off
+		// 장착후 상호작용 off
 		ShowPickupWidget(false);
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		WeaponMesh->SetSimulatePhysics(false);
@@ -251,11 +249,12 @@ void AWeapon::Dropped()
 
 void AWeapon::TurnOnAttackCollision()
 {
+	HitSet.Empty();
 	bAttackCollisionTrace = true;
 }
 
 void AWeapon::TurnOffAttackCollision()
 {
-	bAttackCollisionTrace = false;
 	HitSet.Empty();
+	bAttackCollisionTrace = false;
 }

@@ -36,11 +36,11 @@ void USpearmanCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	TIPState = SpearmanCharacter->GetTIPState();
 	bIsDead = SpearmanCharacter->IsDead();
 
-	// BlendSpace µ¿±âÈ­ ºÎºÐ
+	// BlendSpace ë™ê¸°í™” ë¶€ë¶„
 	FRotator AimRotation = SpearmanCharacter->GetBaseAimRotation();
 	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(SpearmanCharacter->GetVelocity());
 	FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation);
-	// DeltaRotation : ÀÌµ¿ ¹æÇâÀ» ÆÇÁ¤ÇÏ±â À§ÇÔ, RInterpTo´Â -180¿¡¼­ 180À¸·Î ÃÖ´Ü°Å¸® º¯°æÀ» À§ÇÔ
+	// DeltaRotation : ì´ë™ ë°©í–¥ì„ íŒì •í•˜ê¸° ìœ„í•¨, RInterpToëŠ” -180ì—ì„œ 180ìœ¼ë¡œ ìµœë‹¨ê±°ë¦¬ ë³€ê²½ì„ ìœ„í•¨
 	DeltaRotation = FMath::RInterpTo(DeltaRotation, DeltaRot, DeltaTime, 6.f);
 	YawOffset = DeltaRotation.Yaw;
 
@@ -54,7 +54,7 @@ void USpearmanCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	AO_Yaw = 0.f;
 	AO_Pitch = SpearmanCharacter->GetAO_Pitch();
 
-	// Weapon ¼³Á¤, TODO : AnimInstance¿¡¼­ Ã³¸®¸¦ ÇÏ´Â°Ô ¸Â´ÂÁö ?, ¿ì¼±Àº Anim_Notify¶§¹®¿¡ ¿©±â¼­ Ã³¸®...
+	// Weapon ì„¤ì •, TODO : AnimInstanceì—ì„œ ì²˜ë¦¬ë¥¼ í•˜ëŠ”ê²Œ ë§žëŠ”ì§€ ?, ìš°ì„ ì€ Anim_Notifyë•Œë¬¸ì— ì—¬ê¸°ì„œ ì²˜ë¦¬...
 	EquippedWeapon = SpearmanCharacter->GetCombat()->GetEquippedWeapon();
 	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && SpearmanCharacter->GetMesh())
 	{
@@ -85,11 +85,8 @@ void USpearmanCharacterAnimInstance::AnimNotify_AttackCollisionOff()
 
 void USpearmanCharacterAnimInstance::AnimNotify_SetCanAttack()
 {
-	/*if (SpearmanCharacter->IsLocallyControlled())
-		UE_LOG(LogTemp, Warning, TEXT("InClientSetCanAttack"));*/
 	if (SpearmanCharacter && SpearmanCharacter->HasAuthority())
 	{
 		SpearmanCharacter->GetCombat()->SetCanAttack();
-		//UE_LOG(LogTemp, Warning, TEXT("InServerSetCanAttack"));
 	}
 }

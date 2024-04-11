@@ -8,6 +8,12 @@
 #include "Components/WidgetComponent.h"
 #include "Spearman/HUD/HitDamageWidget.h"
 #include "Spearman/HUD/HpBarWidget.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "DrawDebugHelpers.h"
+#include "Spearman/AI/BasicMonsterAIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "Components/SphereComponent.h"
+#include "Spearman/Character/SpearmanCharacter.h"
 
 ABasicMonster::ABasicMonster()
 {
@@ -20,6 +26,12 @@ ABasicMonster::ABasicMonster()
 	HpBar->SetupAttachment(GetMesh());
 	HpBar->SetWidgetSpace(EWidgetSpace::Screen);
 	HpBar->SetDrawSize(FVector2D(125.f, 20.f));
+
+	AggroSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AggroSphere"));
+	AggroSphere->SetupAttachment(GetRootComponent());
+
+	CombatRangeSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AttackRangeSphere"));
+	CombatRangeSphere->SetupAttachment(GetRootComponent());
 }
 
 void ABasicMonster::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -44,12 +56,36 @@ void ABasicMonster::BeginPlay()
 {
 	Super::BeginPlay();
 
+	HitDamage->SetVisibility(false);
+
 	HpBarWidget->SetHpBar(GetHpRatio());
 	HpBar->SetVisibility(false);
 
+	if (HasAuthority())
+	{ // AI
+
+		AggroSphere->OnComponentBeginOverlap.AddDynamic(this, &ABasicMonster::AggroSphereBeginOverlap);
+		CombatRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &ABasicMonster::CombatRangeBeginOverlap);
+		CombatRangeSphere->OnComponentEndOverlap.AddDynamic(this, &ABasicMonster::CombatRangeEndOverlap);
+
+		BasicMonsterAIController = Cast<ABasicMonsterAIController>(GetController());
+
+		const FVector WorldPatrolPoint = UKismetMathLibrary::TransformLocation(GetActorTransform(), PatrolPoint);
+		const FVector WorldPatrolPoint2 = UKismetMathLibrary::TransformLocation(GetActorTransform(), PatrolPoint2);
+		DrawDebugSphere(GetWorld(), WorldPatrolPoint, 25.f, 12, FColor::Red, true);
+		DrawDebugSphere(GetWorld(), WorldPatrolPoint2, 25.f, 12, FColor::Blue, true);
+
+		if (BasicMonsterAIController)
+		{
+			BasicMonsterAIController->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint"), WorldPatrolPoint);
+			BasicMonsterAIController->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint2"), WorldPatrolPoint2);
+
+			BasicMonsterAIController->RunBehaviorTree(BehaviorTree);
+		}
+	}	
 
 	if (HasAuthority())
-	{
+	{ // Damage
 		OnTakeAnyDamage.AddDynamic(this, &ABasicMonster::OnAttacked);
 	}
 }
@@ -73,9 +109,17 @@ void ABasicMonster::WeaponHit_Implementation(FHitResult HitResult)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, HitResult.Location, FRotator(0.f), true);
 	}
-
 	ShowHpBar();
-	PlayHitMontage(FName("HitReact"));
+	
+	if (HasAuthority())
+	{ // 랜덤 값에 따라 피격이 실행되는 경우는 랜덤 결과를 같이 보내거나 NetMulticast를 써서 동기화하는 수 밖에...
+		const float Stunned = FMath::FRandRange(0.f, 1.f);
+		if (Stunned <= StunChance)
+		{
+			MulticastPlayHitMontage(FName("HitReact"));
+			SetStunned(true);
+		}
+	}
 }
 
 void ABasicMonster::OnAttacked(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
@@ -119,7 +163,6 @@ void ABasicMonster::ShowHitDamage(int32 Damage, FVector HitLocation, bool bHeadS
 void ABasicMonster::StoreHitDamage(UHitDamageWidget* HitDamageToStore, FVector Location)
 {
 	HitDamages.Add(HitDamageToStore, Location);
-
 
 	FTimerHandle HitDamageTimer;
 	FTimerDelegate HitDamageDelegate;
@@ -170,13 +213,75 @@ void ABasicMonster::Die()
 	// TODO : many thing,
 }
 
-void ABasicMonster::PlayHitMontage(FName Section, float PlayRate)
+void ABasicMonster::AggroSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{ // server only
+	if (OtherActor == nullptr) return;
+
+	ASpearmanCharacter* SpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
+	if (SpearmanCharacter)
+	{
+		BasicMonsterAIController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), SpearmanCharacter);
+	}
+}
+
+void ABasicMonster::CombatRangeBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{ // server only
+	if (OtherActor == nullptr) return;
+	ASpearmanCharacter* SpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
+	if (SpearmanCharacter)
+	{
+		bInCombatRange = true;
+		if (BasicMonsterAIController)
+		{
+			BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(TEXT("InCombatRange"), true);
+		}
+	}
+}
+
+void ABasicMonster::CombatRangeEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{ // server only
+	if (OtherActor == nullptr) return;
+	ASpearmanCharacter* SpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
+	if (SpearmanCharacter)
+	{
+		bInCombatRange = false;
+		if (BasicMonsterAIController)
+		{
+			BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(TEXT("InCombatRange"), false);
+		}
+	}
+}
+
+void ABasicMonster::SetStunned(bool Stunned)
+{
+	if (HasAuthority())
+	{
+		bStunned = Stunned;
+
+		if (BasicMonsterAIController)
+		{
+			BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(TEXT("Stunned"), Stunned);
+		}
+	}
+}
+
+void ABasicMonster::MulticastPlayHitMontage_Implementation(FName Section)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance)
+	if (AnimInstance && HitMontage) 
 	{
-		AnimInstance->Montage_Play(HitMontage, PlayRate);
+		AnimInstance->Montage_Play(HitMontage);
 		AnimInstance->Montage_JumpToSection(Section, HitMontage);
+	}
+}
+
+void ABasicMonster::MulticastPlayAttackMontage_Implementation(FName Section)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && AttackMontage)
+	{
+		AnimInstance->Montage_Play(AttackMontage);
+		AnimInstance->Montage_JumpToSection(Section, AttackMontage);
 	}
 }
 

@@ -106,7 +106,6 @@ void UCombatComponent::ServerSpearAttack_Implementation()
 	{
 		MulticastSpearAttack();
 	}
-	
 }
 
 void UCombatComponent::SetDashCooldown()
