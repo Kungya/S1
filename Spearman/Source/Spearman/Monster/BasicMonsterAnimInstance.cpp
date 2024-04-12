@@ -34,3 +34,19 @@ void UBasicMonsterAnimInstance::AnimNotify_StunFinish()
 		UE_LOG(LogTemp, Warning, TEXT("Stun Finish"));
 	}
 }
+
+void UBasicMonsterAnimInstance::AnimNotify_AttackCollisionOn()
+{
+	if (BasicMonster && BasicMonster->HasAuthority())
+	{
+		BasicMonster->TurnOnAttackCollision();
+	}
+}
+
+void UBasicMonsterAnimInstance::AnimNotify_AttackCollisionOff()
+{
+	if (BasicMonster && BasicMonster->HasAuthority())
+	{
+		BasicMonster->TurnOffAttackCollision();
+	}
+}

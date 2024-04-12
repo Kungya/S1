@@ -62,6 +62,15 @@ protected:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
 
+	UFUNCTION()
+		void AttackCollisionBoxBeginOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
+
 private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	class UParticleSystem* HitParticles;
@@ -151,9 +160,21 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	USphereComponent* CombatRangeSphere;
 
+	UPROPERTY(VisibleAnywhere, Category = "Combat")
+	class UBoxComponent* AttackCollisionBox;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float BaseDamage = 20.f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat")
+	bool bCanAttack = true;
+
+	FTimerHandle AttackCooldownTimer;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float AttackCooldown = 1.f; 
 	
-	
-public:	
+public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -168,6 +189,12 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastPlayAttackMontage(FName Section);
+
+	void TurnOnAttackCollision();
+	void TurnOffAttackCollision();
+
+	void SetCanAttack();
+	void SetCanAttackTimer();
 
 public:
 	FORCEINLINE FString GetHeadBone() const { return HeadBone; }

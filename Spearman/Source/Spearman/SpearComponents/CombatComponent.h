@@ -21,6 +21,10 @@ public:
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 
+	// 현재 캐릭터의 전투 상태, 이거 하나로 동작 사용가능 유무를 판단
+	UPROPERTY(Replicated, VisibleAnywhere)
+	ECombatState CombatState;
+
 protected:
 	virtual void BeginPlay() override;
 	
@@ -47,9 +51,6 @@ private:
 	class ASpearmanPlayerController* Controller;
 	class ASpearmanHUD* HUD;
 
-	UPROPERTY(Replicated, VisibleAnywhere)
-	ECombatState CombatState;
-
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
 
@@ -60,11 +61,8 @@ private:
 	UPROPERTY(Replicated)
 	bool bCanDash = true;
 
-	UPROPERTY(Replicated)
-	bool bCanAttack = true;
-
 
 public:
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
-	void SetCanAttack() { bCanAttack = true; }
+
 };

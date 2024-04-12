@@ -19,6 +19,12 @@ public:
 
 	UFUNCTION()
 	void AnimNotify_StunFinish();
+
+	UFUNCTION()
+	void AnimNotify_AttackCollisionOn();
+
+	UFUNCTION()
+	void AnimNotify_AttackCollisionOff();
 	
 private:
 	UPROPERTY(BlueprintReadOnly, Category = BasicMonster, meta = (AllowPrivateAccess = "true"))

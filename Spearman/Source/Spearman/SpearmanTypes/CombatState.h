@@ -3,11 +3,11 @@
 UENUM(BlueprintType)
 enum class ECombatState : uint8
 {
-	ECS_Unoccupied UMETA(DisplayName = "Unoccupied"),
-	ECS_Equipped UMETA(DisplayName = "Equipped"),
-	ECS_SuperArmor UMETA(DisplayName = "SuperArmor"),
+	ECS_Idle UMETA(DisplayName = "Idle"),
 	ECS_Attacking UMETA(DisplayName = "Attacking"),
-	ECS_UnderAttack UMETA(DisplayName = "UnderAttack"),
+	ECS_Stunned UMETA(DisplayName = "Stunned"),
+
+	ECS_SuperArmor UMETA(DisplayName = "SuperArmor"),
 
 	ECS_MAX UMETA(DisplayName = "DefaultMAX")
 };

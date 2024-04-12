@@ -92,6 +92,54 @@ void ASpearmanCharacter::PostInitializeComponents()
 	HpBarWidget = Cast<UHpBarWidget>(HpBar->GetUserWidgetObject());
 }
 
+void ASpearmanCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	GetMesh()->HideBoneByName(TEXT("sword_bottom"), EPhysBodyOp::PBO_None);
+
+	SpearmanPlayerController = SpearmanPlayerController == nullptr ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
+	if (SpearmanPlayerController)
+	{
+		if (SpearmanPlayerController->PlayerCameraManager)
+		{
+			SpearmanPlayerController->PlayerCameraManager->ViewPitchMin = -45.f;
+			SpearmanPlayerController->PlayerCameraManager->ViewPitchMax = 45.f;
+		}
+	}
+
+	ShowHitDamage(false);
+
+	UpdateHUDHp();
+
+	HpBarWidget->SetHpBar(GetHpRatio());
+	HpBar->SetVisibility(false);
+
+	if (IsLocallyControlled())
+	{
+		HpBar->SetVisibility(false);
+	}
+
+	if (HasAuthority())
+	{
+		OnTakeAnyDamage.AddDynamic(this, &ASpearmanCharacter::OnAttacked);
+	}
+}
+
+void ASpearmanCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	TimeSinceLastMovementReplication += DeltaTime;
+	if (TimeSinceLastMovementReplication > 0.25f)
+	{
+		OnRep_ReplicatedMovement();
+	}
+
+	CalculateAO_Pitch();
+	HideCameraIfCharacterTooClose();
+}
+
 void ASpearmanCharacter::PlaySpearAttackMontage()
 {
 	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
@@ -106,6 +154,8 @@ void ASpearmanCharacter::PlaySpearAttackMontage()
 void ASpearmanCharacter::PlayHitReactMontage()
 {
 	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+
+	Combat->CombatState = ECombatState::ECS_Stunned;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && HitReactMontage)
@@ -262,54 +312,6 @@ void ASpearmanCharacter::DeathTimerFinished()
 	}
 }
 
-void ASpearmanCharacter::BeginPlay()
-{
-	Super::BeginPlay();
-	
-	GetMesh()->HideBoneByName(TEXT("sword_bottom"), EPhysBodyOp::PBO_None);
-
-	SpearmanPlayerController = SpearmanPlayerController == nullptr ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
-	if (SpearmanPlayerController)
-	{
-		if (SpearmanPlayerController->PlayerCameraManager)
-		{
-			SpearmanPlayerController->PlayerCameraManager->ViewPitchMin = -45.f;
-			SpearmanPlayerController->PlayerCameraManager->ViewPitchMax = 45.f;
-		}
-	}
-
-	ShowHitDamage(false);
-
-	UpdateHUDHp();
-
-	HpBarWidget->SetHpBar(GetHpRatio());
-	HpBar->SetVisibility(false);
-
-	if (IsLocallyControlled())
-	{
-		HpBar->SetVisibility(false);
-	}
-	
-	if (HasAuthority())
-	{
-		OnTakeAnyDamage.AddDynamic(this, &ASpearmanCharacter::OnAttacked);
-	}
-}
-
-void ASpearmanCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	TimeSinceLastMovementReplication += DeltaTime;
-	if (TimeSinceLastMovementReplication > 0.25f)
-	{
-		OnRep_ReplicatedMovement();
-	}
-
-	CalculateAO_Pitch();
-	HideCameraIfCharacterTooClose();
-}
-
 void ASpearmanCharacter::CalculateAO_Pitch()
 {
 	AO_Pitch = GetBaseAimRotation().Pitch;
@@ -365,7 +367,7 @@ void ASpearmanCharacter::ServerEquipButtonPressed_Implementation()
 
 void ASpearmanCharacter::AttackButtonPressed()
 {
-	if (Combat && Combat->bCanAttack)
+	if (Combat && Combat->CombatState == ECombatState::ECS_Idle)
 	{ // Client측 bCanAttack이 변조되더라도 Server내 에서 bCanAttack 재검사 후 실행 결정
 		Combat->ServerSpearAttack();
 	}
@@ -478,7 +480,10 @@ void ASpearmanCharacter::Jump()
 
 void ASpearmanCharacter::DashButtonPressed()
 {
-	if (Combat && Combat->bCanDash == true)
+	if (Combat == nullptr) return;
+
+
+	if (Combat->bCanDash == true && Combat->CombatState == ECombatState::ECS_Idle)
 	{
 		FVector InputVector = GetLastMovementInputVector().GetSafeNormal();
 		Combat->DashButtonPressed(InputVector);

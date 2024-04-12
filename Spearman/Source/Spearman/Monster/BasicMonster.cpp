@@ -14,6 +14,9 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Components/SphereComponent.h"
 #include "Spearman/Character/SpearmanCharacter.h"
+#include "Components/BoxComponent.h"
+#include "Spearman/Spearman.h"
+#include "Kismet/GameplayStatics.h"
 
 ABasicMonster::ABasicMonster()
 {
@@ -32,6 +35,13 @@ ABasicMonster::ABasicMonster()
 
 	CombatRangeSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AttackRangeSphere"));
 	CombatRangeSphere->SetupAttachment(GetRootComponent());
+
+	AttackCollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("AttackCollisionBox"));
+	AttackCollisionBox->SetupAttachment(GetMesh(), FName("Pig_Nose"));
+	AttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	AttackCollisionBox->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
+	AttackCollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	AttackCollisionBox->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Overlap);
 }
 
 void ABasicMonster::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -67,6 +77,7 @@ void ABasicMonster::BeginPlay()
 		AggroSphere->OnComponentBeginOverlap.AddDynamic(this, &ABasicMonster::AggroSphereBeginOverlap);
 		CombatRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &ABasicMonster::CombatRangeBeginOverlap);
 		CombatRangeSphere->OnComponentEndOverlap.AddDynamic(this, &ABasicMonster::CombatRangeEndOverlap);
+		AttackCollisionBox->OnComponentBeginOverlap.AddDynamic(this, &ABasicMonster::AttackCollisionBoxBeginOverlap);
 
 		BasicMonsterAIController = Cast<ABasicMonsterAIController>(GetController());
 
@@ -79,10 +90,11 @@ void ABasicMonster::BeginPlay()
 		{
 			BasicMonsterAIController->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint"), WorldPatrolPoint);
 			BasicMonsterAIController->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint2"), WorldPatrolPoint2);
+			BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(TEXT("CanAttack"), true);
 
 			BasicMonsterAIController->RunBehaviorTree(BehaviorTree);
 		}
-	}	
+	}
 
 	if (HasAuthority())
 	{ // Damage
@@ -124,6 +136,11 @@ void ABasicMonster::WeaponHit_Implementation(FHitResult HitResult)
 
 void ABasicMonster::OnAttacked(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 { // server only
+	if (BasicMonsterAIController)
+	{ // 피해입힌 적을 Target으로 계속 변경
+		BasicMonsterAIController->GetBlackboardComponent()->SetValueAsObject(FName("Target"), DamageCauser);
+	}
+
 	Hp = FMath::Clamp(Hp - Damage, 0.f, MaxHp);
 	UE_LOG(LogTemp, Warning, TEXT("Hp : %f"), Hp);
 	if (FMath::IsNearlyZero(Hp))
@@ -250,6 +267,43 @@ void ABasicMonster::CombatRangeEndOverlap(UPrimitiveComponent* OverlappedCompone
 			BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(TEXT("InCombatRange"), false);
 		}
 	}
+}
+
+void ABasicMonster::AttackCollisionBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{ // server only
+	if (OtherActor == nullptr || OtherActor == this) return;
+
+	ASpearmanCharacter* SpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
+	if (SpearmanCharacter)
+	{
+		UGameplayStatics::ApplyDamage(SpearmanCharacter, BaseDamage, BasicMonsterAIController, this, UDamageType::StaticClass());
+	}
+}
+
+void ABasicMonster::SetCanAttack()
+{ // server only
+	bCanAttack = true;
+	BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), true);
+}
+
+void ABasicMonster::SetCanAttackTimer()
+{ // server only, called in BTTask_Attack after MulticastPlayAttackMontage()
+	bCanAttack = false;
+	GetWorldTimerManager().SetTimer(AttackCooldownTimer, this, &ABasicMonster::SetCanAttack, AttackCooldown);
+	if (BasicMonsterAIController)
+	{
+		BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), false);
+	}
+}
+
+void ABasicMonster::TurnOnAttackCollision()
+{
+	AttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+}
+
+void ABasicMonster::TurnOffAttackCollision()
+{
+	AttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ABasicMonster::SetStunned(bool Stunned)

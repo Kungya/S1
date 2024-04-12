@@ -87,6 +87,14 @@ void USpearmanCharacterAnimInstance::AnimNotify_SetCanAttack()
 {
 	if (SpearmanCharacter && SpearmanCharacter->HasAuthority())
 	{
-		SpearmanCharacter->GetCombat()->SetCanAttack();
+		SpearmanCharacter->GetCombat()->CombatState = ECombatState::ECS_Idle;
+	}
+}
+
+void USpearmanCharacterAnimInstance::AnimNotify_HitReactEnd()
+{
+	if (SpearmanCharacter && SpearmanCharacter->HasAuthority())
+	{
+		SpearmanCharacter->GetCombat()->CombatState = ECombatState::ECS_Idle;
 	}
 }

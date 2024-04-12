@@ -28,6 +28,10 @@ public:
 
 	UFUNCTION()
 	void AnimNotify_SetCanAttack();
+
+	UFUNCTION()
+	void AnimNotify_HitReactEnd();
+
 private:
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class ASpearmanCharacter* SpearmanCharacter;

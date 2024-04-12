@@ -23,7 +23,7 @@ void ABasicMonsterAIController::OnPossess(APawn* InPawn)
 	if (InPawn == nullptr) return;
 
 	ABasicMonster* BasicMonster = Cast<ABasicMonster>(InPawn);
-	if (BasicMonster)
+	if (BasicMonster && BasicMonster->HasAuthority())
 	{
 		if (BasicMonster->GetBehaviorTree())
 		{

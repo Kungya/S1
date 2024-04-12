@@ -20,8 +20,8 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 	if (BasicMonster && BasicMonster->HasAuthority())
 	{
 		BasicMonster->MulticastPlayAttackMontage(FName("Attack"));
+		BasicMonster->SetCanAttackTimer();
 
-		UE_LOG(LogTemp, Warning, TEXT("Execute in server"));
 		return EBTNodeResult::Succeeded;
 	}
 

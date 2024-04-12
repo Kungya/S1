@@ -23,8 +23,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
 	DOREPLIFETIME(UCombatComponent, bCanDash);
-	DOREPLIFETIME(UCombatComponent, bCanAttack);
-	//DOREPLIFETIME(UCombatComponent, CombatState);
+	DOREPLIFETIME(UCombatComponent, CombatState);
 }
 
 void UCombatComponent::BeginPlay()
@@ -75,11 +74,11 @@ void UCombatComponent::DashButtonPressed_Implementation(const FVector& DashDirec
 	// TODO : SetCombatState : SuperArmor, Timer Cooldown
 	if (DashDirection == FVector::ZeroVector || Character->GetMovementComponent()->IsFalling()) return;
 	if (bCanDash == false) return;
+	if (CombatState != ECombatState::ECS_Idle) return;
 
 	float DotProduct = FVector::DotProduct(DashDirection, Character->GetActorForwardVector());
 	if (EquippedWeapon && FMath::IsNearlyEqual(DotProduct, 0.f, 0.1f))
 	{
-		CombatState = ECombatState::ECS_SuperArmor;
 		Dash(DashDirection);
 	}
 }
@@ -93,16 +92,16 @@ void UCombatComponent::Dash(const FVector& DashDirection)
 
 void UCombatComponent::MulticastSpearAttack_Implementation()
 {
-	if (Character && bCanAttack)
+	if (Character && CombatState == ECombatState::ECS_Idle)
 	{
-		bCanAttack = false;
+		CombatState = ECombatState::ECS_Attacking;
 		Character->PlaySpearAttackMontage();
 	}
 }
 
 void UCombatComponent::ServerSpearAttack_Implementation()
 {
-	if (bCanAttack)
+	if (CombatState == ECombatState::ECS_Idle)
 	{
 		MulticastSpearAttack();
 	}
