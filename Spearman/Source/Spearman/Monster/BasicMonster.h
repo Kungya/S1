@@ -35,8 +35,6 @@ protected:
 	void ShowHpBar();
 	void HideHpBar();
 
-	void Die();
-
 	UFUNCTION()
 	void AggroSphereBeginOverlap(
 		UPrimitiveComponent* OverlappedComponent,
@@ -125,6 +123,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* AttackMontage;
 
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* DeathMontage;
+
 	/*
 	* Behavior Tree
 	*/
@@ -163,16 +164,21 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Combat")
 	class UBoxComponent* AttackCollisionBox;
 
+	UPROPERTY()
+	TSet<AActor*> HitSet;
+
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float BaseDamage = 20.f;
 
 	UPROPERTY(VisibleAnywhere, Category = "Combat")
 	bool bCanAttack = true;
 
-	FTimerHandle AttackCooldownTimer;
+	FTimerHandle AttackWaitTimer;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
-	float AttackCooldown = 1.f; 
+	float AttackWaitTime = 1.f; 
+
+	bool bDying = false;
 	
 public:
 	virtual void Tick(float DeltaTime) override;
@@ -185,10 +191,15 @@ public:
 	void SetStunned(bool Stunned);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastPlayHitMontage(FName Section);
+	void MulticastHit();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastPlayAttackMontage(FName Section);
+	void MulticastAttack();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastDeath();
+
+	void Death();
 
 	void TurnOnAttackCollision();
 	void TurnOffAttackCollision();

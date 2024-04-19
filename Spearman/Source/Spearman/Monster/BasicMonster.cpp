@@ -17,6 +17,7 @@
 #include "Components/BoxComponent.h"
 #include "Spearman/Spearman.h"
 #include "Kismet/GameplayStatics.h"
+#include "Spearman/Weapon/Weapon.h"
 
 ABasicMonster::ABasicMonster()
 {
@@ -79,12 +80,12 @@ void ABasicMonster::BeginPlay()
 		CombatRangeSphere->OnComponentEndOverlap.AddDynamic(this, &ABasicMonster::CombatRangeEndOverlap);
 		AttackCollisionBox->OnComponentBeginOverlap.AddDynamic(this, &ABasicMonster::AttackCollisionBoxBeginOverlap);
 
-		BasicMonsterAIController = Cast<ABasicMonsterAIController>(GetController());
-
 		const FVector WorldPatrolPoint = UKismetMathLibrary::TransformLocation(GetActorTransform(), PatrolPoint);
 		const FVector WorldPatrolPoint2 = UKismetMathLibrary::TransformLocation(GetActorTransform(), PatrolPoint2);
 		DrawDebugSphere(GetWorld(), WorldPatrolPoint, 25.f, 12, FColor::Red, true);
 		DrawDebugSphere(GetWorld(), WorldPatrolPoint2, 25.f, 12, FColor::Blue, true);
+
+		BasicMonsterAIController = Cast<ABasicMonsterAIController>(GetController());
 
 		if (BasicMonsterAIController)
 		{
@@ -122,23 +123,22 @@ void ABasicMonster::WeaponHit_Implementation(FHitResult HitResult)
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, HitResult.Location, FRotator(0.f), true);
 	}
 	ShowHpBar();
-	
-	if (HasAuthority())
-	{ // 랜덤 값에 따라 피격이 실행되는 경우는 랜덤 결과를 같이 보내거나 NetMulticast를 써서 동기화하는 수 밖에...
-		const float Stunned = FMath::FRandRange(0.f, 1.f);
-		if (Stunned <= StunChance)
-		{
-			MulticastPlayHitMontage(FName("HitReact"));
-			SetStunned(true);
-		}
-	}
 }
 
 void ABasicMonster::OnAttacked(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 { // server only
+	if (bDying) return;
+
 	if (BasicMonsterAIController)
 	{ // 피해입힌 적을 Target으로 계속 변경
-		BasicMonsterAIController->GetBlackboardComponent()->SetValueAsObject(FName("Target"), DamageCauser);
+		if (DamageCauser)
+		{
+			AWeapon* AttackerWeapon = Cast<AWeapon>(DamageCauser);
+			if (AttackerWeapon)
+			{
+				BasicMonsterAIController->GetBlackboardComponent()->SetValueAsObject(FName("Target"), AttackerWeapon->GetOwner());
+			}
+		}
 	}
 
 	Hp = FMath::Clamp(Hp - Damage, 0.f, MaxHp);
@@ -146,14 +146,18 @@ void ABasicMonster::OnAttacked(AActor* DamagedActor, float Damage, const UDamage
 	if (FMath::IsNearlyZero(Hp))
 	{ // Death
 		// TODO : GameMode, SpearmanCharacter->GameState?
-		
 		// TODO : Warning use Widget After Destory kinda Timer
-		//Destroy();
-		SetLifeSpan(2.f);
+		Death();
 	}
 	else
-	{ // HitReact
-		// TODO : PlayHitReactMontage
+	{ // Hit
+		// 랜덤 값에 따라 피격이 실행되는 경우는 랜덤 결과를 같이 보내거나 NetMulticast를 써서 동기화하는 수 밖에...
+		const float Stunned = FMath::FRandRange(0.f, 1.f);
+		if (Stunned <= StunChance)
+		{
+			MulticastHit();
+			SetStunned(true);
+		}
 	}
 }
 
@@ -223,10 +227,18 @@ void ABasicMonster::HideHpBar()
 	}
 }
 
-void ABasicMonster::Die()
-{
-	HideHpBar();
+void ABasicMonster::Death()
+{ //server only
+	if (bDying) return;
+	bDying = true;
 
+	if (BasicMonsterAIController)
+	{
+		BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(FName("Dead"), true);
+		BasicMonsterAIController->StopMovement();
+	}
+
+	MulticastDeath();
 	// TODO : many thing,
 }
 
@@ -272,7 +284,9 @@ void ABasicMonster::CombatRangeEndOverlap(UPrimitiveComponent* OverlappedCompone
 void ABasicMonster::AttackCollisionBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 { // server only
 	if (OtherActor == nullptr || OtherActor == this) return;
+	if (HitSet.Contains(OtherActor)) return;
 
+	HitSet.Add(OtherActor);
 	ASpearmanCharacter* SpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
 	if (SpearmanCharacter)
 	{
@@ -283,13 +297,16 @@ void ABasicMonster::AttackCollisionBoxBeginOverlap(UPrimitiveComponent* Overlapp
 void ABasicMonster::SetCanAttack()
 { // server only
 	bCanAttack = true;
-	BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), true);
+	if (BasicMonsterAIController)
+	{
+		BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), true);
+	}
 }
 
 void ABasicMonster::SetCanAttackTimer()
 { // server only, called in BTTask_Attack after MulticastPlayAttackMontage()
 	bCanAttack = false;
-	GetWorldTimerManager().SetTimer(AttackCooldownTimer, this, &ABasicMonster::SetCanAttack, AttackCooldown);
+	GetWorldTimerManager().SetTimer(AttackWaitTimer, this, &ABasicMonster::SetCanAttack, AttackWaitTime);
 	if (BasicMonsterAIController)
 	{
 		BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), false);
@@ -298,12 +315,14 @@ void ABasicMonster::SetCanAttackTimer()
 
 void ABasicMonster::TurnOnAttackCollision()
 {
+	HitSet.Empty();
 	AttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 }
 
 void ABasicMonster::TurnOffAttackCollision()
 {
 	AttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitSet.Empty();
 }
 
 void ABasicMonster::SetStunned(bool Stunned)
@@ -319,23 +338,33 @@ void ABasicMonster::SetStunned(bool Stunned)
 	}
 }
 
-void ABasicMonster::MulticastPlayHitMontage_Implementation(FName Section)
+void ABasicMonster::MulticastHit_Implementation()
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && HitMontage) 
+	if (AnimInstance && HitMontage)
 	{
 		AnimInstance->Montage_Play(HitMontage);
-		AnimInstance->Montage_JumpToSection(Section, HitMontage);
+		AnimInstance->Montage_JumpToSection(FName("Hit"), HitMontage);
 	}
 }
 
-void ABasicMonster::MulticastPlayAttackMontage_Implementation(FName Section)
+void ABasicMonster::MulticastAttack_Implementation()
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && AttackMontage)
 	{
 		AnimInstance->Montage_Play(AttackMontage);
-		AnimInstance->Montage_JumpToSection(Section, AttackMontage);
+		AnimInstance->Montage_JumpToSection(FName("Attack"), AttackMontage);
+	}
+}
+
+void ABasicMonster::MulticastDeath_Implementation()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DeathMontage)
+	{
+		AnimInstance->Montage_Play(DeathMontage);
+		AnimInstance->Montage_JumpToSection(FName("Death"), DeathMontage);
 	}
 }
 
@@ -344,6 +373,6 @@ void ABasicMonster::OnRep_Hp()
 	HpBarWidget->SetHpBar(GetHpRatio());
 	if (FMath::IsNearlyZero(Hp))
 	{
-		Die();
+		//Die();
 	}
 }

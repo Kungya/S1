@@ -19,7 +19,7 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 
 	if (BasicMonster && BasicMonster->HasAuthority())
 	{
-		BasicMonster->MulticastPlayAttackMontage(FName("Attack"));
+		BasicMonster->MulticastAttack();
 		BasicMonster->SetCanAttackTimer();
 
 		return EBTNodeResult::Succeeded;

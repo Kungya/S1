@@ -25,6 +25,10 @@ public:
 
 	UFUNCTION()
 	void AnimNotify_AttackCollisionOff();
+
+	UFUNCTION()
+	void AnimNotify_EndDeath();
+	
 	
 private:
 	UPROPERTY(BlueprintReadOnly, Category = BasicMonster, meta = (AllowPrivateAccess = "true"))

@@ -20,6 +20,8 @@
 #include "Kismet/GamePlayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Spearman/HUD/HpBarWidget.h"
+#include "Spearman/AI/BasicMonsterAIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 
 ASpearmanCharacter::ASpearmanCharacter()
@@ -178,6 +180,8 @@ void ASpearmanCharacter::PlayDeathMontage()
 
 void ASpearmanCharacter::OnAttacked(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 { // in server
+	if (bDeath) return;
+
 	Hp = FMath::Clamp(Hp - Damage, 0.f, MaxHp);
 	UpdateHUDHp();
 
@@ -189,6 +193,12 @@ void ASpearmanCharacter::OnAttacked(AActor* DamagedActor, float Damage, const UD
 			SpearmanPlayerController = SpearmanPlayerController == nullptr ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
 			ASpearmanPlayerController* AttackerController = Cast<ASpearmanPlayerController>(InstigatorController);
 			SpearmanGameMode->PlayerDeath(this, SpearmanPlayerController, AttackerController);
+		}
+
+		ABasicMonsterAIController*BasicMonsterAIController = Cast<ABasicMonsterAIController>(InstigatorController);
+		if (BasicMonsterAIController)
+		{
+			BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(FName(TEXT("CharacterDead")), true);
 		}
 	}
 	else
