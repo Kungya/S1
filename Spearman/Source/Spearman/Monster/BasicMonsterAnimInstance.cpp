@@ -54,7 +54,7 @@ void UBasicMonsterAnimInstance::AnimNotify_AttackCollisionOff()
 void UBasicMonsterAnimInstance::AnimNotify_EndDeath()
 {
 	if (BasicMonster && BasicMonster->HasAuthority())
-	{ // server측에서만 destroy를 해도 되는지?
+	{
 		BasicMonster->Destroy();
 	}
 }
