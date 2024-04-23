@@ -4,12 +4,13 @@
 #include "SpearmanHUD.h"
 #include "GameFramework/PlayerController.h"
 #include "CharacterOverlay.h"
+#include "CharacterOverlayNotice.h"
 
 void ASpearmanHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AddCharacterOverlay();
+	
 }
 
 void ASpearmanHUD::AddCharacterOverlay()
@@ -22,8 +23,18 @@ void ASpearmanHUD::AddCharacterOverlay()
 	}
 }
 
+void ASpearmanHUD::AddCharacterOverlayNotice()
+{
+	APlayerController* PlayerController = GetOwningPlayerController();
+	if (PlayerController && CharacterOverlayNoticeClass)
+	{
+		CharacterOverlayNotice = CreateWidget<UCharacterOverlayNotice>(PlayerController, CharacterOverlayNoticeClass);
+		CharacterOverlayNotice->AddToViewport();
+	}
+}
+
 void ASpearmanHUD::DrawHUD()
-{ // -> DrawHUD�� ������ �� �����Ӹ��� �ڵ����� call�� ���ֱ� ������ override�ؼ� �ڵ带 �־��ֱ⸸ �ϸ� �ȴ�
+{ // -> DrawHUD는 내부에서 call되고 있으므로 override해서 추가만 하면 됨
 	Super::DrawHUD();
 
 	FVector2D ViewportSize;
@@ -44,7 +55,7 @@ void ASpearmanHUD::DrawCrosshair(UTexture2D* Texture, FVector2D CenterInViewport
 	const float Width = Texture->GetSizeX();
 	const float Height = Texture->GetSizeY();
 	
-	// 1/2�� �о �߾ӿ� ����  
+	// 1/2, 화면 중앙에 표시
 	const FVector2D CorrectedCenter(CenterInViewport.X - Width / 2.f, CenterInViewport.Y - Height / 2.f);
 
 	AHUD::DrawTexture(Texture, CorrectedCenter.X, CorrectedCenter.Y, Width, Height, 0.f, 0.f, 1.f, 1.f, FLinearColor::Black);

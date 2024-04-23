@@ -26,13 +26,23 @@ public:
 	virtual void DrawHUD() override;
 
 	// WBP_CharacterOverlay를 들고 있음
-	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<class UUserWidget> CharacterOverlayClass;
 
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<UUserWidget> CharacterOverlayNoticeClass;
+
+	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay;
+
+	UPROPERTY()
+	class UCharacterOverlayNotice* CharacterOverlayNotice;
+	
+	void AddCharacterOverlay();
+	void AddCharacterOverlayNotice();
+
 protected:
 	virtual void BeginPlay() override;
-	void AddCharacterOverlay();
 
 private:
 	FHUDPackage HUDPackage;

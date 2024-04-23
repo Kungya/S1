@@ -4,23 +4,19 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "CharacterOverlay.generated.h"
+#include "CharacterOverlayNotice.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class SPEARMAN_API UCharacterOverlay : public UUserWidget
+class SPEARMAN_API UCharacterOverlayNotice : public UUserWidget
 {
 	GENERATED_BODY()
 	
-public:
 	UPROPERTY(meta = (BindWidget))
-	class UProgressBar* HpBar;
+	class UTextBlock* WarmupNoticeText;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* HpText;
-
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* MatchCountdownText;
+	UTextBlock* WarmupTimeText;
 };

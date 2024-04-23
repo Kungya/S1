@@ -250,6 +250,7 @@ void ABasicMonster::AggroSphereBeginOverlap(UPrimitiveComponent* OverlappedCompo
 	if (SpearmanCharacter)
 	{
 		BasicMonsterAIController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), SpearmanCharacter);
+		BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(TEXT("CharacterDead"), false);
 	}
 }
 
