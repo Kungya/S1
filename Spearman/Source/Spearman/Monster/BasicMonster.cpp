@@ -22,6 +22,7 @@
 ABasicMonster::ABasicMonster()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 
 	HitDamage = CreateDefaultSubobject<UWidgetComponent>(TEXT("HitDamageWidget"));
 	HitDamage->SetupAttachment(GetMesh());

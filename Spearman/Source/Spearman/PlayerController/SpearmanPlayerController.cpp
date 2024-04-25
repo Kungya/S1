@@ -19,10 +19,8 @@ void ASpearmanPlayerController::BeginPlay()
 
 	SpearmanHUD = Cast<ASpearmanHUD>(GetHUD());
 
-	if (SpearmanHUD)
-	{
-		SpearmanHUD->AddCharacterOverlayNotice();
-	}
+	// Client should get MatchState from Server ASAP.
+	ServerRequestMatchState();
 }
 
 void ASpearmanPlayerController::Tick(float DeltaTime)
@@ -30,14 +28,15 @@ void ASpearmanPlayerController::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	SetHUDTime();
-	HUDInit();
 
 	DeltaTimeSumforTimeSync += DeltaTime;
-	if (IsLocalController() && DeltaTimeSumforTimeSync >= 5.f)
+	if (IsLocalController() && DeltaTimeSumforTimeSync > 5.f)
 	{
 		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
 		DeltaTimeSumforTimeSync = 0.f;
 	}
+
+	HUDInit();
 }
 
 void ASpearmanPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -54,6 +53,16 @@ void ASpearmanPlayerController::OnPossess(APawn* InPawn)
 	if (SpearmanCharacter)
 	{
 		SetHUDHp(SpearmanCharacter->GetHp(), SpearmanCharacter->GetMaxHp());
+	}
+}
+
+void ASpearmanPlayerController::ReceivedPlayer()
+{
+	Super::ReceivedPlayer();
+
+	if (IsLocalController())
+	{
+		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -88,25 +97,78 @@ void ASpearmanPlayerController::SetHUDMatchCountdown(float CountdownTime)
 	{
 		if (SpearmanHUD->CharacterOverlay->MatchCountdownText)
 		{
+			if (CountdownTime < 0.f)
+			{
+				SpearmanHUD->CharacterOverlay->MatchCountdownText->SetText(FText());
+				return;
+			}
+
 			int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
 			int32 Seconds = CountdownTime  - Minutes * 60;
 
-			FString MatchCountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
-			SpearmanHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(MatchCountdownText));
+			FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+			SpearmanHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
+		}
+	}
+}
+
+void ASpearmanPlayerController::SetHUDNoticeCountdown(float CountdownTime)
+{
+	SpearmanHUD = SpearmanHUD == nullptr ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
+
+	if (SpearmanHUD && SpearmanHUD->CharacterOverlayNotice)
+	{
+		if (SpearmanHUD->CharacterOverlayNotice->WarmupTimeText)
+		{
+			if (CountdownTime < 0.f)
+			{
+				SpearmanHUD->CharacterOverlayNotice->WarmupTimeText->SetText(FText());
+				return;
+			}
+
+			int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
+			int32 Seconds = CountdownTime - Minutes * 60;
+
+			FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+			SpearmanHUD->CharacterOverlayNotice->WarmupTimeText->SetText(FText::FromString(CountdownText));
 		}
 	}
 }
 
 void ASpearmanPlayerController::SetHUDTime()
 {
-	uint32 LeftTime = FMath::CeilToInt(MatchTime - GetServerTime());
+	float TimeLeft = 0.f;
+	if (MatchState == MatchState::WaitingToStart)
+	{
+		// GetServerTime() = BeginplayTime + passed time
+		TimeLeft = WarmupTime - GetServerTime() + BeginPlayTime;
+	}
+	else if (MatchState == MatchState::InProgress)
+	{
+		TimeLeft = WarmupTime + MatchTime - GetServerTime() + BeginPlayTime;
+	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		TimeLeft = WarmupTime + MatchTime + CooldownTime - GetServerTime() + BeginPlayTime;
+	}
 
-	if (CountdownInt != LeftTime)
+	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
+
+	// TODO : HasAuthority()
+
+	if (CountdownInt != SecondsLeft)
 	{ // 초 단위가 변경되었음
-		SetHUDMatchCountdown(MatchTime - GetServerTime());
+		if (MatchState == MatchState::WaitingToStart || MatchState == MatchState::Cooldown)
+		{
+			SetHUDNoticeCountdown(TimeLeft);
+		}
+		else if (MatchState == MatchState::InProgress)
+		{
+			SetHUDMatchCountdown(TimeLeft);
+		}
 	}
 	 
-	CountdownInt = LeftTime;
+	CountdownInt = SecondsLeft;
 }
 
 void ASpearmanPlayerController::HUDInit()
@@ -149,37 +211,51 @@ float ASpearmanPlayerController::GetServerTime()
 	}
 }
 
-void ASpearmanPlayerController::ReceivedPlayer()
+void ASpearmanPlayerController::HandleMatchHasStarted()
 {
-	Super::ReceivedPlayer();
+	SpearmanHUD = (SpearmanHUD == nullptr) ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
+	if (SpearmanHUD)
+	{ // AddCharacterOverlay when Mtach Starts (Hp, MatchTime....and so on)
+		SpearmanHUD->AddCharacterOverlay();
 
-	if (IsLocalController())
+		if (SpearmanHUD->CharacterOverlayNotice)
+		{
+			SpearmanHUD->CharacterOverlayNotice->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
+}
+
+void ASpearmanPlayerController::HandleCooldown()
+{
+	SpearmanHUD = (SpearmanHUD == nullptr) ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
+	if (SpearmanHUD)
 	{
-		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+		SpearmanHUD->CharacterOverlay->RemoveFromParent();
+		if (SpearmanHUD->CharacterOverlayNotice && SpearmanHUD->CharacterOverlayNotice->WarmupNoticeText)
+		{
+			SpearmanHUD->CharacterOverlayNotice->SetVisibility(ESlateVisibility::Visible);
+			FString NoticeText("Match End. New Match Stats Soon !");
+			SpearmanHUD->CharacterOverlayNotice->WarmupNoticeText->SetText(FText::FromString(NoticeText));
+		}
+	}
+	ASpearmanCharacter* SpearmanCharacter = Cast<ASpearmanCharacter>(GetPawn());
+	if (SpearmanCharacter)
+	{
+		SpearmanCharacter->bDisableKeyInput = true;
 	}
 }
 
 void ASpearmanPlayerController::OnMatchStateSet(FName State)
-{ // Server Only
+{
 	MatchState = State;
-
-	if (MatchState == MatchState::WaitingToStart)
-	{
-		// TODO : 
-	}
 
 	if (MatchState == MatchState::InProgress)
 	{
-		SpearmanHUD = SpearmanHUD == nullptr ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
-		if (SpearmanHUD)
-		{
-			SpearmanHUD->AddCharacterOverlay();
-
-			if (SpearmanHUD->CharacterOverlayNotice)
-			{
-				SpearmanHUD->CharacterOverlayNotice->SetVisibility(ESlateVisibility::Hidden);
-			}
-		}
+		HandleMatchHasStarted();
+	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		HandleCooldown();
 	}
 }
 
@@ -187,27 +263,39 @@ void ASpearmanPlayerController::OnRep_MatchState()
 {
 	if (MatchState == MatchState::InProgress)
 	{
-		SpearmanHUD = SpearmanHUD == nullptr ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
-		if (SpearmanHUD)
-		{ // AddCharacterOverlay when Mtach Starts (Hp, MatchTime....and so on)
-			SpearmanHUD->AddCharacterOverlay();
-
-			if (SpearmanHUD->CharacterOverlayNotice)
-			{
-				SpearmanHUD->CharacterOverlayNotice->SetVisibility(ESlateVisibility::Hidden);
-			}
-		}
+		HandleMatchHasStarted();
+	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		HandleCooldown();
 	}
 }
 
-void ASpearmanPlayerController::ServerCheckMatchState_Implementation()
-{ // server only 
+void ASpearmanPlayerController::ServerRequestMatchState_Implementation()
+{ // server only, Client should get MatchState from Server ASAP. 
 	ASpearmanGameMode* GameMode = Cast<ASpearmanGameMode>(UGameplayStatics::GetGameMode(this));
 	if (GameMode)
 	{
+		MatchState = GameMode->GetMatchState();
+		BeginPlayTime = GameMode->BeginPlayTime;
 		WarmupTime = GameMode->WarmupTime;
 		MatchTime = GameMode->MatchTime;
-		BeginPlayTime = GameMode->BeginPlayTime;
-		MatchState = GameMode->GetMatchState();
+		CooldownTime = GameMode->CooldownTime;
+		ClientReportMatchState(MatchState, BeginPlayTime, WarmupTime, MatchTime, CooldownTime);
+	}
+}
+
+void ASpearmanPlayerController::ClientReportMatchState_Implementation(FName ServerMatchState, float ServerBeginPlayTime, float ServerWarmupTime, float ServerMatchTime, float ServerCooldownTime)
+{ // client only
+	MatchState = ServerMatchState;
+	BeginPlayTime = ServerBeginPlayTime;
+	WarmupTime = ServerWarmupTime;
+	MatchTime = ServerMatchTime;
+	CooldownTime = ServerCooldownTime;
+	OnMatchStateSet(MatchState);
+	
+	if (SpearmanHUD && MatchState == MatchState::WaitingToStart)
+	{
+		SpearmanHUD->AddCharacterOverlayNotice();
 	}
 }

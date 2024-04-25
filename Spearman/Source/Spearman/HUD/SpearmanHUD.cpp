@@ -10,7 +10,6 @@ void ASpearmanHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
-	
 }
 
 void ASpearmanHUD::AddCharacterOverlay()

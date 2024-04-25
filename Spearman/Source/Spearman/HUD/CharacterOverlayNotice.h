@@ -14,6 +14,7 @@ class SPEARMAN_API UCharacterOverlayNotice : public UUserWidget
 {
 	GENERATED_BODY()
 	
+public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* WarmupNoticeText;
 

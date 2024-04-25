@@ -29,6 +29,9 @@ public:
 
 	virtual void WeaponHit_Implementation(FHitResult HitResult) override;
 
+	// Disable Key Input if Character Dies or Match is Ended...
+	UPROPERTY(Replicated)
+	bool bDisableKeyInput = false;
 protected:
 	virtual void BeginPlay() override;
 

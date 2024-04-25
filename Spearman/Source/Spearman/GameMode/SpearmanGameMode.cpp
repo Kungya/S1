@@ -7,6 +7,11 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerStart.h"
 
+namespace MatchState
+{
+	const FName Cooldown = FName("Cooldown");
+}
+
 ASpearmanGameMode::ASpearmanGameMode()
 {
 	bDelayedStart = true;
@@ -20,6 +25,37 @@ void ASpearmanGameMode::BeginPlay()
 	BeginPlayTime = GetWorld()->GetTimeSeconds();
 }
 
+void ASpearmanGameMode::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (MatchState == MatchState::WaitingToStart)
+	{
+		CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + BeginPlayTime;
+
+		if (CountdownTime <= 0.f)
+		{
+			StartMatch();
+		}
+	}
+	else if (MatchState == MatchState::InProgress)
+	{
+		CountdownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + BeginPlayTime;
+		if (CountdownTime <= 0.f)
+		{
+			SetMatchState(MatchState::Cooldown);
+		}
+	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		CountdownTime = WarmupTime + MatchTime + CooldownTime - GetWorld()->GetTimeSeconds() + BeginPlayTime;
+		if (CountdownTime <= 0.f)
+		{
+			RestartGame();
+		}
+	}
+}
+
 void ASpearmanGameMode::OnMatchStateSet()
 {
 	Super::OnMatchStateSet();
@@ -30,21 +66,6 @@ void ASpearmanGameMode::OnMatchStateSet()
 		if (SpearmanPlayerController)
 		{
 			SpearmanPlayerController->OnMatchStateSet(MatchState);
-		}
-	}
-}
-
-void ASpearmanGameMode::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	if (MatchState == MatchState::WaitingToStart)
-	{
-		WarmupTime = 10.f - GetWorld()->GetTimeSeconds() + BeginPlayTime;
-		
-		if (WarmupTime <= 0.f)
-		{
-			StartMatch();
 		}
 	}
 }

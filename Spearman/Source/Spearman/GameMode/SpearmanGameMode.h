@@ -6,6 +6,12 @@
 #include "GameFramework/GameMode.h"
 #include "SpearmanGameMode.generated.h"
 
+namespace MatchState
+{
+	extern SPEARMAN_API const FName Cooldown;
+
+}
+
 /**
  * 
  */
@@ -22,13 +28,21 @@ public:
 	float BeginPlayTime = 0.f;
 
 	UPROPERTY(EditDefaultsOnly)
-	float WarmupTime = 0.f;
+	float WarmupTime = 10.f;
+
 	UPROPERTY(EditDefaultsOnly)
 	float MatchTime = 120.f;
+	
+	UPROPERTY(EditDefaultsOnly)
+	float CooldownTime = 10.f;
 protected:
 	virtual void BeginPlay() override;
 
 	virtual void OnMatchStateSet() override;
 
 private:
+	float CountdownTime = 0.f;
+
+public:
+	FORCEINLINE float GetCountdownTime() const { return CountdownTime; }
 };

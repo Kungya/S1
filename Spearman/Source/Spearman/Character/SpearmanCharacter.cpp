@@ -73,6 +73,7 @@ void ASpearmanCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 
 	DOREPLIFETIME_CONDITION(ASpearmanCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(ASpearmanCharacter, Hp);
+	DOREPLIFETIME(ASpearmanCharacter, bDisableKeyInput);
 }
 
 void ASpearmanCharacter::PostInitializeComponents()
@@ -139,6 +140,7 @@ void ASpearmanCharacter::Tick(float DeltaTime)
 	}
 
 	CalculateAO_Pitch();
+
 	HideCameraIfCharacterTooClose();
 }
 
@@ -304,10 +306,11 @@ void ASpearmanCharacter::MulticastDeath_Implementation()
 
 	GetCharacterMovement()->DisableMovement();
 	GetCharacterMovement()->StopMovementImmediately();
-	if (SpearmanPlayerController)
+	bDisableKeyInput = true;
+	/*if (SpearmanPlayerController)
 	{
 		DisableInput(SpearmanPlayerController);
-	}
+	}*/
 	// Disable Collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -377,6 +380,7 @@ void ASpearmanCharacter::ServerEquipButtonPressed_Implementation()
 
 void ASpearmanCharacter::AttackButtonPressed()
 {
+	if (bDisableKeyInput) return;
 	if (Combat && Combat->CombatState == ECombatState::ECS_Idle)
 	{ // Client측 bCanAttack이 변조되더라도 Server내 에서 bCanAttack 재검사 후 실행 결정
 		Combat->ServerSpearAttack();
@@ -454,6 +458,7 @@ void ASpearmanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 void ASpearmanCharacter::MoveForward(float Value)
 {
+	if (bDisableKeyInput) return;
 	if (Controller != nullptr && Value != 0.f)
 	{
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
@@ -464,6 +469,7 @@ void ASpearmanCharacter::MoveForward(float Value)
 
 void ASpearmanCharacter::MoveRight(float Value)
 {
+	if (bDisableKeyInput) return;
 	if (Controller != nullptr && Value != 0.f)
 	{
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
@@ -474,24 +480,26 @@ void ASpearmanCharacter::MoveRight(float Value)
 
 void ASpearmanCharacter::Turn(float Value)
 {
+	if (bDisableKeyInput) return;
 	AddControllerYawInput(Value);
 }
 
 void ASpearmanCharacter::LookUp(float Value)
 {
+	if (bDisableKeyInput) return;
 	AddControllerPitchInput(Value);
 }
 
 void ASpearmanCharacter::Jump()
 {
+	if (bDisableKeyInput) return;
 	Super::Jump();
-
 }
 
 void ASpearmanCharacter::DashButtonPressed()
 {
+	if (bDisableKeyInput) return;
 	if (Combat == nullptr) return;
-
 
 	if (Combat->bCanDash == true && Combat->CombatState == ECombatState::ECS_Idle)
 	{
@@ -502,6 +510,7 @@ void ASpearmanCharacter::DashButtonPressed()
 
 void ASpearmanCharacter::EquipButtonPressed()
 {
+	if (bDisableKeyInput) return;
 	if (Combat)
 	{
 		if (HasAuthority())
