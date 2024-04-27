@@ -27,6 +27,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* PickupMesh;
+
+	UPROPERTY(EditAnywhere)
+	float RotateSpeed = 120.f;
 public:	
 
 };

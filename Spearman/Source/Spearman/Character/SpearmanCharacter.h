@@ -21,9 +21,9 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 	virtual void OnRep_ReplicatedMovement() override;
-	// TODO : 기능이 더 추가된다면 Rep에서 Multicast로 변경
-	void Death();
+	void UpdateHUDHp();
 
+	void Death();
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastDeath();
 
@@ -52,8 +52,6 @@ protected:
 
 	UFUNCTION()
 	void OnAttacked(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
-	
-	void UpdateHUDHp();
 
 	void ShowHitDamage(bool bShowHitDamageWidget);
 	void HideHitDamage();
@@ -105,6 +103,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UCombatComponent* Combat;
+
+	UPROPERTY(VisibleAnywhere)
+	class UBuffComponent* Buff;
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed();
@@ -176,9 +177,10 @@ public:
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
 	FORCEINLINE ETurnInPlace GetTIPState() const { return TIPState; }
 	FORCEINLINE bool IsDead() const { return bDeath; }
+	FORCEINLINE void SetHp(float NewHp) { Hp = NewHp; }
 	FORCEINLINE float GetHp() const { return Hp; }
 	FORCEINLINE float GetMaxHp() const { return MaxHp; }
 	FORCEINLINE float GetHpRatio() const { return Hp / MaxHp; }
 	FORCEINLINE FString GetHeadBone() const { return HeadBone; }
-
+	FORCEINLINE UBuffComponent* GetBuff() const { return Buff; }
 };

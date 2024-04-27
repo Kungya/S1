@@ -6,6 +6,7 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Spearman/SpearComponents/CombatComponent.h"
+#include "Spearman/SpearComponents/BuffComponent.h"
 #include "Spearman/Weapon/Weapon.h"
 #include "Net/UnrealNetwork.h"
 #include "SpearmanCharacterAnimInstance.h"
@@ -45,6 +46,9 @@ ASpearmanCharacter::ASpearmanCharacter()
 	Combat = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	Combat->SetIsReplicated(true);
 
+	Buff = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
+	Buff->SetIsReplicated(true);
+
 	HitDamage = CreateDefaultSubobject<UWidgetComponent>(TEXT("HitDamageWidget"));
 	HitDamage->SetupAttachment(GetMesh());
 	HitDamage->SetWidgetSpace(EWidgetSpace::Screen);
@@ -83,6 +87,11 @@ void ASpearmanCharacter::PostInitializeComponents()
 	if (Combat)
 	{
 		Combat->Character = this;
+	}
+
+	if (Buff)
+	{
+		Buff->Character = this;
 	}
 
 	GetMesh()->HideBoneByName(TEXT("weapon"), EPhysBodyOp::PBO_None);
@@ -213,6 +222,7 @@ void ASpearmanCharacter::OnRep_Hp(float LastHp)
 {
 	if (!IsLocallyControlled())
 	{ // TODO : 피격자가 입은 데미지만 공격자 입장에서 표시 -> 우선은 피격자, 서버를 제외하고 전부 표시
+		// TODO : 수정 필요
 		const float Damage = LastHp - Hp;
 		HitDamageWidget->SetHitDamageText(Damage);
 		ShowHitDamage(true);
@@ -221,12 +231,13 @@ void ASpearmanCharacter::OnRep_Hp(float LastHp)
 		GetWorldTimerManager().SetTimer(HitDamageTimerHandle, this, &ASpearmanCharacter::HideHitDamage, 2.f, false);
 	}
 	UpdateHUDHp();
+
 	if (FMath::IsNearlyZero(Hp))
 	{ // TODO : Die client widget
 		HideHpBar();
 	}
-	else
-	{
+	else if (Hp < LastHp)
+	{ // 이전 체력보다 감소했을 때만 피격 애니메이션 -> 반대인 회복의 경우 싫행하지 않음
 		PlayHitReactMontage();
 	}
 }

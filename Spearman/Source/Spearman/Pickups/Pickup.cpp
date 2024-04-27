@@ -29,6 +29,8 @@ void APickup::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	AddActorLocalRotation(FRotator(15.f, 0.f, 0.f));
+
 	if (HasAuthority())
 	{
 		OverlapSphere->OnComponentBeginOverlap.AddDynamic(this, &APickup::OnSphereBeginOverlap);
@@ -44,5 +46,6 @@ void APickup::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	AddActorWorldRotation(FRotator(0.f, RotateSpeed * DeltaTime, 0.f));
 }
 
