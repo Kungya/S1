@@ -88,14 +88,6 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	class UWidgetComponent* PickupWidget;
 
-	// crosshair texture (if equip weapon)
-	
-	UPROPERTY(EditAnywhere, Category = Crosshair)
-	class UTexture2D* CrosshairCircle;
-
-	UPROPERTY(EditAnywhere, Category = Crosshair)
-	UTexture2D* CrosshairDot;
-
 	bool bAttackCollisionTrace = false;
 
 	UPROPERTY()
@@ -110,8 +102,6 @@ public:
 	FORCEINLINE void SetWeaponVisibility(bool bNewVisibility) const { WeaponMesh->SetVisibility(bNewVisibility); }
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
-	FORCEINLINE UTexture2D* GetCrosshairCircle() const { return CrosshairCircle; }
-	FORCEINLINE UTexture2D* GetCrosshairDot() const { return CrosshairDot; }
 	FORCEINLINE float GetDamage() const { return Damage; }
 	FORCEINLINE float GetHeadShotDamage() const { return HeadShotDamage; }
 };

@@ -55,7 +55,7 @@ void UBuffComponent::Heal(float DeltaTime)
 	Character->UpdateHUDHp();
 
 	TotalHealAmount = FMath::Clamp(TotalHealAmount - HealAmountNow, 0.f, TotalHealAmount);
-	UE_LOG(LogTemp, Warning, TEXT("NewHp : %f"), NewHp);
+
 	if (FMath::IsNearlyZero(TotalHealAmount) || FMath::IsNearlyEqual(Character->GetHp(), Character->GetMaxHp()))
 	{
 		bHealing = false;

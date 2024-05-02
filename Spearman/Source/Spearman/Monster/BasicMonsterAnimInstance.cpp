@@ -55,6 +55,7 @@ void UBasicMonsterAnimInstance::AnimNotify_EndDeath()
 {
 	if (BasicMonster && BasicMonster->HasAuthority())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Monster Destroy"));
 		BasicMonster->Destroy();
 	}
 }

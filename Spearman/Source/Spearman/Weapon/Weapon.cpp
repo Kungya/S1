@@ -99,6 +99,7 @@ void AWeapon::AttackCollisionCheckByTrace()
 	FVector End = TraceEndBox->GetComponentLocation();
 	TArray<FHitResult> HitResults;
 	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
 	Params.AddIgnoredActor(GetOwner());
 	
 	GetWorld()->LineTraceMultiByChannel(HitResults, Start, End, ECC_Visibility, Params);

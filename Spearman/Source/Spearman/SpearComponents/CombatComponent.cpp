@@ -54,16 +54,10 @@ void UCombatComponent::SetHUDCrosshairs(float DeltaTime)
 		if (HUD)
 		{
 			FHUDPackage HUDPackage;
-			if (EquippedWeapon)
-			{
-				HUDPackage.CrosshairCircle = EquippedWeapon->GetCrosshairCircle();
-				HUDPackage.CrosshairDot = EquippedWeapon->GetCrosshairDot();
-			}
-			else
-			{
-				HUDPackage.CrosshairCircle = nullptr;
-				HUDPackage.CrosshairDot = nullptr;
-			}
+			
+			HUDPackage.CrosshairCircle = Character->GetCrosshairCircle();
+			HUDPackage.CrosshairDot = Character->GetCrosshairDot();
+			
 			HUD->SetHUDPackage(HUDPackage);
 		}
 	}

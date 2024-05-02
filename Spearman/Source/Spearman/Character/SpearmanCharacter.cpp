@@ -23,6 +23,8 @@
 #include "Spearman/HUD/HpBarWidget.h"
 #include "Spearman/AI/BasicMonsterAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Spearman/Items/Item.h"
+#include "Spearman/SpearComponents/InventoryComponent.h"
 
 
 ASpearmanCharacter::ASpearmanCharacter()
@@ -49,6 +51,9 @@ ASpearmanCharacter::ASpearmanCharacter()
 	Buff = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
 	Buff->SetIsReplicated(true);
 
+	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
+	Inventory->SetIsReplicated(true);
+
 	HitDamage = CreateDefaultSubobject<UWidgetComponent>(TEXT("HitDamageWidget"));
 	HitDamage->SetupAttachment(GetMesh());
 	HitDamage->SetWidgetSpace(EWidgetSpace::Screen);
@@ -59,6 +64,7 @@ ASpearmanCharacter::ASpearmanCharacter()
 	HpBar->SetDrawSize(FVector2D(125.f, 20.f));
 
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Interact, ECollisionResponse::ECR_Overlap);
 	GetMesh()->SetCollisionObjectType(ECC_SkeletalMesh);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Overlap);
@@ -460,6 +466,7 @@ void ASpearmanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &ASpearmanCharacter::DashButtonPressed);
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ASpearmanCharacter::EquipButtonPressed);
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &ASpearmanCharacter::AttackButtonPressed);
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASpearmanCharacter::InteractButtonPressed);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASpearmanCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ASpearmanCharacter::MoveRight);
@@ -531,6 +538,40 @@ void ASpearmanCharacter::EquipButtonPressed()
 		else
 		{ // RPC,
 			ServerEquipButtonPressed();
+		}
+	}
+}
+
+void ASpearmanCharacter::InteractButtonPressed()
+{
+	if (bDisableKeyInput) return;
+
+	Interact();
+}
+
+void ASpearmanCharacter::Interact()
+{
+	ServerInteract();
+}
+
+void ASpearmanCharacter::ServerInteract_Implementation()
+{
+	FVector Start = FollowCamera->GetComponentLocation();
+	FVector End = Start + FollowCamera->GetForwardVector() * 500.f;
+
+	FHitResult HitResult;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	if (IsWeaponEquipped())
+	{
+		Params.AddIgnoredActor(Combat->EquippedWeapon);
+	}
+
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Interact, Params))
+	{
+		if (IInteractableInterface* InteractableInterface = Cast<IInteractableInterface>(HitResult.GetActor()))
+		{
+			InteractableInterface->Interact();
 		}
 	}
 }

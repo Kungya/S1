@@ -15,6 +15,7 @@ class SPEARMAN_API ASpearmanCharacter : public ACharacter, public IWeaponHitInte
 
 public:
 	friend class UCombatComponent;
+	friend class UInventoryComponent;
 	ASpearmanCharacter();
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -41,6 +42,11 @@ protected:
 	void LookUp(float Value);
 	virtual void Jump() override;
 	void EquipButtonPressed();
+	void InteractButtonPressed();
+	void Interact();
+	
+	UFUNCTION(Server, Reliable)
+	void ServerInteract();
 
 	void HideCameraIfCharacterTooClose();
 	void CalculateAO_Pitch();
@@ -72,6 +78,16 @@ private:
 
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
+
+	/*
+	* Crosshair
+	*/
+
+	UPROPERTY(EditAnywhere, Category = Crosshair)
+	class UTexture2D* CrosshairCircle;
+
+	UPROPERTY(EditAnywhere, Category = Crosshair)
+	UTexture2D* CrosshairDot;
 
 	/* 
 	* Widget
@@ -106,6 +122,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UBuffComponent* Buff;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UInventoryComponent* Inventory;
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed();
@@ -176,6 +195,8 @@ public:
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
 	FORCEINLINE ETurnInPlace GetTIPState() const { return TIPState; }
+	FORCEINLINE UTexture2D* GetCrosshairCircle() const { return CrosshairCircle; }
+	FORCEINLINE UTexture2D* GetCrosshairDot() const { return CrosshairDot; }
 	FORCEINLINE bool IsDead() const { return bDeath; }
 	FORCEINLINE void SetHp(float NewHp) { Hp = NewHp; }
 	FORCEINLINE float GetHp() const { return Hp; }
@@ -183,4 +204,5 @@ public:
 	FORCEINLINE float GetHpRatio() const { return Hp / MaxHp; }
 	FORCEINLINE FString GetHeadBone() const { return HeadBone; }
 	FORCEINLINE UBuffComponent* GetBuff() const { return Buff; }
+	FORCEINLINE UInventoryComponent* GetInventory() const { return Inventory; }
 };
