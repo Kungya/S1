@@ -48,7 +48,6 @@ private:
 
 
 public:	
-
 	FORCEINLINE UItemInstance* GetItemInstance() const { return ItemInstance; }
 
 };

@@ -16,17 +16,13 @@ void UInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	AddItem();
-	AddItem();
-	AddItem();
-	AddItem();
 }
 
 void UInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	//DOREPLIFETIME(UInventoryComponent, Items, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(UInventoryComponent, InventoryArray, COND_OwnerOnly);
 }
 
 void UInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -35,13 +31,12 @@ void UInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 }
 
-void UInventoryComponent::AddItem()
+void UInventoryComponent::AddItem(UItemInstance* InItemInstance)
 {
 	// TODO : ServerAddItem
+	if (InventoryArray.Num() >= 50) return;
 
-	UItemInstance* ItemInstance = NewObject<UItemInstance>();
-	ItemInstance->Init(100);
+	InventoryArray.Add(InItemInstance);
 
-	Items.Add(ItemInstance);
+	UE_LOG(LogTemp, Warning, TEXT("Inventory Size : %d"), InventoryArray.Num());
 }
-

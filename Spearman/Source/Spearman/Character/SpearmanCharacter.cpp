@@ -555,7 +555,7 @@ void ASpearmanCharacter::Interact()
 }
 
 void ASpearmanCharacter::ServerInteract_Implementation()
-{
+{ // server only
 	FVector Start = FollowCamera->GetComponentLocation();
 	FVector End = Start + FollowCamera->GetForwardVector() * 500.f;
 
@@ -569,6 +569,11 @@ void ASpearmanCharacter::ServerInteract_Implementation()
 
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Interact, Params))
 	{
+		if (AItem* Item = Cast<AItem>(HitResult.GetActor()))
+		{
+			Inventory->AddItem(Item->GetItemInstance());
+		}
+
 		if (IInteractableInterface* InteractableInterface = Cast<IInteractableInterface>(HitResult.GetActor()))
 		{
 			InteractableInterface->Interact();

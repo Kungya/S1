@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "InventoryComponent.generated.h"
 
+class UItemInstance;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SPEARMAN_API UInventoryComponent : public UActorComponent
@@ -23,12 +24,13 @@ protected:
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void AddItem();
+	void AddItem(UItemInstance* InIntemInstance);
 private:
-	TArray<class UItemInstance*> Items;
+	UPROPERTY(Replicated)
+	TArray<UItemInstance*> InventoryArray;
 
 public:
 
-	FORCEINLINE const TArray<UItemInstance*>& GetItems() { return Items; }
+	FORCEINLINE const TArray<UItemInstance*>& GetInventoryArray() { return InventoryArray; }
 
 };

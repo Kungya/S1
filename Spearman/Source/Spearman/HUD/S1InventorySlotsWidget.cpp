@@ -14,22 +14,13 @@
 US1InventorySlotsWidget::US1InventorySlotsWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-
 }
 
 void US1InventorySlotsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	SlotWidgets.SetNum(Y_SIZE * X_SIZE);
-	
-	/* 5 * 10
-	*  [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
-	*  [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
-	*  [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
-	*  [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
-	*  [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
-	*/
+	SlotWidgets.SetNum(X_SIZE * Y_SIZE);
 
 	APlayerController* PlayerController = GetOwningPlayer();
 
@@ -51,14 +42,14 @@ void US1InventorySlotsWidget::NativeConstruct()
 	ASpearmanCharacter* OwnerSpearmanCharacter = Cast<ASpearmanCharacter>(PlayerController->GetCharacter());
 	UInventoryComponent* Inventory = OwnerSpearmanCharacter->GetInventory();
 	
-	const TArray<UItemInstance*>& Items = Inventory->GetItems();
-	// TODO : UItemInstance 내부에서 인벤토리 어느 위치에 아이템을 배치할지 인덱스를 들고 있는게 맞다
-	for (int32 i = 0; i < Items.Num(); i++)
+	const TArray<UItemInstance*>& InventoryArray = Inventory->GetInventoryArray();
+	// TODO : UItemInstance 내부에서 인벤토리 어느 위치에 아이템을 배치할지 인덱스를 들고 있는게 나을수도 있다
+	for (int32 i = 0; i < InventoryArray.Num(); i++)
 	{
-		UItemInstance* Item = Items[i];
+		UItemInstance* ItemInstance = InventoryArray[i];
 		// i : 10일 때(11번째, 2째줄 첫번째로 가야함), FIntPoint(0, 1) -> (x, y)
 		FIntPoint ItemSlotPos = FIntPoint(i % X_SIZE, i / X_SIZE);
-		OnInventoryItemInfoChanged(ItemSlotPos, Item);
+		OnInventoryItemInfoChanged(ItemSlotPos, ItemInstance);
 	}
 }
 

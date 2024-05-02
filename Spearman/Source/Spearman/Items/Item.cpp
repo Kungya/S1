@@ -18,11 +18,14 @@ AItem::AItem()
 void AItem::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	ItemInstance = NewObject<UItemInstance>();
+	ItemInstance->Init(100);
 }
 
 void AItem::Interact()
-{
+{ // must be called in server only (server RPC in spearmancharacter)
+
 	Destroy();
 }
 
