@@ -22,6 +22,8 @@ struct FItemData
 	float ItemCost;
 };
 
+class UItemInstance;
+
 UCLASS()
 class SPEARMAN_API AItem : public AActor, public IInteractableInterface
 {
@@ -34,15 +36,14 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual bool ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Item")
 	UStaticMeshComponent* ItemMesh;
 
-	/*UPROPERTY(EditDefaultsOnly, Category = "Item")
-	FItemData ItemData;*/
-
-	UPROPERTY()
-	class UItemInstance* ItemInstance;
+	UPROPERTY(Replicated)
+	UItemInstance* ItemInstance;
 
 private:
 

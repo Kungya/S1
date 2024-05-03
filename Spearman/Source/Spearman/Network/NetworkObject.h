@@ -14,31 +14,22 @@ class SPEARMAN_API UNetworkObject : public UObject
 {
 	GENERATED_BODY()
 	
-public:
-	
-	// Allows the Object to get a valid UWorld from it's outer.
-	virtual UWorld* GetWorld() const override;
+public:	
+	virtual UWorld* GetWorld() const;
 
-	UFUNCTION(BlueprintPure, Category = "My Object")
+	UFUNCTION(BlueprintPure, Category = "Network Object")
 	AActor* GetOwningActor() const;
 
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	FORCEINLINE virtual bool IsSupportedForNetworking() const override;
-
-	virtual int32 GetFunctionCallspace(UFunction* Function, FFrame* Stack) override;
-
-	// Call "Remote" (aka, RPC) functions through the actors NetDriver
-	virtual bool CallRemoteFunction(UFunction* Function, void* Parms, struct FOutParmRec* OutParms, FFrame* Stack) override;
-
-	/*
-	* Optional
-	* Since this is a replicated object, typically only the Server should create and destroy these
-	* Provide a custom destroy function to ensure these conditions are met.
-	*/
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "My Object")
-	void Destroy();
+	/*UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Network Object")
+	void Destroy();*/
 
 protected:
-	virtual void OnDestroyed();
+	virtual int32 GetFunctionCallspace(UFunction * Function, FFrame * Stack);
+	virtual bool CallRemoteFunction(UFunction * Function, void* Parms, struct FOutParmRec* OutParms, FFrame * Stack);
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+
+	//virtual void OnDestroyed();
+
+public:
+	FORCEINLINE virtual bool IsSupportedForNetworking() const { return true; }
 };

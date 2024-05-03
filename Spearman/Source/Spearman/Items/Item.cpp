@@ -3,6 +3,8 @@
 
 #include "Item.h"
 #include "ItemInstance.h"
+#include "Net/UnrealNetwork.h"
+#include "Engine/ActorChannel.h"
 
 AItem::AItem()
 {
@@ -19,8 +21,28 @@ void AItem::BeginPlay()
 {
 	Super::BeginPlay();
 
-	ItemInstance = NewObject<UItemInstance>();
-	ItemInstance->Init(100);
+	if (HasAuthority())
+	{
+		// TODO : NewObject<UItemInstance>(this, UClass* Class);
+		ItemInstance = NewObject<UItemInstance>(this);
+		ItemInstance->Init(100);
+	}
+}
+
+void AItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AItem, ItemInstance);
+}
+
+bool AItem::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
+{
+	bool bWroteSomething = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
+
+	bWroteSomething |= Channel->ReplicateSubobject(ItemInstance, *Bunch, *RepFlags);
+
+	return bWroteSomething;
 }
 
 void AItem::Interact()

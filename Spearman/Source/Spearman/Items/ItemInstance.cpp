@@ -5,6 +5,13 @@
 
 UItemInstance::UItemInstance()
 {
+
+}
+
+void UItemInstance::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
 }
 
 void UItemInstance::Init(int32 InItemId)
@@ -13,6 +20,7 @@ void UItemInstance::Init(int32 InItemId)
 
 	ItemId = InItemId;
 	ItemCost = 20'000;
+
 
 	// TODO : many default setting...
 }

@@ -18,21 +18,6 @@ AActor* UNetworkObject::GetOwningActor() const
 	return GetTypedOuter<AActor>();
 }
 
-void UNetworkObject::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	// Add any Blueprint properties
-	// This is not required if you do not want the class to be "Blueprintable"
-	if (const UBlueprintGeneratedClass* BPClass = Cast<UBlueprintGeneratedClass>(GetClass()))
-	{
-		BPClass->GetLifetimeBlueprintReplicationList(OutLifetimeProps);
-	}
-}
-
-bool UNetworkObject::IsSupportedForNetworking() const
-{
-	return true;
-}
-
 int32 UNetworkObject::GetFunctionCallspace(UFunction* Function, FFrame* Stack)
 {
 	check(GetOuter() != nullptr);
@@ -40,7 +25,7 @@ int32 UNetworkObject::GetFunctionCallspace(UFunction* Function, FFrame* Stack)
 }
 
 bool UNetworkObject::CallRemoteFunction(UFunction* Function, void* Parms, FOutParmRec* OutParms, FFrame* Stack)
-{
+{ // Call "Remote" (aka, RPC) functions through the actors NetDriver
 	check(!HasAnyFlags(RF_ClassDefaultObject));
 	AActor* Owner = GetOwningActor();
 	UNetDriver* NetDriver = Owner->GetNetDriver();
@@ -52,18 +37,28 @@ bool UNetworkObject::CallRemoteFunction(UFunction* Function, void* Parms, FOutPa
 	return false;
 }
 
-void UNetworkObject::Destroy()
+void UNetworkObject::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	if (!IsPendingKill())
+	// Add any Blueprint properties
+	// This is not required if you do not want the class to be "Blueprintable"
+	/*if (const UBlueprintGeneratedClass* BPClass = Cast<UBlueprintGeneratedClass>(GetClass()))
 	{
-		checkf(GetOwningActor()->HasAuthority() == true, TEXT("Destroy:: Object does not have authority to destroy itself!"));
-
-		OnDestroyed();
-		MarkPendingKill();
-	}
+		BPClass->GetLifetimeBlueprintReplicationList(OutLifetimeProps);
+	}*/
 }
 
-void UNetworkObject::OnDestroyed()
-{
-	// Notify Owner etc.
-}
+//void UNetworkObject::Destroy()
+//{ // server only
+//	if (!IsPendingKill())
+//	{
+//		checkf(GetOwningActor()->HasAuthority() == true, TEXT("Destroy:: Object does not have authority to destroy itself!"));
+//
+//		OnDestroyed();
+//		MarkPendingKill();
+//	}
+//}
+
+//void UNetworkObject::OnDestroyed()
+//{
+//	// Notify Owner etc.
+//}

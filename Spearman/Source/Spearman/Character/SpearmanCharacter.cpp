@@ -557,7 +557,7 @@ void ASpearmanCharacter::Interact()
 void ASpearmanCharacter::ServerInteract_Implementation()
 { // server only
 	FVector Start = FollowCamera->GetComponentLocation();
-	FVector End = Start + FollowCamera->GetForwardVector() * 500.f;
+	FVector End = Start + FollowCamera->GetForwardVector() * 1'000.f;
 
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
@@ -571,6 +571,7 @@ void ASpearmanCharacter::ServerInteract_Implementation()
 	{
 		if (AItem* Item = Cast<AItem>(HitResult.GetActor()))
 		{
+			// todo : 복사해서 넘겨줘야함
 			Inventory->AddItem(Item->GetItemInstance());
 		}
 
