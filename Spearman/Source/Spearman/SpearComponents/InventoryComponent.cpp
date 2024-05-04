@@ -6,12 +6,15 @@
 #include "Net/UnrealNetwork.h"
 #include "Engine/ActorChannel.h"
 #include "Spearman/Character/SpearmanCharacter.h"
+#include "Spearman/PlayerController/SpearmanPlayerController.h"
+#include "Spearman/HUD/SpearmanHUD.h"
+#include "Spearman/HUD/CharacterOverlay.h"
+#include "Spearman/HUD/S1InventoryWidget.h"
+#include "Spearman/HUD/S1InventorySlotsWidget.h"
 
 UInventoryComponent::UInventoryComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-
-	// Replicated is call in SpearmanCharacter, | SetIsReplicatedByDefault(true);
 }
 
 
@@ -53,14 +56,21 @@ void UInventoryComponent::AddItem(UItemInstance* InItemInstance)
 	UE_LOG(LogTemp, Warning, TEXT("Inventory Size : %d"), InventoryArray.Num());
 }
 
+void UInventoryComponent::UpdateHUDInventory()
+{
+	Character = (Character == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : Character;
+	if (Character)
+	{
+		US1InventorySlotsWidget* SlotsWidget = Character->SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->InventoryWidget->InventorySlotsWidget;
+		// SlotsWidget->
+		// TODO : 
+	}
+}
+
 void UInventoryComponent::OnRep_InventoryArray()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Replicated !!"));
 
-	Character = (Character == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : Character;
-	if (Character)
-	{
-		//Character->
-	}
+	UpdateHUDInventory();
+	
 }
-

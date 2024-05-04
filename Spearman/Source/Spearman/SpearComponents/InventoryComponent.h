@@ -25,6 +25,8 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void AddItem(UItemInstance* InIntemInstance);
+
+	void UpdateHUDInventory();
 private:
 	// caching owner
 	ASpearmanCharacter* Character;

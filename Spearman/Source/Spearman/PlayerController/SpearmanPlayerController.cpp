@@ -172,7 +172,7 @@ void ASpearmanPlayerController::SetHUDTime()
 }
 
 void ASpearmanPlayerController::HUDInit()
-{ // BeginPlay에서도 CharacterOveraly가 null일 경우가 있어, Tick에서 대기해서 처리
+{ // BeginPlay에서도 CharacterOverlay가 null일 경우가 있어, Tick에서 대기해서 처리
 	if (CharacterOverlay == nullptr)
 	{
 		if (SpearmanHUD && SpearmanHUD->CharacterOverlay)

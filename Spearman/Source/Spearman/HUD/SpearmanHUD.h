@@ -6,6 +6,8 @@
 #include "GameFramework/HUD.h"
 #include "SpearmanHUD.generated.h"
 
+class UUserWidget;
+
 USTRUCT(BlueprintType)
 struct FHUDPackage
 {
@@ -27,7 +29,7 @@ public:
 
 	// WBP_CharacterOverlay를 들고 있음
 	UPROPERTY(EditAnywhere, Category = "UI")
-	TSubclassOf<class UUserWidget> CharacterOverlayClass;
+	TSubclassOf<UUserWidget> CharacterOverlayClass;
 
 	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<UUserWidget> CharacterOverlayNoticeClass;

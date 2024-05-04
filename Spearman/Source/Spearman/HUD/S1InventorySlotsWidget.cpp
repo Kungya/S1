@@ -10,15 +10,26 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Spearman/HUD/S1InventoryItemInfoWidget.h"
 #include "Spearman/HUD/S1DragDropOperation.h"
+#include "Components/UniformGridSlot.h"
+#include "Components/OverlaySlot.h"
 
 US1InventorySlotsWidget::US1InventorySlotsWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+
 }
 
 void US1InventorySlotsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+
+	/*UOverlaySlot* OverlaySlot_Slots_GridPanel = Cast<UOverlaySlot>(Slots_GridPanel->Slot);
+	OverlaySlot_Slots_GridPanel->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Fill);
+	OverlaySlot_Slots_GridPanel->SetVerticalAlignment(EVerticalAlignment::VAlign_Fill);
+	
+	UOverlaySlot* OverlaySlot_ItemInfos_CanvasPanel = Cast<UOverlaySlot>(ItemInfos_CanvasPanel->Slot);
+	OverlaySlot_ItemInfos_CanvasPanel->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Fill);
+	OverlaySlot_ItemInfos_CanvasPanel->SetVerticalAlignment(EVerticalAlignment::VAlign_Fill);*/
 
 	SlotWidgets.SetNum(X_SIZE * Y_SIZE);
 
@@ -31,7 +42,6 @@ void US1InventorySlotsWidget::NativeConstruct()
 			int32 Idx = Y * X_SIZE + X;
 
 			US1InventorySlotWidget* SlotWidget = CreateWidget<US1InventorySlotWidget>(PlayerController, SlotWidgetClass);
-
 			SlotWidgets[Idx] = SlotWidget;
 			Slots_GridPanel->AddChildToUniformGrid(SlotWidget, Y, X);
 		}
@@ -108,12 +118,17 @@ void US1InventorySlotsWidget::OnInventoryItemInfoChanged(const FIntPoint& InItem
 	// 2d idx -> 1d idx
 	int32 SlotIdx = InItemSlotPos.Y * X_SIZE + InItemSlotPos.X;
 
-	if (US1InventoryItemInfoWidget* ItemInfoWidget = ItemInfoWidgets[SlotIdx])
+	US1InventoryItemInfoWidget* ItemInfoWidget = ItemInfoWidgets[SlotIdx];
+	if (ItemInfoWidget)
 	{
 		if (Item == nullptr)
 		{
 			ItemInfos_CanvasPanel->RemoveChild(ItemInfoWidget);
 			ItemInfoWidgets[SlotIdx] = nullptr;
+		}
+		else
+		{
+
 		}
 	}
 	else
@@ -135,4 +150,9 @@ void US1InventorySlotsWidget::OnInventoryItemInfoChanged(const FIntPoint& InItem
 void US1InventorySlotsWidget::FinishDrag()
 {
 	PrevDragOverSlotPos = FIntPoint(-1, -1);
+}
+
+void US1InventorySlotsWidget::GetLogfromSlotsWidget()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Can Access !!"));
 }

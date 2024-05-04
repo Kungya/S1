@@ -82,4 +82,7 @@ private:
 	
 	float HUDHp;
 	float HUDMaxHp;
+
+public:
+	FORCEINLINE ASpearmanHUD* GetSpearmanHUD() const { return SpearmanHUD;  }
 };

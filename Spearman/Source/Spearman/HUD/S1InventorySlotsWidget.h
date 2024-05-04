@@ -9,6 +9,8 @@
 class UItemInstance;
 class US1InventorySlotWidget;
 class US1InventoryItemInfoWidget;
+class UUniformGridPanel;
+class UCanvasPanel;
 
 /**
  * 
@@ -20,6 +22,8 @@ class SPEARMAN_API US1InventorySlotsWidget : public US1UserWidget
 	
 public:
 	US1InventorySlotsWidget(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
+	void GetLogfromSlotsWidget();
 
 protected:
 	virtual void NativeConstruct() override;
@@ -46,10 +50,10 @@ protected:
 	TArray<US1InventoryItemInfoWidget*> ItemInfoWidgets;
 
 	UPROPERTY(meta = (BindWidget))
-	class UUniformGridPanel* Slots_GridPanel;
+	UUniformGridPanel* Slots_GridPanel;
 
 	UPROPERTY(meta = (BindWidget))
-	class UCanvasPanel* ItemInfos_CanvasPanel;
+	UCanvasPanel* ItemInfos_CanvasPanel;
 
 private:
 	FIntPoint PrevDragOverSlotPos = FIntPoint(-1, -1);
