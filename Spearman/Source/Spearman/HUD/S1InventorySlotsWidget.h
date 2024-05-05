@@ -6,7 +6,9 @@
 #include "S1UserWidget.h"
 #include "S1InventorySlotsWidget.generated.h"
 
+class ASpearmanCharacter;
 class UItemInstance;
+class UInventoryComponent;
 class US1InventorySlotWidget;
 class US1InventoryItemInfoWidget;
 class UUniformGridPanel;
@@ -25,6 +27,8 @@ public:
 
 	void GetLogfromSlotsWidget();
 
+	void UpdateItemInfoWidget();
+
 protected:
 	virtual void NativeConstruct() override;
 	virtual bool NativeOnDragOver(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
@@ -35,6 +39,19 @@ protected:
 
 private:
 	void FinishDrag();
+
+	/*
+	* Caching
+	*/
+
+	UPROPERTY()
+	ASpearmanCharacter* SpearmanCharacter;
+
+	UPROPERTY()
+	UInventoryComponent* Inventory;
+
+	UPROPERTY()
+	APlayerController* PlayerController;
 
 protected:
 	UPROPERTY(EditDefaultsOnly)

@@ -2,12 +2,12 @@
 
 #include "S1InventorySlotsWidget.h"
 #include "Components/UniformGridPanel.h"
-#include "Spearman/HUD/S1InventorySlotWidget.h"
-#include "Spearman/SpearComponents/InventoryComponent.h"
 #include "Spearman/Character/SpearmanCharacter.h"
+#include "Spearman/SpearComponents/InventoryComponent.h"
 #include "Spearman/Items/ItemInstance.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Spearman/HUD/S1InventorySlotWidget.h"
 #include "Spearman/HUD/S1InventoryItemInfoWidget.h"
 #include "Spearman/HUD/S1DragDropOperation.h"
 #include "Components/UniformGridSlot.h"
@@ -33,7 +33,7 @@ void US1InventorySlotsWidget::NativeConstruct()
 
 	SlotWidgets.SetNum(X_SIZE * Y_SIZE);
 
-	APlayerController* PlayerController = GetOwningPlayer();
+	PlayerController = (PlayerController == nullptr) ? GetOwningPlayer() : PlayerController;
 
 	for (int32 Y = 0; Y < Y_SIZE; Y++)
 	{
@@ -49,8 +49,8 @@ void US1InventorySlotsWidget::NativeConstruct()
 
 	ItemInfoWidgets.SetNum(Y_SIZE * X_SIZE);
 
-	ASpearmanCharacter* OwnerSpearmanCharacter = Cast<ASpearmanCharacter>(PlayerController->GetCharacter());
-	UInventoryComponent* Inventory = OwnerSpearmanCharacter->GetInventory();
+	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(PlayerController->GetCharacter()) : SpearmanCharacter;
+	Inventory = (Inventory == nullptr) ? SpearmanCharacter->GetInventory() : Inventory;
 	
 	const TArray<UItemInstance*>& InventoryArray = Inventory->GetInventoryArray();
 	// TODO : UItemInstance 내부에서 인벤토리 어느 위치에 아이템을 배치할지 인덱스를 들고 있는게 나을수도 있다
@@ -105,6 +105,7 @@ bool US1InventorySlotsWidget::NativeOnDrop(const FGeometry& InGeometry, const FD
 
 		if (DragDrop->FromItemSlotPos != ToItemSlotPos)
 		{
+			// OnInventoryItemInfoChanged(A, B) -> A위치에 있는걸 ItemInstance B로 바꾸겠다
 			OnInventoryItemInfoChanged(DragDrop->FromItemSlotPos, nullptr);
 			OnInventoryItemInfoChanged(ToItemSlotPos, DragDrop->ItemInstance);
 		}
@@ -128,12 +129,14 @@ void US1InventorySlotsWidget::OnInventoryItemInfoChanged(const FIntPoint& InItem
 		}
 		else
 		{
-
+			// TODO : else 쪽에 있는거 긁어와서 Update
+			// TODO : ItemCount 정책
+			ItemInfoWidget->Init(this, Item, 1);
 		}
 	}
 	else
 	{
-		ItemInfoWidget = CreateWidget<US1InventoryItemInfoWidget>(GetOwningPlayer(), ItemInfoWidgetClass);
+		ItemInfoWidget = CreateWidget<US1InventoryItemInfoWidget>(PlayerController, ItemInfoWidgetClass);
 		ItemInfoWidgets[SlotIdx] = ItemInfoWidget;
 
 		UCanvasPanelSlot* CanvasPanelSlot = ItemInfos_CanvasPanel->AddChildToCanvas(ItemInfoWidget);
@@ -144,6 +147,18 @@ void US1InventorySlotsWidget::OnInventoryItemInfoChanged(const FIntPoint& InItem
 		// Caching
 		// TODO : ItemCount 정책
 		ItemInfoWidget->Init(this, Item, 1);
+	}
+}
+
+void US1InventorySlotsWidget::UpdateItemInfoWidget()
+{
+	const TArray<UItemInstance*>& InventoryArray = Inventory->GetInventoryArray();
+	for (int32 i = 0; i < InventoryArray.Num(); i++)
+	{
+		UItemInstance* ItemInstance = InventoryArray[i];
+		// i : 10일 때(11번째, 2째줄 첫번째로 가야함), FIntPoint(0, 1) -> (x, y)
+		FIntPoint ItemSlotPos = FIntPoint(i % X_SIZE, i / X_SIZE);
+		OnInventoryItemInfoChanged(ItemSlotPos, ItemInstance);
 	}
 }
 

@@ -62,7 +62,7 @@ void UInventoryComponent::UpdateHUDInventory()
 	if (Character)
 	{
 		US1InventorySlotsWidget* SlotsWidget = Character->SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->InventoryWidget->InventorySlotsWidget;
-		// SlotsWidget->
+		SlotsWidget->UpdateItemInfoWidget();
 		// TODO : 
 	}
 }
@@ -72,5 +72,4 @@ void UInventoryComponent::OnRep_InventoryArray()
 	UE_LOG(LogTemp, Warning, TEXT("Replicated !!"));
 
 	UpdateHUDInventory();
-	
 }
