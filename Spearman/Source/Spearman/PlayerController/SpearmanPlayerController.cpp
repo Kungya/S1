@@ -11,6 +11,7 @@
 #include "Components/TextBlock.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
+#include "Spearman/HUD/S1InventoryWidget.h"
 
 
 void ASpearmanPlayerController::BeginPlay()
@@ -181,6 +182,7 @@ void ASpearmanPlayerController::HUDInit()
 			if (CharacterOverlay)
 			{
 				SetHUDHp(HUDHp, HUDMaxHp);
+				CharacterOverlay->InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
 			}
 		}
 	}
@@ -242,6 +244,18 @@ void ASpearmanPlayerController::HandleCooldown()
 	if (SpearmanCharacter)
 	{
 		SpearmanCharacter->bDisableKeyInput = true;
+	}
+}
+
+void ASpearmanPlayerController::ShowInventoryWidget()
+{
+	if (SpearmanHUD && CharacterOverlay)
+	{
+		US1InventoryWidget* InventoryWidget = SpearmanHUD->CharacterOverlay->InventoryWidget;
+		if (InventoryWidget)
+		{
+			InventoryWidget->SetVisibility(ESlateVisibility::Visible);
+		}
 	}
 }
 

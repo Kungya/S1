@@ -5,16 +5,27 @@
 #include "Spearman/HUD/S1InventorySlotsWidget.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Spearman/PlayerController/SpearmanPlayerController.h"
 
 void US1InventoryWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	/*SlotsWidget = CreateWidget<US1InventorySlotsWidget>(GetOwningPlayer(), SlotsWidgetClass);
-	Item_CanvasPanel->AddChildToCanvas(SlotsWidget);
+	bIsFocusable = true;
+	SetKeyboardFocus();
+}
 
-	UCanvasPanelSlot* CanvasPanelSlot = Cast<UCanvasPanelSlot>(SlotsWidget->Slot);
-	CanvasPanelSlot->SetAnchors(FAnchors::FAnchors(0.5f, 0.5f, 0.5f, 0.5f));
-	CanvasPanelSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-	CanvasPanelSlot->SetAutoSize(true);*/
+FReply US1InventoryWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+{
+	if (InKeyEvent.GetKey() == FName("Tab"))
+	{
+		SetVisibility(ESlateVisibility::Hidden);
+		SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(GetOwningPlayer()) : SpearmanPlayerController;
+		if (SpearmanPlayerController)
+		{
+			SpearmanPlayerController->SetInputMode(FInputModeGameOnly());
+		}
+	}
+	
+	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
 }

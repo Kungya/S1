@@ -8,6 +8,7 @@
 
 class UCanvasPanel;
 class US1InventorySlotsWidget;
+class ASpearmanPlayerController;
 
 /**
  * 
@@ -21,10 +22,15 @@ public:
 
 protected:
 	virtual void NativeConstruct() override;
+	virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<US1InventorySlotsWidget> SlotsWidgetClass;
 	
+private:
+	/* Caching Owner PlayerController */
+	ASpearmanPlayerController* SpearmanPlayerController;
+
 public:
 	UPROPERTY(meta = (BindWidget))
 	UCanvasPanel* Item_CanvasPanel;

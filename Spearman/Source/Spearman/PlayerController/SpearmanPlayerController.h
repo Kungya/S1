@@ -28,6 +28,8 @@ public:
 	
 	void HandleMatchHasStarted();
 	void HandleCooldown();
+
+	void ShowInventoryWidget();
 protected:
 	virtual void BeginPlay() override;
 	void SetHUDTime();

@@ -42,11 +42,15 @@ protected:
 	void LookUp(float Value);
 	virtual void Jump() override;
 	void EquipButtonPressed();
+
 	void InteractButtonPressed();
 	void Interact();
 	
 	UFUNCTION(Server, Reliable)
 	void ServerInteract();
+
+	void InventoryButtonPressed();
+	void InventoryButtonReleased();
 
 	void HideCameraIfCharacterTooClose();
 	void CalculateAO_Pitch();

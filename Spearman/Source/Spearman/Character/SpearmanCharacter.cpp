@@ -25,7 +25,8 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Spearman/Items/Item.h"
 #include "Spearman/SpearComponents/InventoryComponent.h"
-
+#include "Spearman/HUD/CharacterOverlay.h"
+#include "Spearman/HUD/S1InventoryWidget.h"
 
 ASpearmanCharacter::ASpearmanCharacter()
 {
@@ -467,11 +468,13 @@ void ASpearmanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ASpearmanCharacter::EquipButtonPressed);
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &ASpearmanCharacter::AttackButtonPressed);
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASpearmanCharacter::InteractButtonPressed);
+	PlayerInputComponent->BindAction("Inventory", IE_Pressed, this, &ASpearmanCharacter::InventoryButtonPressed);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASpearmanCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ASpearmanCharacter::MoveRight);
 	PlayerInputComponent->BindAxis("Turn", this, &ASpearmanCharacter::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &ASpearmanCharacter::LookUp);
+	
 }
 
 void ASpearmanCharacter::MoveForward(float Value)
@@ -558,7 +561,6 @@ void ASpearmanCharacter::ServerInteract_Implementation()
 { // server only
 	FVector Start = FollowCamera->GetComponentLocation();
 	FVector End = Start + FollowCamera->GetForwardVector() * 1'000.f;
-
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
@@ -579,4 +581,13 @@ void ASpearmanCharacter::ServerInteract_Implementation()
 			InteractableInterface->Interact();
 		}
 	}
+}
+
+void ASpearmanCharacter::InventoryButtonPressed()
+{
+	if (SpearmanPlayerController)
+	{
+		SpearmanPlayerController->ShowInventoryWidget();
+		SpearmanPlayerController->SetInputMode(FInputModeUIOnly());
+	}	
 }
