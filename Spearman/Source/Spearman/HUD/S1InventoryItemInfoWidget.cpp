@@ -21,6 +21,10 @@ void US1InventoryItemInfoWidget::Init(US1InventorySlotsWidget* InSlotsWidget, UI
 	SlotsWidget = InSlotsWidget;
 	ItemInstance = InItemInstance;
 	ItemCount = InItemCount;
+	Icon_Image->SetBrushFromTexture(InItemInstance->Icon);
+
+	// TODO : ItemInstance, Count가 바뀌면 -> Icon_Image, Hover_Image, Count_Text도 바꿔줘야한다
+	// Icon_Image, Hover_Image는 ItemInstance
 }
 
 void US1InventoryItemInfoWidget::NativeConstruct()
@@ -34,7 +38,6 @@ void US1InventoryItemInfoWidget::NativeOnMouseEnter(const FGeometry& InGeometry,
 {
 	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
 
-	UE_LOG(LogTemp, Warning, TEXT("NativeOnMouseEnter"));
 	Hover_Image->SetRenderOpacity(1.f);
 
 	// TODO : 마우스를 댔을때 추가적인 UI
@@ -44,7 +47,6 @@ void US1InventoryItemInfoWidget::NativeOnMouseLeave(const FPointerEvent& InMouse
 {
 	Super::NativeOnMouseLeave(InMouseEvent);
 
-	UE_LOG(LogTemp, Warning, TEXT("NativeOnMouseLeave"));
 	Hover_Image->SetRenderOpacity(0.f);
 }
 
@@ -55,8 +57,6 @@ FReply US1InventoryItemInfoWidget::NativeOnMouseButtonDown(const FGeometry& InGe
 	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
 	{ // DragOperation을 받겠다
 		Reply.DetectDrag(TakeWidget(), EKeys::LeftMouseButton);
-
-		//UE_LOG(LogTemp, Warning, TEXT("NativeOnMouseButtonDown : LeftMouseButton"));
 	}
 
 	const FIntPoint InventorySlotSize = FIntPoint(50, 50);
@@ -75,7 +75,6 @@ FReply US1InventoryItemInfoWidget::NativeOnMouseButtonDown(const FGeometry& InGe
 void US1InventoryItemInfoWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation)
 {
 	Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
-	//UE_LOG(LogTemp, Warning, TEXT("NativeOnDragDetected"));
 
 	US1ItemDragWidget* DragWidget = CreateWidget<US1ItemDragWidget>(GetOwningPlayer(), DragWidgetClass);
 	FVector2D ItemInfoWidgetSize = FVector2D(1 * 50, 1 * 50);

@@ -66,4 +66,8 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* Hover_Image;
+
+public:
+	FORCEINLINE UItemInstance* GetItemInstance() const { return ItemInstance; }
+	FORCEINLINE int32 GetItemCount() const { return ItemCount; }
 };

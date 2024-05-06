@@ -7,6 +7,8 @@
 //#include "UObject/NoExportTypes.h"
 #include "ItemInstance.generated.h"
 
+
+class UTexture2D;
 /**
  * 
  */
@@ -18,15 +20,27 @@ class SPEARMAN_API UItemInstance : public UNetworkObject
 public:
 	UItemInstance();
 
-	void Init(int32 InItemId);
+	void Init(int32 num);
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 	
 public:
-	UPROPERTY(Replicated, VisibleAnywhere)
-	int32 ItemId = 0;
+	UPROPERTY(Replicated)
+	int32 Id;
 
-	UPROPERTY(Replicated, VisibleAnywhere)
-	int32 ItemCost = 0;
-	
+	UPROPERTY(Replicated)
+	int32 Cost;
+
+	UPROPERTY(Replicated)
+	int32 Weight;
+
+	UPROPERTY(Replicated)
+	UTexture2D* Icon;
+
+	// TODO : Data Table 추가시 설정
+	UPROPERTY(Replicated)
+	int32 InventoryIdx = -1;
+
+private:
+
 };

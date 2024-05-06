@@ -570,8 +570,7 @@ void ASpearmanCharacter::ServerInteract_Implementation()
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Interact, Params))
 	{
 		if (AItem* Item = Cast<AItem>(HitResult.GetActor()))
-		{
-			// todo : 복사해서 넘겨줘야함
+		{ // TODO : 복사해서 넘겨줘야할지?
 			Inventory->AddItem(Item->GetItemInstance());
 		}
 

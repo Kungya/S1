@@ -18,6 +18,7 @@
 #include "Spearman/Spearman.h"
 #include "Kismet/GameplayStatics.h"
 #include "Spearman/Weapon/Weapon.h"
+#include "Spearman/Items/Item.h"
 
 ABasicMonster::ABasicMonster()
 {
@@ -229,7 +230,7 @@ void ABasicMonster::HideHpBar()
 }
 
 void ABasicMonster::Death()
-{ //server only
+{ // Server Only
 	if (bDying) return;
 	bDying = true;
 
@@ -239,12 +240,64 @@ void ABasicMonster::Death()
 		BasicMonsterAIController->StopMovement();
 	}
 
+	DropItems();
+
 	MulticastDeath();
-	// TODO : many thing,
+}
+
+void ABasicMonster::DropItems()
+{ // Server Only
+	const int32 RandomNum = FMath::RandRange(1, 5);
+
+	if (RandomNum == 1)
+	{
+		AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item1Class, GetActorTransform());
+		if (Item)
+		{
+			Item->Init(RandomNum);
+			Item->FinishSpawning(GetActorTransform());
+		}
+	}
+	else if (RandomNum == 2)
+	{
+		AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item2Class, GetActorTransform());
+		if (Item)
+		{
+			Item->Init(RandomNum);
+			Item->FinishSpawning(GetActorTransform());
+		}
+	}
+	else if (RandomNum == 3)
+	{
+		AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item3Class, GetActorTransform());
+		if (Item)
+		{
+			Item->Init(RandomNum);
+			Item->FinishSpawning(GetActorTransform());
+		}
+	}
+	else if (RandomNum == 4)
+	{
+		AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item4Class, GetActorTransform());
+		if (Item)
+		{
+			Item->Init(RandomNum);
+			Item->FinishSpawning(GetActorTransform());
+		}
+	}
+	else if (RandomNum == 5)
+	{
+		AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item5Class, GetActorTransform());
+		if (Item)
+		{
+			Item->Init(RandomNum);
+			Item->FinishSpawning(GetActorTransform());
+		}
+	}
 }
 
 void ABasicMonster::AggroSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{ // server only
+{ // Server Only
 	if (OtherActor == nullptr) return;
 
 	ASpearmanCharacter* SpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
@@ -256,7 +309,7 @@ void ABasicMonster::AggroSphereBeginOverlap(UPrimitiveComponent* OverlappedCompo
 }
 
 void ABasicMonster::CombatRangeBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{ // server only
+{ // Server Only
 	if (OtherActor == nullptr) return;
 	ASpearmanCharacter* SpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
 	if (SpearmanCharacter)

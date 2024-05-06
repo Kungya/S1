@@ -29,7 +29,7 @@ public:
 	void UpdateHUDInventory();
 private:
 	// caching owner
-	ASpearmanCharacter* Character;
+	ASpearmanCharacter* SpearmanCharacter;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_InventoryArray)
 	TArray<UItemInstance*> InventoryArray;

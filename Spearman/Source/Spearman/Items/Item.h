@@ -8,20 +8,7 @@
 #include "Item.generated.h"
 
 
-// Deprecated
-USTRUCT(BlueprintType)
-struct FItemData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TSubclassOf<class AItem> ItemClass;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	class UTexture2D* ItemImage;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float ItemCost;
-};
-
+class UTexture2D;
 class UItemInstance;
 
 UCLASS()
@@ -33,7 +20,8 @@ public:
 	AItem();
 
 	virtual void Interact() override;
-
+	// set num 1~5 for ItemInstance
+	void Init(int32 num);
 protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -42,13 +30,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Item")
 	UStaticMeshComponent* ItemMesh;
 
-	UPROPERTY(Replicated)
-	UItemInstance* ItemInstance;
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "Item")
+	UItemInstance* ItemInstance = nullptr;
 
 private:
 
 
 public:	
 	FORCEINLINE UItemInstance* GetItemInstance() const { return ItemInstance; }
-
 };

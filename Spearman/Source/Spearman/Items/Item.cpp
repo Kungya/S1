@@ -13,19 +13,16 @@ AItem::AItem()
 
 	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
 	RootComponent = ItemMesh;
-
-
 }
 
 void AItem::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (HasAuthority())
-	{
-		// TODO : NewObject<UItemInstance>(this, UClass* Class);
+	if (!ItemInstance && HasAuthority())
+	{ // default ItemInstance
 		ItemInstance = NewObject<UItemInstance>(this);
-		ItemInstance->Init(100);
+		ItemInstance->Init(3);
 	}
 }
 
@@ -45,9 +42,17 @@ bool AItem::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FRepli
 	return bWroteSomething;
 }
 
+void AItem::Init(int32 num)
+{ // server only
+	if (ItemInstance == nullptr)
+	{
+		ItemInstance = NewObject<UItemInstance>(this);
+		ItemInstance->Init(num);
+	}
+}
+
 void AItem::Interact()
 { // must be called in server only (server RPC in spearmancharacter)
 
 	Destroy();
 }
-

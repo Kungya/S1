@@ -35,6 +35,8 @@ protected:
 	virtual void NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 
+	void InitItemSlotWidget();
+
 	void OnInventoryItemInfoChanged(const FIntPoint& InItemSlotPos, UItemInstance* Item);
 
 private:
@@ -48,10 +50,10 @@ private:
 	ASpearmanCharacter* SpearmanCharacter;
 
 	UPROPERTY()
-	UInventoryComponent* Inventory;
+	APlayerController* PlayerController;
 
 	UPROPERTY()
-	APlayerController* PlayerController;
+	UInventoryComponent* Inventory;
 
 protected:
 	UPROPERTY(EditDefaultsOnly)

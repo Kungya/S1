@@ -20,15 +20,15 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Network Object")
 	AActor* GetOwningActor() const;
 
-	/*UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Network Object")
-	void Destroy();*/
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "Network Object")
+	void Destroy();
 
 protected:
 	virtual int32 GetFunctionCallspace(UFunction * Function, FFrame * Stack);
 	virtual bool CallRemoteFunction(UFunction * Function, void* Parms, struct FOutParmRec* OutParms, FFrame * Stack);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 
-	//virtual void OnDestroyed();
+	virtual void OnDestroyed();
 
 public:
 	FORCEINLINE virtual bool IsSupportedForNetworking() const { return true; }

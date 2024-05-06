@@ -22,6 +22,7 @@ void UInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : SpearmanCharacter;
 }
 
 void UInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -47,29 +48,33 @@ void UInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 }
 
 void UInventoryComponent::AddItem(UItemInstance* InItemInstance)
-{ // must be called in server only
+{ // Server Only
 	if (InventoryArray.Num() >= 50) return;
 	
+	// change Outer in (Item -> Inventory) for Object Replication
 	InItemInstance->Rename(nullptr, GetOwner());
-	InventoryArray.Add(InItemInstance);
+	InItemInstance->InventoryIdx = InventoryArray.Add(InItemInstance);
 
-	UE_LOG(LogTemp, Warning, TEXT("Inventory Size : %d"), InventoryArray.Num());
+	if (SpearmanCharacter && SpearmanCharacter->IsLocallyControlled())
+	{
+		UpdateHUDInventory();
+	}
 }
 
 void UInventoryComponent::UpdateHUDInventory()
-{
-	Character = (Character == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : Character;
-	if (Character)
+{ // should be called in ROLE_Authority or ROLE_AutonomousProxy because of PlayerConroller
+	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : SpearmanCharacter;
+	if (SpearmanCharacter)
 	{
-		US1InventorySlotsWidget* SlotsWidget = Character->SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->InventoryWidget->InventorySlotsWidget;
-		SlotsWidget->UpdateItemInfoWidget();
-		// TODO : 
+		US1InventorySlotsWidget* SlotsWidget = SpearmanCharacter->SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->InventoryWidget->InventorySlotsWidget;
+		if (SlotsWidget)
+		{
+			SlotsWidget->UpdateItemInfoWidget();
+		}
 	}
 }
 
 void UInventoryComponent::OnRep_InventoryArray()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Replicated !!"));
-
 	UpdateHUDInventory();
 }

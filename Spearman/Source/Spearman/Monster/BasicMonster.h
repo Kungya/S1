@@ -8,6 +8,7 @@
 #include "BasicMonster.generated.h"
 
 class UHitDamageWidget;
+class AItem;
 
 UCLASS()
 class SPEARMAN_API ABasicMonster : public ACharacter, public IWeaponHitInterface
@@ -19,6 +20,8 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 protected:
+	virtual void Tick(float DeltaTime) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
@@ -70,6 +73,11 @@ protected:
 		const FHitResult& SweepResult);
 
 private:
+
+	/*
+	* Hit, Stats
+	*/
+
 	UPROPERTY(EditAnywhere, Category = Combat)
 	class UParticleSystem* HitParticles;
 
@@ -180,15 +188,28 @@ private:
 
 	bool bDying = false;
 	
-public:
-	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	/*
+	* Drop
+	*/
 
+	UPROPERTY(EditAnywhere, Category = "Drop")
+	TSubclassOf<AItem> Item1Class;
+
+	UPROPERTY(EditAnywhere, Category = "Drop")
+	TSubclassOf<AItem> Item2Class;
+
+	UPROPERTY(EditAnywhere, Category = "Drop")
+	TSubclassOf<AItem> Item3Class;
+
+	UPROPERTY(EditAnywhere, Category = "Drop")
+	TSubclassOf<AItem> Item4Class;
+
+	UPROPERTY(EditAnywhere, Category = "Drop")
+	TSubclassOf<AItem> Item5Class;
+public:
 	virtual void WeaponHit_Implementation(FHitResult HitResult) override;
 
 	void ShowHitDamage(int32 Damage, FVector HitLocation, bool bHeadShot);
-
-	void SetStunned(bool Stunned);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastHit();
@@ -199,13 +220,17 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastDeath();
 
-	void Death();
+	void SetStunned(bool Stunned);
 
 	void TurnOnAttackCollision();
 	void TurnOffAttackCollision();
 
 	void SetCanAttack();
 	void SetCanAttackTimer();
+
+	void Death();
+
+	void DropItems();
 
 public:
 	FORCEINLINE FString GetHeadBone() const { return HeadBone; }

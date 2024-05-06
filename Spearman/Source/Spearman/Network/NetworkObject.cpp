@@ -20,7 +20,7 @@ AActor* UNetworkObject::GetOwningActor() const
 
 int32 UNetworkObject::GetFunctionCallspace(UFunction* Function, FFrame* Stack)
 {
-	check(GetOuter() != nullptr);
+	check(GetOuter());
 	return GetOuter()->GetFunctionCallspace(Function, Stack);
 }
 
@@ -39,26 +39,21 @@ bool UNetworkObject::CallRemoteFunction(UFunction* Function, void* Parms, FOutPa
 
 void UNetworkObject::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	// Add any Blueprint properties
-	// This is not required if you do not want the class to be "Blueprintable"
-	/*if (const UBlueprintGeneratedClass* BPClass = Cast<UBlueprintGeneratedClass>(GetClass()))
-	{
-		BPClass->GetLifetimeBlueprintReplicationList(OutLifetimeProps);
-	}*/
 }
 
-//void UNetworkObject::Destroy()
-//{ // server only
-//	if (!IsPendingKill())
-//	{
-//		checkf(GetOwningActor()->HasAuthority() == true, TEXT("Destroy:: Object does not have authority to destroy itself!"));
-//
-//		OnDestroyed();
-//		MarkPendingKill();
-//	}
-//}
+void UNetworkObject::Destroy()
+{ // server only, deprecated : IsPendingKill -> IsValid, MarkPendingKill -> MarkAsGarbage
+	if (IsValid(this))
+	{
+		if (GetOwningActor()->HasAuthority())
+		{
+			OnDestroyed();
+			MarkAsGarbage();
+		}
+	}
+}
 
-//void UNetworkObject::OnDestroyed()
-//{
-//	// Notify Owner etc.
-//}
+void UNetworkObject::OnDestroyed()
+{
+	// Notify Owner etc.
+}
