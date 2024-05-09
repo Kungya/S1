@@ -54,13 +54,11 @@ void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if (HasAuthority())
-	{
-		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
-		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap);
-		AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
-	}
+	// triggered for show widget, called in both server and client
+	AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+	AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap);
+	AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
 
 	ShowPickupWidget(false);
 }
@@ -103,7 +101,6 @@ void AWeapon::AttackCollisionCheckByTrace()
 	Params.AddIgnoredActor(GetOwner());
 	
 	GetWorld()->LineTraceMultiByChannel(HitResults, Start, End, ECC_Visibility, Params);
-	
 	if (HitResults.Num() == 0) return;
 
 	for (const FHitResult& HitResult : HitResults)
@@ -118,10 +115,10 @@ void AWeapon::AttackCollisionCheckByTrace()
 			{ // Cast will succeed if BasicMonster, since BasicMonster inherits from WeaponHitInterface
 				WeaponHitInterface->WeaponHit_Implementation(HitResult);
 			}
-			OwnerCharacter = OwnerCharacter == nullptr ? Cast<ACharacter>(GetOwner()) : OwnerCharacter;
+			OwnerCharacter = (OwnerCharacter == nullptr) ? Cast<ACharacter>(GetOwner()) : OwnerCharacter;
 			if (OwnerCharacter)
 			{
-				OwnerController = OwnerController == nullptr ? OwnerCharacter->GetController() : OwnerController;
+				OwnerController = (OwnerController == nullptr) ? OwnerCharacter->GetController() : OwnerController;
 				if (OwnerController)
 				{
 					if (HitResult.GetActor()->IsA<ASpearmanCharacter>())
@@ -161,14 +158,6 @@ void AWeapon::AttackCollisionCheckByTrace()
 							{ // Body Damage
 								bHeadShot = false;
 								FinalDamage = Damage;
-							}
-							if (HasAuthority())
-							{ // TOOD : 간헐적 피격 데미지 처리되지 않는 현상 디버깅
-								UE_LOG(LogTemp, Warning, TEXT("Server Hit BasicMonster Component : %s"), *HitResult.BoneName.ToString());
-							}
-							else
-							{
-								UE_LOG(LogTemp, Warning, TEXT("Client Hit BasicMonster Component : %s"), *HitResult.BoneName.ToString());
 							}
 							const float Dist = FVector::Distance(OwnerCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
 							FVector2D InRange(60.f, 240.f);

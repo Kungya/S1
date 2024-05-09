@@ -34,6 +34,7 @@ protected:
 	virtual void BeginPlay() override;
 	void SetHUDTime();
 	void HUDInit();
+	void SetHUDPing(float DeltaTime);
 	/*
 	* Sync time
 	*/
@@ -84,6 +85,8 @@ private:
 	
 	float HUDHp;
 	float HUDMaxHp;
+
+	float PingCheckTime = 0.f;
 
 public:
 	FORCEINLINE ASpearmanHUD* GetSpearmanHUD() const { return SpearmanHUD;  }

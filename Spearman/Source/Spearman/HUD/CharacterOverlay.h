@@ -46,4 +46,10 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	US1InventoryWidget* InventoryWidget;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* Ping_Text;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* ServerTick_Text;
 };

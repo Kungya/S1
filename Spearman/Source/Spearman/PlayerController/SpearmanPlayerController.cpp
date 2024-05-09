@@ -12,6 +12,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
 #include "Spearman/HUD/S1InventoryWidget.h"
+#include "GameFramework/PlayerState.h"
 
 
 void ASpearmanPlayerController::BeginPlay()
@@ -29,6 +30,7 @@ void ASpearmanPlayerController::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	SetHUDTime();
+	SetHUDPing(DeltaTime);
 
 	DeltaTimeSumforTimeSync += DeltaTime;
 	if (IsLocalController() && DeltaTimeSumforTimeSync > 5.f)
@@ -69,7 +71,7 @@ void ASpearmanPlayerController::ReceivedPlayer()
 
 void ASpearmanPlayerController::SetHUDHp(float Hp, float MaxHp)
 {
-	SpearmanHUD = SpearmanHUD == nullptr ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
+	SpearmanHUD = (SpearmanHUD == nullptr) ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
 
 	if (SpearmanHUD && SpearmanHUD->CharacterOverlay)
 	{
@@ -92,7 +94,7 @@ void ASpearmanPlayerController::SetHUDHp(float Hp, float MaxHp)
 
 void ASpearmanPlayerController::SetHUDMatchCountdown(float CountdownTime)
 {
-	SpearmanHUD = SpearmanHUD == nullptr ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
+	SpearmanHUD = (SpearmanHUD == nullptr) ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
 
 	if (SpearmanHUD && SpearmanHUD->CharacterOverlay)
 	{
@@ -115,7 +117,7 @@ void ASpearmanPlayerController::SetHUDMatchCountdown(float CountdownTime)
 
 void ASpearmanPlayerController::SetHUDNoticeCountdown(float CountdownTime)
 {
-	SpearmanHUD = SpearmanHUD == nullptr ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
+	SpearmanHUD = (SpearmanHUD == nullptr) ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
 
 	if (SpearmanHUD && SpearmanHUD->CharacterOverlayNotice)
 	{
@@ -158,7 +160,7 @@ void ASpearmanPlayerController::SetHUDTime()
 	// TODO : HasAuthority()
 
 	if (CountdownInt != SecondsLeft)
-	{ // 초 단위가 변경되었음
+	{ // true per sec
 		if (MatchState == MatchState::WaitingToStart || MatchState == MatchState::Cooldown)
 		{
 			SetHUDNoticeCountdown(TimeLeft);
@@ -183,6 +185,27 @@ void ASpearmanPlayerController::HUDInit()
 			{
 				SetHUDHp(HUDHp, HUDMaxHp);
 				CharacterOverlay->InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
+			}
+		}
+	}
+}
+
+void ASpearmanPlayerController::SetHUDPing(float DeltaTime)
+{
+	PingCheckTime += DeltaTime;
+	if (PingCheckTime >= 1.f)
+	{
+		PingCheckTime = 0.f;
+
+		if (SpearmanHUD && CharacterOverlay)
+		{
+			PlayerState = (PlayerState == nullptr) ? GetPlayerState<APlayerState>() : PlayerState;
+			if (PlayerState)
+			{
+				const float CurrentPing = PlayerState->GetCompressedPing() * 4.f;
+				// UE_LOG(LogTemp, Warning, TEXT("Ping : %d ms"), FMath::FloorToInt(CurrentPing));
+				FString PingText = FString::Printf(TEXT("%d ms"), FMath::FloorToInt(CurrentPing));
+				CharacterOverlay->Ping_Text->SetText(FText::FromString(PingText));
 			}
 		}
 	}
@@ -249,6 +272,8 @@ void ASpearmanPlayerController::HandleCooldown()
 
 void ASpearmanPlayerController::ShowInventoryWidget()
 {
+	SpearmanHUD = (SpearmanHUD == nullptr) ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
+
 	if (SpearmanHUD && CharacterOverlay)
 	{
 		US1InventoryWidget* InventoryWidget = SpearmanHUD->CharacterOverlay->InventoryWidget;
