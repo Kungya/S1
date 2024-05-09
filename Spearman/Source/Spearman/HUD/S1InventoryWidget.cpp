@@ -11,7 +11,7 @@ void US1InventoryWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	bIsFocusable = true;
+	bIsFocusable = true;  
 	SetKeyboardFocus();
 }
 

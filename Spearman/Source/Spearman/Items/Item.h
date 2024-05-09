@@ -27,15 +27,21 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual bool ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Item")
+	/*UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SetStaticMesh();*/
+
+private:
+
+	UPROPERTY(VisibleAnywhere)
+	USceneComponent* SceneComponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "Item")
 	UStaticMeshComponent* ItemMesh;
 
 	UPROPERTY(Replicated, VisibleAnywhere, Category = "Item")
 	UItemInstance* ItemInstance = nullptr;
 
-private:
-
-
 public:	
 	FORCEINLINE UItemInstance* GetItemInstance() const { return ItemInstance; }
+	FORCEINLINE UStaticMeshComponent* GetItemMesh() const { return ItemMesh; }
 };

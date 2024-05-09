@@ -12,11 +12,11 @@ void US1GameInstance::Init()
 {
 	Super::Init();
 
-	UE_LOG(LogTemp, Warning, TEXT("GameInstancem %d"), GetItemData(102)->Weight);
+
+	ItemIds = { 101, 102, 201, 202, 203 };
 }
 
 FItemData* US1GameInstance::GetItemData(int32 Id)
 {
-	// ContextStr : 세밀하게 찾을 때
 	return ItemDataTable->FindRow<FItemData>(*FString::FromInt(Id), TEXT(""));
 }

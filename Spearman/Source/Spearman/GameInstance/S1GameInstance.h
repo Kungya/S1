@@ -14,23 +14,23 @@ struct FItemData : public FTableRowBase
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	int32 Id;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	int32 Cost;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	int32 Weight;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	// Idx in inventory widget
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
 	int32 InventoryIdx;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* Texture;
-
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemData")
+	int32 ItemDataIdx;
 };
+
 /**
  * 
  */
@@ -50,4 +50,21 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	class UDataTable* ItemDataTable;
+
+	/* Mapping [Random Number] -> [DataTable Idx] */
+	UPROPERTY()
+	TArray<int32> ItemIds;
+
+	/* set in BP */
+	UPROPERTY(EditAnywhere, Category = "Item Data")
+	TArray<UTexture2D*> TextureAssets;
+	
+	/* set in BP */
+	UPROPERTY(EditAnywhere, Category = "Item Data")
+	TArray<UStaticMesh*> StaticMeshAssets;
+
+public:
+	FORCEINLINE const TArray<int32>& GetItemIds() const { return ItemIds; }
+	FORCEINLINE const TArray<UTexture2D*>& GetTextureAssets() const { return TextureAssets; }
+	FORCEINLINE const TArray<UStaticMesh*>& GetStaticMeshAssets() const { return StaticMeshAssets; }
 };

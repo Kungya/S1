@@ -193,6 +193,9 @@ private:
 	*/
 
 	UPROPERTY(EditAnywhere, Category = "Drop")
+	TSubclassOf<AItem> ItemClass;
+	
+	/*UPROPERTY(EditAnywhere, Category = "Drop")
 	TSubclassOf<AItem> Item1Class;
 
 	UPROPERTY(EditAnywhere, Category = "Drop")
@@ -205,7 +208,7 @@ private:
 	TSubclassOf<AItem> Item4Class;
 
 	UPROPERTY(EditAnywhere, Category = "Drop")
-	TSubclassOf<AItem> Item5Class;
+	TSubclassOf<AItem> Item5Class;*/
 public:
 	virtual void WeaponHit_Implementation(FHitResult HitResult) override;
 

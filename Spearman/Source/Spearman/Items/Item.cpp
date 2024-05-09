@@ -11,8 +11,11 @@ AItem::AItem()
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 
+	SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Scene"));
+	SetRootComponent(SceneComponent);
+
 	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
-	RootComponent = ItemMesh;
+	ItemMesh->SetupAttachment(GetRootComponent());
 }
 
 void AItem::BeginPlay()
@@ -20,7 +23,7 @@ void AItem::BeginPlay()
 	Super::BeginPlay();
 
 	if (!ItemInstance && HasAuthority())
-	{ // default ItemInstance
+	{ // default ItemInstance for test
 		ItemInstance = NewObject<UItemInstance>(this);
 		ItemInstance->Init(3);
 	}
@@ -42,17 +45,27 @@ bool AItem::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FRepli
 	return bWroteSomething;
 }
 
+//void AItem::Multicast_SetStaticMesh_Implementaiton()
+//{
+//	ItemMesh->SetStaticMesh()
+//}
+
 void AItem::Init(int32 num)
-{ // server only
+{ // Server Only
 	if (ItemInstance == nullptr)
 	{
 		ItemInstance = NewObject<UItemInstance>(this);
 		ItemInstance->Init(num);
+		//UStaticMesh* StaticMesh = ItemInstance->GetStaticMesh();
+		//if (StaticMesh)
+		//{ // 서버에서만 설정을해서 안보는거였음 -> 모든 클라와 서버에서 StaticMesh Array를 들고 있다가, iDX만 넘겨줘서 그걸로 설정하면 어떨까
+		//	ItemMesh->SetStaticMesh(StaticMesh);
+		//}
 	}
 }
 
 void AItem::Interact()
-{ // must be called in server only (server RPC in spearmancharacter)
+{ // Server Only
 
 	Destroy();
 }

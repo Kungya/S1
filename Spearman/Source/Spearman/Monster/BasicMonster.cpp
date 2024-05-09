@@ -128,7 +128,7 @@ void ABasicMonster::WeaponHit_Implementation(FHitResult HitResult)
 }
 
 void ABasicMonster::OnAttacked(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
-{ // server only
+{ // Server Only
 	if (bDying) return;
 
 	if (BasicMonsterAIController)
@@ -153,7 +153,6 @@ void ABasicMonster::OnAttacked(AActor* DamagedActor, float Damage, const UDamage
 	}
 	else
 	{ // Hit
-		// 랜덤 값에 따라 피격이 실행되는 경우는 랜덤 결과를 같이 보내거나 NetMulticast를 써서 동기화하는 수 밖에...
 		const float Stunned = FMath::FRandRange(0.f, 1.f);
 		if (Stunned <= StunChance)
 		{
@@ -240,8 +239,9 @@ void ABasicMonster::Death()
 		BasicMonsterAIController->StopMovement();
 	}
 
-	DropItems();
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	DropItems();
 	MulticastDeath();
 }
 
@@ -249,51 +249,60 @@ void ABasicMonster::DropItems()
 { // Server Only
 	const int32 RandomNum = FMath::RandRange(1, 5);
 
-	if (RandomNum == 1)
+	AItem* ItemToSpawn = GetWorld()->SpawnActorDeferred<AItem>(ItemClass, GetActorTransform());
+	if (ItemToSpawn)
 	{
-		AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item1Class, GetActorTransform());
-		if (Item)
-		{
-			Item->Init(RandomNum);
-			Item->FinishSpawning(GetActorTransform());
-		}
+		ItemToSpawn->Init(RandomNum);
+		ItemToSpawn->FinishSpawning(GetActorTransform());
 	}
-	else if (RandomNum == 2)
-	{
-		AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item2Class, GetActorTransform());
-		if (Item)
-		{
-			Item->Init(RandomNum);
-			Item->FinishSpawning(GetActorTransform());
-		}
-	}
-	else if (RandomNum == 3)
-	{
-		AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item3Class, GetActorTransform());
-		if (Item)
-		{
-			Item->Init(RandomNum);
-			Item->FinishSpawning(GetActorTransform());
-		}
-	}
-	else if (RandomNum == 4)
-	{
-		AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item4Class, GetActorTransform());
-		if (Item)
-		{
-			Item->Init(RandomNum);
-			Item->FinishSpawning(GetActorTransform());
-		}
-	}
-	else if (RandomNum == 5)
-	{
-		AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item5Class, GetActorTransform());
-		if (Item)
-		{
-			Item->Init(RandomNum);
-			Item->FinishSpawning(GetActorTransform());
-		}
-	}
+
+
+	// Deprecated
+	//if (RandomNum == 1)
+	//{
+	//	AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item1Class, GetActorTransform());
+	//	if (Item)
+	//	{
+	//		Item->Init(RandomNum);
+	//		Item->FinishSpawning(GetActorTransform());
+	//	}
+	//}
+	//else if (RandomNum == 2)
+	//{
+	//	AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item2Class, GetActorTransform());
+	//	if (Item)
+	//	{
+	//		Item->Init(RandomNum);
+	//		Item->FinishSpawning(GetActorTransform());
+	//	}
+	//}
+	//else if (RandomNum == 3)
+	//{
+	//	AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item3Class, GetActorTransform());
+	//	if (Item)
+	//	{
+	//		Item->Init(RandomNum);
+	//		Item->FinishSpawning(GetActorTransform());
+	//	}
+	//}
+	//else if (RandomNum == 4)
+	//{
+	//	AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item4Class, GetActorTransform());
+	//	if (Item)
+	//	{
+	//		Item->Init(RandomNum);
+	//		Item->FinishSpawning(GetActorTransform());
+	//	}
+	//}
+	//else if (RandomNum == 5)
+	//{
+	//	AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item5Class, GetActorTransform());
+	//	if (Item)
+	//	{
+	//		Item->Init(RandomNum);
+	//		Item->FinishSpawning(GetActorTransform());
+	//	}
+	//}
 }
 
 void ABasicMonster::AggroSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

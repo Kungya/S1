@@ -53,7 +53,10 @@ void UInventoryComponent::AddItem(UItemInstance* InItemInstance)
 	
 	// change Outer in (Item -> Inventory) for Object Replication
 	InItemInstance->Rename(nullptr, GetOwner());
-	InItemInstance->InventoryIdx = InventoryArray.Add(InItemInstance);
+	const int32 Idx = InventoryArray.Add(InItemInstance);
+	InItemInstance->InventoryIdx = Idx;
+
+	UE_LOG(LogTemp, Warning, TEXT("Inventory Size : %d"), InventoryArray.Num());
 
 	if (SpearmanCharacter && SpearmanCharacter->IsLocallyControlled())
 	{
@@ -70,6 +73,7 @@ void UInventoryComponent::UpdateHUDInventory()
 		if (SlotsWidget)
 		{
 			SlotsWidget->UpdateItemInfoWidget();
+			UE_LOG(LogTemp, Warning, TEXT("UpdateHUDInventory"));
 		}
 	}
 }

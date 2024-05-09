@@ -28,11 +28,8 @@ void US1InventorySlotsWidget::NativeConstruct()
 	InitItemSlotWidget();
 	
 	ItemInfoWidgets.SetNum(Y_SIZE * X_SIZE);
-	/*for (const US1InventoryItemInfoWidget* ItemInfoWidget : ItemInfoWidgets)
-	{
-		ItemInfoWidget->
-	}*/
 
+	/* If default items exist when begin play */
 	const TArray<UItemInstance*>& InventoryArray = Inventory->GetInventoryArray();
 	for (int32 i = 0; i < InventoryArray.Num(); i++)
 	{  // TODO : UItemInstance 내부에서 인벤토리 어느 위치에 아이템을 배치할지 인덱스를 들고 있는게 나을수도 있다
@@ -91,7 +88,7 @@ bool US1InventorySlotsWidget::NativeOnDrop(const FGeometry& InGeometry, const FD
 			{ // Swap if ToItemSlot is valid
 				ToItemInstance = ToItemInfoWidget->GetItemInstance();
 			}
-
+			/* Swap */
 			OnInventoryItemInfoChanged(DragDrop->FromItemSlotPos, ToItemInstance);
 			OnInventoryItemInfoChanged(ToItemSlotPos, DragDrop->ItemInstance);
 		}

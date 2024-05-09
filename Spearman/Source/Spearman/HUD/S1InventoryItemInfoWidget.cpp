@@ -21,7 +21,7 @@ void US1InventoryItemInfoWidget::Init(US1InventorySlotsWidget* InSlotsWidget, UI
 	SlotsWidget = InSlotsWidget;
 	ItemInstance = InItemInstance;
 	ItemCount = InItemCount;
-	Icon_Image->SetBrushFromTexture(InItemInstance->Icon);
+	Icon_Image->SetBrushFromTexture(InItemInstance->Icon, true);
 
 	// TODO : ItemInstance, Count가 바뀌면 -> Icon_Image, Hover_Image, Count_Text도 바꿔줘야한다
 	// Icon_Image, Hover_Image는 ItemInstance
