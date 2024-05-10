@@ -118,11 +118,11 @@ void ABasicMonster::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-void ABasicMonster::WeaponHit_Implementation(FHitResult HitResult)
+void ABasicMonster::WeaponHit_Implementation(FVector_NetQuantize HitPoint)
 {
 	if (HitParticles)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, HitResult.Location, FRotator(0.f), true);
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, HitPoint, FRotator(0.f), true);
 	}
 	ShowHpBar();
 }

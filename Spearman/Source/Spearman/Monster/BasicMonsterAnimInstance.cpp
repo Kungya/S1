@@ -31,7 +31,6 @@ void UBasicMonsterAnimInstance::AnimNotify_StunFinish()
 	if (BasicMonster && BasicMonster->HasAuthority())
 	{
 		BasicMonster->SetStunned(false);
-		UE_LOG(LogTemp, Warning, TEXT("Stun Finish"));
 	}
 }
 
@@ -55,7 +54,6 @@ void UBasicMonsterAnimInstance::AnimNotify_EndDeath()
 {
 	if (BasicMonster && BasicMonster->HasAuthority())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Monster Destroy"));
 		BasicMonster->Destroy();
 	}
 }

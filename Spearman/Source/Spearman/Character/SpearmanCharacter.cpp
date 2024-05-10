@@ -249,11 +249,11 @@ void ASpearmanCharacter::OnRep_Hp(float LastHp)
 	}
 }
 
-void ASpearmanCharacter::WeaponHit_Implementation(FHitResult HitResult)
+void ASpearmanCharacter::WeaponHit_Implementation(FVector_NetQuantize HitPoint)
 {
 	if (HitParticles)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, HitResult.Location, FRotator(0.f), true);
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, HitPoint, FRotator(0.f), true);
 	}
 
 	if (!IsLocallyControlled())

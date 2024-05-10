@@ -51,5 +51,8 @@ public:
 	UTextBlock* Ping_Text;
 
 	UPROPERTY(meta = (BindWidget))
+	UTextBlock* ClientTick_Text;
+
+	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ServerTick_Text;
 };

@@ -24,5 +24,5 @@ class SPEARMAN_API IWeaponHitInterface
 public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	void WeaponHit(FHitResult HitResult);
+	void WeaponHit(FVector_NetQuantize HitPoint);
 };

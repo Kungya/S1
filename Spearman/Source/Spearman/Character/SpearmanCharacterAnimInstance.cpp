@@ -69,7 +69,7 @@ void USpearmanCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 
 void USpearmanCharacterAnimInstance::AnimNotify_AttackCollisionOn()
 {
-	if (EquippedWeapon)
+	if (EquippedWeapon && EquippedWeapon->HasAuthority())
 	{
 		EquippedWeapon->TurnOnAttackCollision();
 	}
@@ -77,7 +77,7 @@ void USpearmanCharacterAnimInstance::AnimNotify_AttackCollisionOn()
 
 void USpearmanCharacterAnimInstance::AnimNotify_AttackCollisionOff()
 {
-	if (EquippedWeapon)
+	if (EquippedWeapon && EquippedWeapon->HasAuthority())
 	{
 		EquippedWeapon->TurnOffAttackCollision();
 	}

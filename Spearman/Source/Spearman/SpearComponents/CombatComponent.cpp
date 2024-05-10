@@ -43,13 +43,11 @@ void UCombatComponent::SetHUDCrosshairs(float DeltaTime)
 {
 	if (Character == nullptr || Character->Controller == nullptr) return;
 
-	if (Controller == nullptr)
-		Controller = Cast<ASpearmanPlayerController>(Character->Controller);
+	Controller = (Controller == nullptr) ? Cast<ASpearmanPlayerController>(Character->Controller) : Controller;
 
 	if (Controller)
 	{
-		if (HUD == nullptr)
-			HUD = Cast<ASpearmanHUD>(Controller->GetHUD());
+		HUD = (HUD == nullptr) ? Cast<ASpearmanHUD>(Controller->GetHUD()) : HUD;
 
 		if (HUD)
 		{
@@ -64,7 +62,7 @@ void UCombatComponent::SetHUDCrosshairs(float DeltaTime)
 }
 
 void UCombatComponent::DashButtonPressed_Implementation(const FVector& DashDirection)
-{ // ServerOnly
+{ // Server Only
 	// TODO : SetCombatState : SuperArmor, Timer Cooldown
 	if (DashDirection == FVector::ZeroVector || Character->GetMovementComponent()->IsFalling()) return;
 	if (bCanDash == false) return;
@@ -78,7 +76,7 @@ void UCombatComponent::DashButtonPressed_Implementation(const FVector& DashDirec
 }
 
 void UCombatComponent::Dash(const FVector& DashDirection)
-{ // ServerOnly
+{ // Server Only
 	bCanDash = false;
 	Character->LaunchCharacter(DashDirection * 4500.f, true, true);
 	Character->GetWorldTimerManager().SetTimer(DashTimer, this, &UCombatComponent::SetDashCooldown, 2.f, false);

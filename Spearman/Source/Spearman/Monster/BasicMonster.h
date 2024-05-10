@@ -210,7 +210,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Drop")
 	TSubclassOf<AItem> Item5Class;*/
 public:
-	virtual void WeaponHit_Implementation(FHitResult HitResult) override;
+	virtual void WeaponHit_Implementation(FVector_NetQuantize HitPoint) override;
 
 	void ShowHitDamage(int32 Damage, FVector HitLocation, bool bHeadShot);
 

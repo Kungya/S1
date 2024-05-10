@@ -21,7 +21,7 @@ void ASpearmanPlayerController::BeginPlay()
 
 	SpearmanHUD = Cast<ASpearmanHUD>(GetHUD());
 
-	// Client should get MatchState from Server ASAP.
+	// Client should get MatchState from Server asap.
 	ServerRequestMatchState();
 }
 
@@ -29,8 +29,16 @@ void ASpearmanPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	SetHUDTime();
-	SetHUDPing(DeltaTime);
+	LocalTickRate = 1.f / DeltaTime;
+
+	if (IsLocalController())
+	{
+		SetHUDTickRate(LocalTickRate, ServerTickRate);
+		SetHUDTime();
+		SetHUDPing(DeltaTime);
+
+		HUDInit();
+	}
 
 	DeltaTimeSumforTimeSync += DeltaTime;
 	if (IsLocalController() && DeltaTimeSumforTimeSync > 5.f)
@@ -38,8 +46,6 @@ void ASpearmanPlayerController::Tick(float DeltaTime)
 		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
 		DeltaTimeSumforTimeSync = 0.f;
 	}
-
-	HUDInit();
 }
 
 void ASpearmanPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -203,7 +209,6 @@ void ASpearmanPlayerController::SetHUDPing(float DeltaTime)
 			if (PlayerState)
 			{
 				const float CurrentPing = PlayerState->GetCompressedPing() * 4.f;
-				// UE_LOG(LogTemp, Warning, TEXT("Ping : %d ms"), FMath::FloorToInt(CurrentPing));
 				FString PingText = FString::Printf(TEXT("%d ms"), FMath::FloorToInt(CurrentPing));
 				CharacterOverlay->Ping_Text->SetText(FText::FromString(PingText));
 			}
@@ -211,17 +216,30 @@ void ASpearmanPlayerController::SetHUDPing(float DeltaTime)
 	}
 }
 
-void ASpearmanPlayerController::ServerRequestServerTime_Implementation(float ClientRequestTime)
-{ // server only
-	const float ServerTime = GetWorld()->GetTimeSeconds();
-	ClientReportServerTime(ClientRequestTime, ServerTime);
+void ASpearmanPlayerController::SetHUDTickRate(float ClientTick, float ServerTick)
+{
+	SpearmanHUD = (SpearmanHUD == nullptr) ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
+	if (SpearmanHUD && CharacterOverlay)
+	{
+		FString ClientTickText = FString::Printf(TEXT("%d"), FMath::FloorToInt(ClientTick));
+		CharacterOverlay->ClientTick_Text->SetText(FText::FromString(ClientTickText));
+		FString ServerTickText = FString::Printf(TEXT("%d"), FMath::FloorToInt(ServerTick));
+		CharacterOverlay->ServerTick_Text->SetText(FText::FromString(ServerTickText));
+	}
 }
 
-void ASpearmanPlayerController::ClientReportServerTime_Implementation(float ClientRequestTime, float ServerReportTime)
+void ASpearmanPlayerController::ServerRequestServerTime_Implementation(float ClientRequestTime)
+{ /* Server Only */
+	const float ServerTime = GetWorld()->GetTimeSeconds();
+	ClientReportServerTime(ClientRequestTime, ServerTime, LocalTickRate);
+}
+
+void ASpearmanPlayerController::ClientReportServerTime_Implementation(float ClientRequestTime, float ServerReportTime, float ServerReportTickRate)
 { // CurrentServerTime = ServerTime + 1/2RTT;
 	const float RoundTripTime = GetWorld()->GetTimeSeconds() - ClientRequestTime;
 	const float CurrentServerTime = ServerReportTime + (0.5f * RoundTripTime);
 	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
+	ServerTickRate = ServerReportTickRate;
 }
 
 float ASpearmanPlayerController::GetServerTime()

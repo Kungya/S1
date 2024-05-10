@@ -35,6 +35,9 @@ protected:
 	void SetHUDTime();
 	void HUDInit();
 	void SetHUDPing(float DeltaTime);
+	
+	void SetHUDTickRate(float ClientTick, float ServerTick);
+
 	/*
 	* Sync time
 	*/
@@ -43,7 +46,7 @@ protected:
 	void ServerRequestServerTime(float ClientRequestTime);
 
 	UFUNCTION(Client, Reliable)
-	void ClientReportServerTime(float ClientRequestTime, float ServerReportTime);
+	void ClientReportServerTime(float ClientRequestTime, float ServerReportTime, float ServerReportTickRate);
 
 	float ClientServerDelta = 0.f;
 
@@ -87,6 +90,10 @@ private:
 	float HUDMaxHp;
 
 	float PingCheckTime = 0.f;
+
+	float LocalTickRate = 0.f;
+	float ServerTickRate = 0.f;
+
 
 public:
 	FORCEINLINE ASpearmanHUD* GetSpearmanHUD() const { return SpearmanHUD;  }
