@@ -221,7 +221,7 @@ void AWeapon::ShowPickupWidget(bool bShowPickupWidget)
 }
 
 void AWeapon::Dropped()
-{
+{ /* Server Only, Called in SpearmanCharacter::Death() */
 	SetWeaponState(EWeaponState::EWS_Dropped);
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 	WeaponMesh->DetachFromComponent(DetachRules);
@@ -229,13 +229,13 @@ void AWeapon::Dropped()
 }
 
 void AWeapon::TurnOnAttackCollision()
-{
+{ /* Server Only */
 	HitSet.Empty();
 	bAttackCollisionTrace = true;
 }
 
 void AWeapon::TurnOffAttackCollision()
-{
+{ /* Server Only */
 	HitSet.Empty();
 	bAttackCollisionTrace = false;
 }

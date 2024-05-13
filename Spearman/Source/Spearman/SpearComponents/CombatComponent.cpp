@@ -62,7 +62,7 @@ void UCombatComponent::SetHUDCrosshairs(float DeltaTime)
 }
 
 void UCombatComponent::DashButtonPressed_Implementation(const FVector& DashDirection)
-{ // Server Only
+{ /* Server Only */
 	// TODO : SetCombatState : SuperArmor, Timer Cooldown
 	if (DashDirection == FVector::ZeroVector || Character->GetMovementComponent()->IsFalling()) return;
 	if (bCanDash == false) return;
@@ -76,7 +76,7 @@ void UCombatComponent::DashButtonPressed_Implementation(const FVector& DashDirec
 }
 
 void UCombatComponent::Dash(const FVector& DashDirection)
-{ // Server Only
+{ /* Server Only */
 	bCanDash = false;
 	Character->LaunchCharacter(DashDirection * 4500.f, true, true);
 	Character->GetWorldTimerManager().SetTimer(DashTimer, this, &UCombatComponent::SetDashCooldown, 2.f, false);
@@ -105,7 +105,7 @@ void UCombatComponent::SetDashCooldown()
 }
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
-{ // in server
+{ /* Server Only */
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
 
 	EquippedWeapon = WeaponToEquip;
@@ -122,7 +122,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 }
 
 void UCombatComponent::OnRep_EquippedWeapon()
-{ // in client
+{ /* Client Only */
 	if (EquippedWeapon && Character)
 	{
 		EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);

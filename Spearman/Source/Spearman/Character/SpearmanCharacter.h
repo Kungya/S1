@@ -8,6 +8,20 @@
 #include "Spearman/Interfaces/WeaponHitInterface.h"
 #include "SpearmanCharacter.generated.h"
 
+class USpringArmComponent;
+class UCameraComponent;
+class AWeapon;
+class UTexture2D;
+class UWidgetComponent;
+class UHitDamageWidget;
+class UHpBarWidget;
+class UCombatComponent;
+class UBuffComponent;
+class UInventoryComponent;
+class UAnimMontage;
+class ASpearmanPlayerController;
+class UParticleSystem;
+
 UCLASS()
 class SPEARMAN_API ASpearmanCharacter : public ACharacter, public IWeaponHitInterface
 {
@@ -71,14 +85,14 @@ protected:
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
-	class USpringArmComponent* CameraBoom;
+	USpringArmComponent* CameraBoom;
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
-	class UCameraComponent* FollowCamera;
+	UCameraComponent* FollowCamera;
 
 	// 땅에 떨어진 무기와 겹쳤을 때의 Weapon
 	UPROPERTY (ReplicatedUsing = OnRep_OverlappingWeapon)
-	class AWeapon* OverlappingWeapon;
+	AWeapon* OverlappingWeapon;
 
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
@@ -88,7 +102,7 @@ private:
 	*/
 
 	UPROPERTY(EditAnywhere, Category = Crosshair)
-	class UTexture2D* CrosshairCircle;
+	UTexture2D* CrosshairCircle;
 
 	UPROPERTY(EditAnywhere, Category = Crosshair)
 	UTexture2D* CrosshairDot;
@@ -98,19 +112,19 @@ private:
 	*/
 
 	UPROPERTY(VisibleAnywhere, Category = Widget)
-	class UWidgetComponent* HitDamage;
+	UWidgetComponent* HitDamage;
 
 	UPROPERTY(VisibleAnywhere, Category = Widget)
-	class UHitDamageWidget* HitDamageWidget;
+	UHitDamageWidget* HitDamageWidget;
 
 	FTimerHandle HitDamageTimerHandle;
 
 	// Overhead HpBar; on Enemy
 	UPROPERTY(VisibleAnywhere, Category = Widget)
-	class UWidgetComponent* HpBar;
+	UWidgetComponent* HpBar;
 
 	UPROPERTY(VisibleAnywhere, Category = Widget)
-	class UHpBarWidget* HpBarWidget;
+	UHpBarWidget* HpBarWidget;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	float HpBarDisplayTime = 4.f;
@@ -122,13 +136,13 @@ private:
 	*/
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UCombatComponent* Combat;
+	UCombatComponent* Combat;
 
 	UPROPERTY(VisibleAnywhere)
-	class UBuffComponent* Buff;
+	UBuffComponent* Buff;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UInventoryComponent* Inventory;
+	UInventoryComponent* Inventory;
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed();
@@ -148,7 +162,7 @@ private:
 	ETurnInPlace TIPState;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
-	class UAnimMontage* SpearAttackMontage;
+	UAnimMontage* SpearAttackMontage;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* HitReactMontage;
@@ -177,7 +191,7 @@ private:
 	FString HeadBone;
 
 	UPROPERTY()
-	class ASpearmanPlayerController* SpearmanPlayerController;
+	ASpearmanPlayerController* SpearmanPlayerController;
 
 	bool bDeath = false;
 
@@ -189,7 +203,7 @@ private:
 	void DeathTimerFinished();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	class UParticleSystem* HitParticles;
+	UParticleSystem* HitParticles;
 
 
 public:

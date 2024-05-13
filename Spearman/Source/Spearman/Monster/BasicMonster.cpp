@@ -76,6 +76,8 @@ void ABasicMonster::BeginPlay()
 
 	if (HasAuthority())
 	{
+		OnTakeAnyDamage.AddDynamic(this, &ABasicMonster::OnAttacked);
+
 		AggroSphere->OnComponentBeginOverlap.AddDynamic(this, &ABasicMonster::AggroSphereBeginOverlap);
 		CombatRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &ABasicMonster::CombatRangeBeginOverlap);
 		CombatRangeSphere->OnComponentEndOverlap.AddDynamic(this, &ABasicMonster::CombatRangeEndOverlap);
@@ -97,17 +99,11 @@ void ABasicMonster::BeginPlay()
 			BasicMonsterAIController->RunBehaviorTree(BehaviorTree);
 		}
 	}
-
-	if (HasAuthority())
-	{
-		OnTakeAnyDamage.AddDynamic(this, &ABasicMonster::OnAttacked);
-	}
 }
 
 void ABasicMonster::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 	
 	UpdateHitDamages();
 }
@@ -144,7 +140,6 @@ void ABasicMonster::OnAttacked(AActor* DamagedActor, float Damage, const UDamage
 	}
 
 	Hp = FMath::Clamp(Hp - Damage, 0.f, MaxHp);
-	UE_LOG(LogTemp, Warning, TEXT("Hp : %f"), Hp);
 	if (FMath::IsNearlyZero(Hp))
 	{ // Death
 		// TODO : GameMode, SpearmanCharacter->GameState?
@@ -383,7 +378,7 @@ void ABasicMonster::MulticastDeath_Implementation()
 	}
 }
 
-void ABasicMonster::OnRep_Hp()
+void ABasicMonster::OnRep_Hp(float LastHp)
 { // Client Only
 	HpBar->SetHpBar(GetHpRatio());
 	if (FMath::IsNearlyZero(Hp))

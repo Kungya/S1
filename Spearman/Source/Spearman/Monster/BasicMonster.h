@@ -7,8 +7,15 @@
 #include "Spearman/Interfaces/WeaponHitInterface.h"
 #include "BasicMonster.generated.h"
 
+class UParticleSystem;
+class UWidgetComponent;
 class UHitDamageWidget;
+class UHpBarWidget;
 class AItem;
+class UBehaviorTree;
+class ABasicMonsterAIController;
+class USphereComponent;
+class UBoxComponent;
 
 UCLASS()
 class SPEARMAN_API ABasicMonster : public ACharacter, public IWeaponHitInterface
@@ -79,7 +86,7 @@ private:
 	*/
 
 	UPROPERTY(EditAnywhere, Category = Combat)
-	class UParticleSystem* HitParticles;
+	UParticleSystem* HitParticles;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	float MaxHp = 75.f;
@@ -88,7 +95,7 @@ private:
 	float Hp = 75.f;
 
 	UFUNCTION()
-	void OnRep_Hp();
+	void OnRep_Hp(float LastHp);
 	
 	UPROPERTY(EditAnywhere, Category = Combat)
 	FString HeadBone;
@@ -98,7 +105,7 @@ private:
 	*/
 
 	UPROPERTY(VisibleAnywhere, Category = Widget)
-	class UWidgetComponent* HitDamageWidget;
+	UWidgetComponent* HitDamageWidget;
 
 	UPROPERTY(VisibleAnywhere, Category = Widget)
 	UHitDamageWidget* HitDamage;
@@ -107,7 +114,7 @@ private:
 	UWidgetComponent* HpBarWidget;
 
 	UPROPERTY(VisibleAnywhere, Category = Widget)
-	class UHpBarWidget* HpBar;
+	UHpBarWidget* HpBar;
 
 	// Map to store HitDamage Widgets and locations
 	UPROPERTY(VisibleAnywhere, Category = Widget)
@@ -139,7 +146,7 @@ private:
 	*/
 
 	UPROPERTY(EditAnywhere, Category = "Behavior Tree")
-	class UBehaviorTree* BehaviorTree;
+	UBehaviorTree* BehaviorTree;
 
 	// Point for the monster to move to, in local space
 	UPROPERTY(EditAnywhere, Category = "Behavior Tree", meta = (AllowPrivateAccess = "true", MakeEditWidget = "true"))
@@ -148,14 +155,14 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Behavior Tree", meta = (AllowPrivateAccess = "true", MakeEditWidget = "true"))
 	FVector PatrolPoint2;
 
-	class ABasicMonsterAIController* BasicMonsterAIController;
+	ABasicMonsterAIController* BasicMonsterAIController;
 
 	/*
 	* Combat
 	*/
 	
 	UPROPERTY(EditAnywhere, Category = "Combat")
-	class USphereComponent* AggroSphere;
+	USphereComponent* AggroSphere;
 
 	UPROPERTY(VisibleAnywhere, Category = "Combat")
 	bool bStunned = false;
@@ -170,7 +177,7 @@ private:
 	USphereComponent* CombatRangeSphere;
 
 	UPROPERTY(VisibleAnywhere, Category = "Combat")
-	class UBoxComponent* AttackCollisionBox;
+	UBoxComponent* AttackCollisionBox;
 
 	UPROPERTY()
 	TSet<AActor*> HitSet;
@@ -195,20 +202,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Drop")
 	TSubclassOf<AItem> ItemClass;
 	
-	/*UPROPERTY(EditAnywhere, Category = "Drop")
-	TSubclassOf<AItem> Item1Class;
 
-	UPROPERTY(EditAnywhere, Category = "Drop")
-	TSubclassOf<AItem> Item2Class;
-
-	UPROPERTY(EditAnywhere, Category = "Drop")
-	TSubclassOf<AItem> Item3Class;
-
-	UPROPERTY(EditAnywhere, Category = "Drop")
-	TSubclassOf<AItem> Item4Class;
-
-	UPROPERTY(EditAnywhere, Category = "Drop")
-	TSubclassOf<AItem> Item5Class;*/
 public:
 	virtual void WeaponHit_Implementation(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot) override;
 

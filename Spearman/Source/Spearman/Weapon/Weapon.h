@@ -6,6 +6,10 @@
 #include "GameFramework/Actor.h"
 #include "Weapon.generated.h"
 
+class UBoxComponent;
+class USphereComponent;
+class UWidgetComponent;
+
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
 {
@@ -71,10 +75,10 @@ private:
 	USkeletalMeshComponent* WeaponMesh;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
-	class USphereComponent* AreaSphere;
+	USphereComponent* AreaSphere;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
-	class UBoxComponent* AttackCollisionBox;
+	UBoxComponent* AttackCollisionBox;
 	
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	UBoxComponent* TraceStartBox;
@@ -89,7 +93,7 @@ private:
 	void OnRep_WeaponState();
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
-	class UWidgetComponent* PickupWidget;
+	UWidgetComponent* PickupWidget;
 
 	bool bAttackCollisionTrace = false;
 

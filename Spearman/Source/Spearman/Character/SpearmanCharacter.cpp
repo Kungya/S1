@@ -244,7 +244,7 @@ void ASpearmanCharacter::OnRep_Hp(float LastHp)
 		HideHpBar();
 	}
 	else if (Hp < LastHp)
-	{ // 이전 체력보다 감소했을 때만 피격 애니메이션 -> 반대인 회복의 경우 싫행하지 않음
+	{ /* Play HitReactMontage when Hp is only decreaseed */
 		PlayHitReactMontage();
 	}
 }
@@ -308,7 +308,7 @@ void ASpearmanCharacter::OnRep_ReplicatedMovement()
 }
 
 void ASpearmanCharacter::Death()
-{ // server only
+{ /* Server Only */
 	if (Combat && Combat->EquippedWeapon)
 	{
 		Combat->EquippedWeapon->Dropped();
