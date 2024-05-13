@@ -25,13 +25,13 @@ ABasicMonster::ABasicMonster()
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
-	HitDamage = CreateDefaultSubobject<UWidgetComponent>(TEXT("HitDamageWidget"));
-	HitDamage->SetupAttachment(GetMesh());
+	HitDamageWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HitDamageWidget"));
+	HitDamageWidget->SetupAttachment(GetMesh());
 
-	HpBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("HpBarWidget"));
-	HpBar->SetupAttachment(GetMesh());
-	HpBar->SetWidgetSpace(EWidgetSpace::Screen);
-	HpBar->SetDrawSize(FVector2D(125.f, 20.f));
+	HpBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HpBarWidget"));
+	HpBarWidget->SetupAttachment(GetMesh());
+	HpBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	HpBarWidget->SetDrawSize(FVector2D(125.f, 20.f));
 
 	AggroSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AggroSphere"));
 	AggroSphere->SetupAttachment(GetRootComponent());
@@ -58,25 +58,24 @@ void ABasicMonster::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	HitDamage->InitWidget();
-	HitDamageWidget = Cast<UHitDamageWidget>(HitDamage->GetUserWidgetObject());
+	HitDamageWidget->InitWidget();
+	HitDamage = Cast<UHitDamageWidget>(HitDamageWidget->GetUserWidgetObject());
 
-	HpBar->InitWidget();
-	HpBarWidget = Cast<UHpBarWidget>(HpBar->GetUserWidgetObject());
+	HpBarWidget->InitWidget();
+	HpBar = Cast<UHpBarWidget>(HpBarWidget->GetUserWidgetObject());
 }
 
 void ABasicMonster::BeginPlay()
 {
 	Super::BeginPlay();
 
-	HitDamage->SetVisibility(false);
+	HitDamageWidget->SetVisibility(false);
 
-	HpBarWidget->SetHpBar(GetHpRatio());
-	HpBar->SetVisibility(false);
+	HpBar->SetHpBar(GetHpRatio());
+	HpBar->SetVisibility(ESlateVisibility::Hidden);
 
 	if (HasAuthority())
-	{ // AI
-
+	{
 		AggroSphere->OnComponentBeginOverlap.AddDynamic(this, &ABasicMonster::AggroSphereBeginOverlap);
 		CombatRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &ABasicMonster::CombatRangeBeginOverlap);
 		CombatRangeSphere->OnComponentEndOverlap.AddDynamic(this, &ABasicMonster::CombatRangeEndOverlap);
@@ -100,7 +99,7 @@ void ABasicMonster::BeginPlay()
 	}
 
 	if (HasAuthority())
-	{ // Damage
+	{
 		OnTakeAnyDamage.AddDynamic(this, &ABasicMonster::OnAttacked);
 	}
 }
@@ -118,21 +117,22 @@ void ABasicMonster::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-void ABasicMonster::WeaponHit_Implementation(FVector_NetQuantize HitPoint)
+void ABasicMonster::WeaponHit_Implementation(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot)
 {
 	if (HitParticles)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, HitPoint, FRotator(0.f), true);
 	}
 	ShowHpBar();
+	ShowHitDamage(Damage, HitPoint, bHeadShot);
 }
 
 void ABasicMonster::OnAttacked(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
-{ // Server Only
+{ /* Server Only */
 	if (bDying) return;
 
 	if (BasicMonsterAIController)
-	{ // 피해입힌 적을 Target으로 계속 변경
+	{ // Set Target Attacker
 		if (DamageCauser)
 		{
 			AWeapon* AttackerWeapon = Cast<AWeapon>(DamageCauser);
@@ -162,7 +162,7 @@ void ABasicMonster::OnAttacked(AActor* DamagedActor, float Damage, const UDamage
 	}
 }
 
-void ABasicMonster::ShowHitDamage(int32 Damage, FVector HitLocation, bool bHeadShot)
+void ABasicMonster::ShowHitDamage(int32 Damage, FVector_NetQuantize HitLocation, bool bHeadShot)
 {
 	/*FVector2D HitDamagePosition;
 
@@ -175,11 +175,11 @@ void ABasicMonster::ShowHitDamage(int32 Damage, FVector HitLocation, bool bHeadS
 	const float RandY = FMath::RandRange(HitDamagePosition.Y - 100.f, HitDamagePosition.Y + 100.f);
 	HitDamagePosition = FVector2D(RandX, RandY);*/
 
-	HitDamageWidget->SetHitDamageText(Damage);
-	HitDamageWidget->AddToViewport();
+	HitDamage->SetHitDamageText(Damage);
+	HitDamage->AddToViewport();
 	//HitDamageWidget->SetPositionInViewport(HitDamagePosition);
-	HitDamageWidget->PlayHitDamageAnimation(bHeadShot);
-	StoreHitDamage(HitDamageWidget, HitLocation);
+	HitDamage->PlayHitDamageAnimation(bHeadShot);
+	StoreHitDamage(HitDamage, HitLocation);
 }
 
 void ABasicMonster::StoreHitDamage(UHitDamageWidget* HitDamageToStore, FVector Location)
@@ -202,11 +202,11 @@ void ABasicMonster::UpdateHitDamages()
 {
 	for (const auto& HitDamagePair : HitDamages)
 	{
-		UHitDamageWidget* HDWidget = HitDamagePair.Key;
+		UHitDamageWidget* InHitDamage = HitDamagePair.Key;
 		const FVector Location = HitDamagePair.Value;
 		FVector2D ScreenPosition;
 		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(), Location, ScreenPosition);
-		HDWidget->SetPositionInViewport(ScreenPosition);
+		InHitDamage->SetPositionInViewport(ScreenPosition);
 	}
 }
 
@@ -214,7 +214,7 @@ void ABasicMonster::ShowHpBar()
 {
 	if (HpBar)
 	{
-		HpBar->SetVisibility(true);
+		HpBar->SetVisibility(ESlateVisibility::Visible);
 	}
 	GetWorldTimerManager().ClearTimer(HpBarTimer);
 	GetWorldTimerManager().SetTimer(HpBarTimer, this, &ABasicMonster::HideHpBar, HpBarDisplayTime);
@@ -224,12 +224,12 @@ void ABasicMonster::HideHpBar()
 {
 	if (HpBar)
 	{
-		HpBar->SetVisibility(false);
+		HpBar->SetVisibility(ESlateVisibility::Hidden);
 	}
 }
 
 void ABasicMonster::Death()
-{ // Server Only
+{ /* Server Only */
 	if (bDying) return;
 	bDying = true;
 
@@ -246,7 +246,7 @@ void ABasicMonster::Death()
 }
 
 void ABasicMonster::DropItems()
-{ // Server Only
+{ /* Server Only */
 	const int32 RandomNum = FMath::RandRange(1, 5);
 
 	AItem* ItemToSpawn = GetWorld()->SpawnActorDeferred<AItem>(ItemClass, GetActorTransform());
@@ -255,58 +255,10 @@ void ABasicMonster::DropItems()
 		ItemToSpawn->Init(RandomNum);
 		ItemToSpawn->FinishSpawning(GetActorTransform());
 	}
-
-
-	// Deprecated
-	//if (RandomNum == 1)
-	//{
-	//	AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item1Class, GetActorTransform());
-	//	if (Item)
-	//	{
-	//		Item->Init(RandomNum);
-	//		Item->FinishSpawning(GetActorTransform());
-	//	}
-	//}
-	//else if (RandomNum == 2)
-	//{
-	//	AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item2Class, GetActorTransform());
-	//	if (Item)
-	//	{
-	//		Item->Init(RandomNum);
-	//		Item->FinishSpawning(GetActorTransform());
-	//	}
-	//}
-	//else if (RandomNum == 3)
-	//{
-	//	AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item3Class, GetActorTransform());
-	//	if (Item)
-	//	{
-	//		Item->Init(RandomNum);
-	//		Item->FinishSpawning(GetActorTransform());
-	//	}
-	//}
-	//else if (RandomNum == 4)
-	//{
-	//	AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item4Class, GetActorTransform());
-	//	if (Item)
-	//	{
-	//		Item->Init(RandomNum);
-	//		Item->FinishSpawning(GetActorTransform());
-	//	}
-	//}
-	//else if (RandomNum == 5)
-	//{
-	//	AItem* Item = GetWorld()->SpawnActorDeferred<AItem>(Item5Class, GetActorTransform());
-	//	if (Item)
-	//	{
-	//		Item->Init(RandomNum);
-	//		Item->FinishSpawning(GetActorTransform());
-	//	}
-	//}
 }
 
 void ABasicMonster::AggroSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{ // Server Only
+{ /* Server Only */
 	if (OtherActor == nullptr) return;
 
 	ASpearmanCharacter* SpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
@@ -318,8 +270,9 @@ void ABasicMonster::AggroSphereBeginOverlap(UPrimitiveComponent* OverlappedCompo
 }
 
 void ABasicMonster::CombatRangeBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{ // Server Only
+{ /* Server Only */
 	if (OtherActor == nullptr) return;
+	
 	ASpearmanCharacter* SpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
 	if (SpearmanCharacter)
 	{
@@ -332,8 +285,9 @@ void ABasicMonster::CombatRangeBeginOverlap(UPrimitiveComponent* OverlappedCompo
 }
 
 void ABasicMonster::CombatRangeEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{ // server only
+{ /* Server Only */
 	if (OtherActor == nullptr) return;
+	
 	ASpearmanCharacter* SpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
 	if (SpearmanCharacter)
 	{
@@ -346,7 +300,7 @@ void ABasicMonster::CombatRangeEndOverlap(UPrimitiveComponent* OverlappedCompone
 }
 
 void ABasicMonster::AttackCollisionBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{ // server only
+{ /* Server Only */
 	if (OtherActor == nullptr || OtherActor == this) return;
 	if (HitSet.Contains(OtherActor)) return;
 
@@ -359,7 +313,7 @@ void ABasicMonster::AttackCollisionBoxBeginOverlap(UPrimitiveComponent* Overlapp
 }
 
 void ABasicMonster::SetCanAttack()
-{ // server only
+{ /* Server Only */
 	bCanAttack = true;
 	if (BasicMonsterAIController)
 	{
@@ -368,7 +322,7 @@ void ABasicMonster::SetCanAttack()
 }
 
 void ABasicMonster::SetCanAttackTimer()
-{ // server only, called in BTTask_Attack after MulticastPlayAttackMontage()
+{ /* Server Only, Called in BTTask_Attack after MulticastPlayAttackMontage() */
 	bCanAttack = false;
 	GetWorldTimerManager().SetTimer(AttackWaitTimer, this, &ABasicMonster::SetCanAttack, AttackWaitTime);
 	if (BasicMonsterAIController)
@@ -390,15 +344,12 @@ void ABasicMonster::TurnOffAttackCollision()
 }
 
 void ABasicMonster::SetStunned(bool Stunned)
-{
-	if (HasAuthority())
-	{
-		bStunned = Stunned;
+{ /* Server Only, Called in OnAttacked() */
+	bStunned = Stunned;
 
-		if (BasicMonsterAIController)
-		{
-			BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(TEXT("Stunned"), Stunned);
-		}
+	if (BasicMonsterAIController)
+	{
+		BasicMonsterAIController->GetBlackboardComponent()->SetValueAsBool(TEXT("Stunned"), Stunned);
 	}
 }
 
@@ -433,8 +384,8 @@ void ABasicMonster::MulticastDeath_Implementation()
 }
 
 void ABasicMonster::OnRep_Hp()
-{ // client only
-	HpBarWidget->SetHpBar(GetHpRatio());
+{ // Client Only
+	HpBar->SetHpBar(GetHpRatio());
 	if (FMath::IsNearlyZero(Hp))
 	{
 		//Die();

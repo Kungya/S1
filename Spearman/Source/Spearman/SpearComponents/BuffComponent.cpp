@@ -38,7 +38,7 @@ void UBuffComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 }
 
 void UBuffComponent::StartHeal(float HealAmount, float BuffTime)
-{ // server only, invoked from HealthPickup
+{ // Server Only, invoked from HealthPickup.h
 	bHealing = true;
 	TotalHealAmount = HealAmount;
 	HealAmountPerSec = HealAmount / BuffTime;

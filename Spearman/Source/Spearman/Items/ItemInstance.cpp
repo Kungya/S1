@@ -70,7 +70,6 @@ void UItemInstance::OnRep_ItemDataIdx()
 		S1GameInstance = (S1GameInstance == nullptr) ? Cast<US1GameInstance>(GetWorld()->GetGameInstance()) : S1GameInstance;
 		if (S1GameInstance)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("OnRep, ItemDataIdx : %d"), ItemDataIdx);
 			const TArray<UTexture2D*>& TextureAssets = S1GameInstance->GetTextureAssets();
 			const TArray<UStaticMesh*>& StaticMeshAssets = S1GameInstance->GetStaticMeshAssets();
 			Icon = TextureAssets[ItemDataIdx];

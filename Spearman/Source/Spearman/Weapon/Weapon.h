@@ -55,7 +55,7 @@ protected:
 	void AttackCollisionCheckByTrace();
 
 	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastHit(AActor* HitActor, FVector_NetQuantize HitPoint);
+	void MulticastHit(AActor* HitActor, int32 InDamage, FVector_NetQuantize HitPoint, bool bHeadShot);
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float Damage = 30.f;

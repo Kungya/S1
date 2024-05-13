@@ -249,7 +249,7 @@ void ASpearmanCharacter::OnRep_Hp(float LastHp)
 	}
 }
 
-void ASpearmanCharacter::WeaponHit_Implementation(FVector_NetQuantize HitPoint)
+void ASpearmanCharacter::WeaponHit_Implementation(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot)
 {
 	if (HitParticles)
 	{
@@ -325,11 +325,6 @@ void ASpearmanCharacter::MulticastDeath_Implementation()
 	GetCharacterMovement()->DisableMovement();
 	GetCharacterMovement()->StopMovementImmediately();
 	bDisableKeyInput = true;
-	/*if (SpearmanPlayerController)
-	{
-		DisableInput(SpearmanPlayerController);
-	}*/
-	// Disable Collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }

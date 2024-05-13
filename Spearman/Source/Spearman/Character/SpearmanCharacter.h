@@ -28,7 +28,7 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastDeath();
 
-	virtual void WeaponHit_Implementation(FVector_NetQuantize HitPoint) override;
+	virtual void WeaponHit_Implementation(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot) override;
 
 	// Disable Key Input if Character Dies or Match is Ended...
 	UPROPERTY(Replicated)

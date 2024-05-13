@@ -98,16 +98,16 @@ private:
 	*/
 
 	UPROPERTY(VisibleAnywhere, Category = Widget)
-	class UWidgetComponent* HitDamage;
+	class UWidgetComponent* HitDamageWidget;
 
 	UPROPERTY(VisibleAnywhere, Category = Widget)
-	UHitDamageWidget* HitDamageWidget;
+	UHitDamageWidget* HitDamage;
 
 	UPROPERTY(VisibleAnywhere, Category = Widget)
-	class UWidgetComponent* HpBar;
+	UWidgetComponent* HpBarWidget;
 
 	UPROPERTY(VisibleAnywhere, Category = Widget)
-	class UHpBarWidget* HpBarWidget;
+	class UHpBarWidget* HpBar;
 
 	// Map to store HitDamage Widgets and locations
 	UPROPERTY(VisibleAnywhere, Category = Widget)
@@ -210,9 +210,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Drop")
 	TSubclassOf<AItem> Item5Class;*/
 public:
-	virtual void WeaponHit_Implementation(FVector_NetQuantize HitPoint) override;
+	virtual void WeaponHit_Implementation(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot) override;
 
-	void ShowHitDamage(int32 Damage, FVector HitLocation, bool bHeadShot);
+	void ShowHitDamage(int32 Damage, FVector_NetQuantize HitLocation, bool bHeadShot);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastHit();

@@ -105,77 +105,67 @@ void AWeapon::AttackCollisionCheckByTrace()
 
 	for (const FHitResult& HitResult : HitResults)
 	{
-		if (HitResult.GetActor() == nullptr) continue;
+		if (HitResult.GetActor() == nullptr || HitSet.Contains(HitResult.GetActor())) continue;
 
-		if (!HitSet.Contains(HitResult.GetActor()))
-		{
-			HitSet.Add(HitResult.GetActor());
-			
-			OwnerCharacter = (OwnerCharacter == nullptr) ? Cast<ACharacter>(GetOwner()) : OwnerCharacter;
-			if (OwnerCharacter)
+		HitSet.Add(HitResult.GetActor());
+
+		OwnerCharacter = (OwnerCharacter == nullptr) ? Cast<ACharacter>(GetOwner()) : OwnerCharacter;
+		if (OwnerCharacter == nullptr) continue;
+		OwnerController = (OwnerController == nullptr) ? OwnerCharacter->GetController() : OwnerController;
+		if (OwnerController == nullptr) continue;
+
+		bool bHeadShot = false;
+		ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(HitResult.GetActor());
+		if (HitSpearmanCharacter)
+		{ /* Hit SpearmanCharacter */
+			if (HitResult.BoneName.ToString() == HitSpearmanCharacter->GetHeadBone())
 			{
-				OwnerController = (OwnerController == nullptr) ? OwnerCharacter->GetController() : OwnerController;
-				if (OwnerController)
-				{
-					MulticastHit(HitResult.GetActor(), HitResult.ImpactPoint);
-
-					ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(HitResult.GetActor());
-					if (HitSpearmanCharacter)
-					{ /* Hit SpearmanCharacter */
-						if (HitResult.BoneName.ToString() == HitSpearmanCharacter->GetHeadBone())
-						{
-							HitAreaDamage = HeadShotDamage;
-						}
-						else
-						{
-							HitAreaDamage = Damage;
-						}
-						UE_LOG(LogTemp, Warning, TEXT("Hit Spearman Component : %s"), *HitResult.BoneName.ToString());
-						const float Dist = FVector::Distance(OwnerCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
-						FVector2D InRange(60.f, 240.f);
-						FVector2D OutRange(HitAreaDamage / 3.f, HitAreaDamage);
-						const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
-						UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerController, this, UDamageType::StaticClass());
-						// TODO : HitDamage Widget, HitSpearmanCharacter->ShowHitDamage();
-					}
-
-					ABasicMonster* HitMonster = Cast<ABasicMonster>(HitResult.GetActor());
-					if (HitMonster)
-					{ /* Hit BasicMonster */
-						bool bHeadShot = false;
-						if (HitResult.BoneName.ToString() == HitMonster->GetHeadBone())
-						{
-							bHeadShot = true;
-							HitAreaDamage = HeadShotDamage;
-						}
-						else
-						{
-							bHeadShot = false;
-							HitAreaDamage = Damage;
-						}
-						const float Dist = FVector::Distance(OwnerCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
-						FVector2D InRange(60.f, 240.f);
-						FVector2D OutRange(HitAreaDamage / 3.f, HitAreaDamage);
-						const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
-						UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerController, this, UDamageType::StaticClass());
-
-						if (OwnerCharacter->IsLocallyControlled())
-						{ // HitDamage Widget
-							HitMonster->ShowHitDamage(InDamage, HitResult.Location, bHeadShot);
-						}
-					}
-				}
+				bHeadShot = true;
+				HitAreaDamage = HeadShotDamage;
 			}
+			else
+			{
+				bHeadShot = true;
+				HitAreaDamage = Damage;
+			}
+			UE_LOG(LogTemp, Warning, TEXT("Hit Spearman Component : %s"), *HitResult.BoneName.ToString());
+			const float Dist = FVector::Distance(OwnerCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
+			FVector2D InRange(60.f, 240.f);
+			FVector2D OutRange(HitAreaDamage / 3.f, HitAreaDamage);
+			const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
+			UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerController, this, UDamageType::StaticClass());
+			// TODO : HitDamage Widget, HitSpearmanCharacter->ShowHitDamage();
+			MulticastHit(HitResult.GetActor(), FMath::FloorToInt(InDamage), HitResult.ImpactPoint, bHeadShot);
+		}
+		ABasicMonster* HitMonster = Cast<ABasicMonster>(HitResult.GetActor());
+		if (HitMonster)
+		{ /* Hit BasicMonster */
+			if (HitResult.BoneName.ToString() == HitMonster->GetHeadBone())
+			{
+				bHeadShot = true;
+				HitAreaDamage = HeadShotDamage;
+			}
+			else
+			{
+				bHeadShot = false;
+				HitAreaDamage = Damage;
+			}
+			const float Dist = FVector::Distance(OwnerCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
+			FVector2D InRange(60.f, 240.f);
+			FVector2D OutRange(HitAreaDamage / 3.f, HitAreaDamage);
+			const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
+			UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerController, this, UDamageType::StaticClass());
+			MulticastHit(HitResult.GetActor(), FMath::FloorToInt(InDamage), HitResult.ImpactPoint, bHeadShot);
 		}
 	}
 }
 
-void AWeapon::MulticastHit_Implementation(AActor* HitActor, FVector_NetQuantize HitPoint)
+void AWeapon::MulticastHit_Implementation(AActor* HitActor, int32 InDamage, FVector_NetQuantize HitPoint, bool bHeadShot)
 {
 	IWeaponHitInterface* WeaponHitInterface = Cast<IWeaponHitInterface>(HitActor);
 	if (WeaponHitInterface)
 	{ // Cast will succeed if BasicMonster, since BasicMonster inherits from WeaponHitInterface
-		WeaponHitInterface->WeaponHit_Implementation(HitPoint);
+		WeaponHitInterface->WeaponHit_Implementation(InDamage, HitPoint, bHeadShot);
 	}
 }
 
