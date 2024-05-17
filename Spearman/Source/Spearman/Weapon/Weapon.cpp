@@ -6,11 +6,13 @@
 #include "Components/BoxComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Spearman/Character/SpearmanCharacter.h"
+#include "Spearman/PlayerController/SpearmanPlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "Spearman/Spearman.h"
 #include "Kismet/GameplayStatics.h"
 #include "Spearman/Interfaces/WeaponHitInterface.h"
 #include "Spearman/Monster/BasicMonster.h"
+#include "Spearman/SpearComponents/LagCompensationComponent.h"
 
 AWeapon::AWeapon()
 {
@@ -86,77 +88,113 @@ void AWeapon::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// TODO : Refactor to AnimState
-	if (bAttackCollisionTrace && HasAuthority())
+	/* if (bUseReiwnd) : Client, else : Server */
+	if (bAttackCollisionTrace)
 	{
-		AttackCollisionCheckByTrace();
+		if (bUseRewind)
+		{
+			AttackCollisionCheckByRewind();
+		}
+		else if (!bUseRewind)
+		{
+			AttackCollisionCheckByServer();
+		}
 	}
 }
 
-void AWeapon::AttackCollisionCheckByTrace()
+void AWeapon::AttackCollisionCheckByRewind()
+{ /* Client Only */
+	FVector Start = TraceStartBox->GetComponentLocation();
+	FVector End = TraceEndBox->GetComponentLocation();
+	FHitResult HitResult;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	Params.AddIgnoredActor(GetOwner());
+
+	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
+
+	if (HitResult.GetActor() == nullptr) return;
+	
+	OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter;
+	if (OwnerSpearmanCharacter == nullptr) return;
+	OwnerSpearmanPlayerController = (OwnerSpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(OwnerSpearmanCharacter->GetController()) : OwnerSpearmanPlayerController;
+	if (OwnerSpearmanPlayerController == nullptr) return;
+
+	bool bHeadShot = false;
+	ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(HitResult.GetActor());
+	if (HitSpearmanCharacter)
+	{ /* Hit SpearmanCharacter */
+		UE_LOG(LogTemp, Warning, TEXT("Hit in Client"));
+		const float CurrentClientTime = OwnerSpearmanPlayerController->GetServerTime() - OwnerSpearmanPlayerController->GetSingleTripTime();
+		OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequest(HitSpearmanCharacter, Start, HitResult.ImpactPoint, CurrentClientTime, this);
+	}
+
+	/* TODO : Rewind BasicMonster */
+}
+
+void AWeapon::AttackCollisionCheckByServer()
 { /* Server Only */
 	FVector Start = TraceStartBox->GetComponentLocation();
 	FVector End = TraceEndBox->GetComponentLocation();
-	TArray<FHitResult> HitResults;
+	FHitResult HitResult;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 	Params.AddIgnoredActor(GetOwner());
 	
-	GetWorld()->LineTraceMultiByChannel(HitResults, Start, End, ECC_Visibility, Params);
+	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
 
-	for (const FHitResult& HitResult : HitResults)
-	{
-		if (HitResult.GetActor() == nullptr || HitSet.Contains(HitResult.GetActor())) continue;
+	if (HitResult.GetActor() == nullptr || HitSet.Contains(HitResult.GetActor())) return;
+	HitSet.Add(HitResult.GetActor());
 
-		HitSet.Add(HitResult.GetActor());
+	OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter;
+	if (OwnerSpearmanCharacter == nullptr) return;
+	OwnerSpearmanPlayerController = (OwnerSpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(OwnerSpearmanCharacter->GetController()) : OwnerSpearmanPlayerController;
+	if (OwnerSpearmanPlayerController == nullptr) return;
 
-		OwnerCharacter = (OwnerCharacter == nullptr) ? Cast<ACharacter>(GetOwner()) : OwnerCharacter;
-		if (OwnerCharacter == nullptr) continue;
-		OwnerController = (OwnerController == nullptr) ? OwnerCharacter->GetController() : OwnerController;
-		if (OwnerController == nullptr) continue;
-
-		bool bHeadShot = false;
-		ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(HitResult.GetActor());
-		if (HitSpearmanCharacter)
-		{ /* Hit SpearmanCharacter */
-			if (HitResult.BoneName.ToString() == HitSpearmanCharacter->GetHeadBone())
-			{
-				bHeadShot = true;
-				HitAreaDamage = HeadShotDamage;
-			}
-			else
-			{
-				bHeadShot = true;
-				HitAreaDamage = Damage;
-			}
-			UE_LOG(LogTemp, Warning, TEXT("Hit Spearman Component : %s"), *HitResult.BoneName.ToString());
-			const float Dist = FVector::Distance(OwnerCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
-			FVector2D InRange(60.f, 240.f);
-			FVector2D OutRange(HitAreaDamage / 3.f, HitAreaDamage);
-			const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
-			UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerController, this, UDamageType::StaticClass());
-			// TODO : HitDamage Widget, HitSpearmanCharacter->ShowHitDamage();
-			MulticastHit(HitResult.GetActor(), FMath::FloorToInt(InDamage), HitResult.ImpactPoint, bHeadShot);
+	bool bHeadShot = false;
+	ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(HitResult.GetActor());
+	if (HitSpearmanCharacter)
+	{ /* Hit SpearmanCharacter */
+		if (HitResult.BoneName.ToString() == HitSpearmanCharacter->GetHeadBone())
+		{
+			bHeadShot = true;
+			HitPartDamage = HeadShotDamage;
 		}
-		ABasicMonster* HitMonster = Cast<ABasicMonster>(HitResult.GetActor());
-		if (HitMonster)
-		{ /* Hit BasicMonster */
-			if (HitResult.BoneName.ToString() == HitMonster->GetHeadBone())
-			{
-				bHeadShot = true;
-				HitAreaDamage = HeadShotDamage;
-			}
-			else
-			{
-				bHeadShot = false;
-				HitAreaDamage = Damage;
-			}
-			const float Dist = FVector::Distance(OwnerCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
-			FVector2D InRange(60.f, 240.f);
-			FVector2D OutRange(HitAreaDamage / 3.f, HitAreaDamage);
-			const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
-			UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerController, this, UDamageType::StaticClass());
-			MulticastHit(HitResult.GetActor(), FMath::FloorToInt(InDamage), HitResult.ImpactPoint, bHeadShot);
+		else
+		{
+			bHeadShot = true;
+			HitPartDamage = Damage;
 		}
+		UE_LOG(LogTemp, Warning, TEXT("Hit Spearman Component : %s"), *HitResult.BoneName.ToString());
+		
+		const float Dist = FVector::Distance(OwnerSpearmanCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
+		FVector2D InRange(60.f, 240.f);
+		FVector2D OutRange(HitPartDamage / 3.f, HitPartDamage);
+		const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
+		
+		UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerSpearmanPlayerController, this, UDamageType::StaticClass());
+		MulticastHit(HitResult.GetActor(), FMath::FloorToInt(InDamage), HitResult.ImpactPoint, bHeadShot);
+	}
+	ABasicMonster* HitMonster = Cast<ABasicMonster>(HitResult.GetActor());
+	if (HitMonster)
+	{ /* Hit BasicMonster */
+		if (HitResult.BoneName.ToString() == HitMonster->GetHeadBone())
+		{
+			bHeadShot = true;
+			HitPartDamage = HeadShotDamage;
+		}
+		else
+		{
+			bHeadShot = false;
+			HitPartDamage = Damage;
+		}
+		const float Dist = FVector::Distance(OwnerSpearmanCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
+		FVector2D InRange(60.f, 240.f);
+		FVector2D OutRange(HitPartDamage / 3.f, HitPartDamage);
+		const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
+		
+		UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerSpearmanPlayerController, this, UDamageType::StaticClass());
+		MulticastHit(HitResult.GetActor(), FMath::FloorToInt(InDamage), HitResult.ImpactPoint, bHeadShot);
 	}
 }
 

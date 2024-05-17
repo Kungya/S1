@@ -18,9 +18,12 @@ class UHpBarWidget;
 class UCombatComponent;
 class UBuffComponent;
 class UInventoryComponent;
+class ULagCompensationComponent;
 class UAnimMontage;
 class ASpearmanPlayerController;
 class UParticleSystem;
+class UBoxComponent;
+class UCapsuleComponent;
 
 UCLASS()
 class SPEARMAN_API ASpearmanCharacter : public ACharacter, public IWeaponHitInterface
@@ -47,6 +50,13 @@ public:
 	// Disable Key Input if Character Dies or Match is Ended...
 	UPROPERTY(Replicated)
 	bool bDisableKeyInput = false;
+
+	UPROPERTY()
+	TMap<FName, UBoxComponent*> HitBoxes;
+
+	UPROPERTY()
+	TArray<UBoxComponent*> HitBoxArray;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -90,7 +100,6 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	UCameraComponent* FollowCamera;
 
-	// 땅에 떨어진 무기와 겹쳤을 때의 Weapon
 	UPROPERTY (ReplicatedUsing = OnRep_OverlappingWeapon)
 	AWeapon* OverlappingWeapon;
 
@@ -135,13 +144,16 @@ private:
 	* Spearman Components
 	*/
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = "ActorComponent")
 	UCombatComponent* Combat;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category = "ActorComponent")
 	UBuffComponent* Buff;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, Category = "ActorComponent")
+	ULagCompensationComponent* LagCompensation;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = "ActorComponent")
 	UInventoryComponent* Inventory;
 
 	UFUNCTION(Server, Reliable)
@@ -205,6 +217,64 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	UParticleSystem* HitParticles;
 
+	/*
+	* Hit Box
+	*/
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* head;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* pelvis;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* spine_02;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* spine_03;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* upperarm_l;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* upperarm_r;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* lowerarm_l;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* lowerarm_r;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* hand_l;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* hand_r;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* thigh_l;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* thigh_r;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* calf_l;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* calf_r;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* foot_l;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* foot_r;
+
+	/* Test for Rewind*/
+	FTimerHandle TestTimer;
+	float TimerVector = 1.f;
+	void TestToggleVector() { TimerVector *= -1.f; };
+	bool bMove = false;
+	void TriggerMove() { bMove = true; };
 
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);
@@ -223,4 +293,5 @@ public:
 	FORCEINLINE FString GetHeadBone() const { return HeadBone; }
 	FORCEINLINE UBuffComponent* GetBuff() const { return Buff; }
 	FORCEINLINE UInventoryComponent* GetInventory() const { return Inventory; }
+	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const { return LagCompensation; }
 };

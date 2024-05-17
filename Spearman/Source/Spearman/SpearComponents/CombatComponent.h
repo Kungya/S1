@@ -22,7 +22,7 @@ public:
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 
 	// 현재 캐릭터의 전투 상태, 이거 하나로 동작 사용가능 유무를 판단
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	ECombatState CombatState;
 
 protected:

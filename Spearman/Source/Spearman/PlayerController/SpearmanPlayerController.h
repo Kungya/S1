@@ -6,9 +6,9 @@
 #include "GameFramework/PlayerController.h"
 #include "SpearmanPlayerController.generated.h"
 
-/**
- * 
- */
+class ASpearmanHUD;
+class ASpearmanGameMode;
+
 UCLASS()
 class SPEARMAN_API ASpearmanPlayerController : public APlayerController
 {
@@ -30,6 +30,7 @@ public:
 	void HandleCooldown();
 
 	void ShowInventoryWidget();
+
 protected:
 	virtual void BeginPlay() override;
 	void SetHUDTime();
@@ -49,8 +50,8 @@ protected:
 	void ClientReportServerTime(float ClientRequestTime, float ServerReportTime, float ServerReportTickRate);
 
 	float ClientServerDelta = 0.f;
-
 	float DeltaTimeSumforTimeSync = 0.f;
+	float SingleTripTime;
 
 	UFUNCTION(Server, Reliable)
 	void ServerRequestMatchState();
@@ -60,10 +61,10 @@ protected:
 	
 private:
 	UPROPERTY()
-	class ASpearmanHUD* SpearmanHUD;
+	ASpearmanHUD* SpearmanHUD;
 
 	UPROPERTY()
-	class ASpearmanGameMode* SpearmanGameMode;
+	ASpearmanGameMode* SpearmanGameMode;
 
 	// Client should get MatchTime from Server, not in Client
 	float BeginPlayTime = 0.f;
@@ -82,9 +83,6 @@ private:
 
 	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay;
-
-	// TODO : 
-	bool bInitializeCharacterOverlay = false;
 	
 	float HUDHp;
 	float HUDMaxHp;
@@ -97,4 +95,5 @@ private:
 
 public:
 	FORCEINLINE ASpearmanHUD* GetSpearmanHUD() const { return SpearmanHUD;  }
+	FORCEINLINE float GetSingleTripTime() const { return SingleTripTime; }
 };

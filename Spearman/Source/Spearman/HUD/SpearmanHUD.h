@@ -7,13 +7,14 @@
 #include "SpearmanHUD.generated.h"
 
 class UUserWidget;
+class UTexture2D;
 
 USTRUCT(BlueprintType)
 struct FHUDPackage
 {
 	GENERATED_BODY()
 	
-	class UTexture2D* CrosshairCircle;
+	UTexture2D* CrosshairCircle;
 	UTexture2D* CrosshairDot;
 };
 

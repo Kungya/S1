@@ -9,6 +9,8 @@
 class UBoxComponent;
 class USphereComponent;
 class UWidgetComponent;
+class ASpearmanCharacter;
+class ASpearmanPlayerController;
 
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
@@ -35,6 +37,9 @@ public:
 	void TurnOnAttackCollision();
 	void TurnOffAttackCollision();
 	
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastHit(AActor* HitActor, int32 InDamage, FVector_NetQuantize HitPoint, bool bHeadShot);
+
 protected:
 	virtual void BeginPlay() override;
 	
@@ -56,10 +61,8 @@ protected:
 		int32 OtherBodyIndex
 		);
 
-	void AttackCollisionCheckByTrace();
-
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastHit(AActor* HitActor, int32 InDamage, FVector_NetQuantize HitPoint, bool bHeadShot);
+	void AttackCollisionCheckByRewind();
+	void AttackCollisionCheckByServer();
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float Damage = 30.f;
@@ -68,8 +71,11 @@ protected:
 	float HeadShotDamage = 50.f;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
-	float HitAreaDamage;
+	float HitPartDamage;
 	
+	UPROPERTY(EditAnywhere)
+	bool bUseRewind = false;
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
@@ -100,8 +106,8 @@ private:
 	UPROPERTY()
 	TSet<AActor*> HitSet;
 
-	ACharacter* OwnerCharacter;
-	AController* OwnerController;
+	ASpearmanCharacter* OwnerSpearmanCharacter;
+	ASpearmanPlayerController* OwnerSpearmanPlayerController;
 	
 public:
 	// 드랍되거나, 장착될 때마다 변경해줘야 함
@@ -111,4 +117,5 @@ public:
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE float GetDamage() const { return Damage; }
 	FORCEINLINE float GetHeadShotDamage() const { return HeadShotDamage; }
+	FORCEINLINE TSet<AActor*> GetHitSet() const { return HitSet; }
 };

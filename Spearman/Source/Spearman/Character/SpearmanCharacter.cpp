@@ -27,6 +27,9 @@
 #include "Spearman/SpearComponents/InventoryComponent.h"
 #include "Spearman/HUD/CharacterOverlay.h"
 #include "Spearman/HUD/S1InventoryWidget.h"
+#include "Components/BoxComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Spearman/SpearComponents/LagCompensationComponent.h"
 
 ASpearmanCharacter::ASpearmanCharacter()
 {
@@ -52,6 +55,9 @@ ASpearmanCharacter::ASpearmanCharacter()
 	Buff = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
 	Buff->SetIsReplicated(true);
 
+	/* Server Only */
+	LagCompensation = CreateDefaultSubobject<ULagCompensationComponent>(TEXT("LagCompensationComponent"));
+
 	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
 	Inventory->SetIsReplicated(true);
 
@@ -76,6 +82,109 @@ ASpearmanCharacter::ASpearmanCharacter()
 
 	GetCharacterMovement()->JumpZVelocity = 480.f;
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	/*
+	* Hit Box, WARNING : Never RELOCATE HitBox's Order, "HitBoxArray[0] => head"
+	*/
+
+	head = CreateDefaultSubobject<UBoxComponent>(TEXT("head"));
+	head->SetupAttachment(GetMesh(), FName("head"));
+	head->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	head->SetRelativeRotation(FRotator(90.f, 0.f, 0.f));
+	HitBoxes.Add(FName("head"), head);
+	HitBoxArray.Add(head);
+
+	pelvis = CreateDefaultSubobject<UBoxComponent>(TEXT("pelvis"));
+	pelvis->SetupAttachment(GetMesh(), FName("pelvis"));
+	pelvis->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("pelvis"), pelvis);
+	HitBoxArray.Add(pelvis);
+
+	spine_02 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_02"));
+	spine_02->SetupAttachment(GetMesh(), FName("spine_02"));
+	spine_02->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("spine_02"), spine_02);
+	HitBoxArray.Add(spine_02);
+
+	spine_03 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_03"));
+	spine_03->SetupAttachment(GetMesh(), FName("spine_03"));
+	spine_03->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("spine_03"), spine_03);
+	HitBoxArray.Add(spine_03);
+
+	upperarm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("upperarm_l"));
+	upperarm_l->SetupAttachment(GetMesh(), FName("upperarm_l"));
+	upperarm_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("upperarm_l"), upperarm_l);
+	HitBoxArray.Add(upperarm_l);
+
+	upperarm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("upperarm_r"));
+	upperarm_r->SetupAttachment(GetMesh(), FName("upperarm_r"));
+	upperarm_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("upperarm_r"), upperarm_r);
+	HitBoxArray.Add(upperarm_r);
+
+	lowerarm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_l"));
+	lowerarm_l->SetupAttachment(GetMesh(), FName("lowerarm_l"));
+	lowerarm_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("lowerarm_l"), lowerarm_l);
+	HitBoxArray.Add(lowerarm_l);
+
+	lowerarm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_r"));
+	lowerarm_r->SetupAttachment(GetMesh(), FName("lowerarm_r"));
+	lowerarm_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("lowerarm_r"), lowerarm_r);
+	HitBoxArray.Add(lowerarm_r);
+
+	hand_l = CreateDefaultSubobject<UBoxComponent>(TEXT("hand_l"));
+	hand_l->SetupAttachment(GetMesh(), FName("hand_l"));
+	hand_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("hand_l"), hand_l);
+	HitBoxArray.Add(hand_l);
+
+	hand_r = CreateDefaultSubobject<UBoxComponent>(TEXT("hand_r"));
+	hand_r->SetupAttachment(GetMesh(), FName("hand_r"));
+	hand_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("hand_r"), hand_r);
+	HitBoxArray.Add(hand_r);
+
+	thigh_l = CreateDefaultSubobject<UBoxComponent>(TEXT("thigh_l"));
+	thigh_l->SetupAttachment(GetMesh(), FName("thigh_l"));
+	thigh_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("thigh_l"), thigh_l);
+	HitBoxArray.Add(thigh_l);
+
+	thigh_r = CreateDefaultSubobject<UBoxComponent>(TEXT("thigh_r"));
+	thigh_r->SetupAttachment(GetMesh(), FName("thigh_r"));
+	thigh_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("thigh_r"), thigh_r);
+	HitBoxArray.Add(thigh_r);
+
+	calf_l = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_l"));
+	calf_l->SetupAttachment(GetMesh(), FName("calf_l"));
+	calf_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("calf_l"), calf_l);
+	HitBoxArray.Add(calf_l);
+
+	calf_r = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_r"));
+	calf_r->SetupAttachment(GetMesh(), FName("calf_r"));
+	calf_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("calf_r"), calf_r);
+	HitBoxArray.Add(calf_r);
+
+	foot_l = CreateDefaultSubobject<UBoxComponent>(TEXT("foot_l"));
+	foot_l->SetupAttachment(GetMesh(), FName("foot_l"));
+	foot_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("foot_l"), foot_l);
+	HitBoxArray.Add(foot_l);
+
+	foot_r = CreateDefaultSubobject<UBoxComponent>(TEXT("foot_r"));
+	foot_r->SetupAttachment(GetMesh(), FName("foot_r"));
+	foot_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxes.Add(FName("foot_r"), foot_r);
+	HitBoxArray.Add(foot_r);
+
+
 }
 
 void ASpearmanCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -99,6 +208,16 @@ void ASpearmanCharacter::PostInitializeComponents()
 	if (Buff)
 	{
 		Buff->Character = this;
+	}
+
+	if (LagCompensation)
+	{
+		LagCompensation->SpearmanCharacter = this;
+
+		if (Controller)
+		{
+			LagCompensation->SpearmanPlayerController = Cast<ASpearmanPlayerController>(Controller);
+		}
 	}
 
 	GetMesh()->HideBoneByName(TEXT("weapon"), EPhysBodyOp::PBO_None);
@@ -143,11 +262,20 @@ void ASpearmanCharacter::BeginPlay()
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ASpearmanCharacter::OnAttacked);
 	}
+
+	GetWorldTimerManager().SetTimer(TestTimer, this, &ASpearmanCharacter::TestToggleVector, 2.f, true);
 }
 
 void ASpearmanCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (bMove)
+	{
+		FVector MoveVector;
+		MoveVector = GetActorForwardVector() * TimerVector;
+		AddMovementInput(MoveVector);
+	}
 
 	TimeSinceLastMovementReplication += DeltaTime;
 	if (TimeSinceLastMovementReplication > 0.25f)
@@ -395,7 +523,7 @@ void ASpearmanCharacter::AttackButtonPressed()
 {
 	if (bDisableKeyInput) return;
 	if (Combat && Combat->CombatState == ECombatState::ECS_Idle)
-	{ // Client측 bCanAttack이 변조되더라도 Server내 에서 bCanAttack 재검사 후 실행 결정
+	{
 		Combat->ServerSpearAttack();
 	}
 	else
@@ -464,6 +592,8 @@ void ASpearmanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &ASpearmanCharacter::AttackButtonPressed);
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASpearmanCharacter::InteractButtonPressed);
 	PlayerInputComponent->BindAction("Inventory", IE_Pressed, this, &ASpearmanCharacter::InventoryButtonPressed);
+	PlayerInputComponent->BindAction("TriggerMove", IE_Pressed, this, &ASpearmanCharacter::TriggerMove);
+
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASpearmanCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ASpearmanCharacter::MoveRight);
@@ -517,7 +647,7 @@ void ASpearmanCharacter::DashButtonPressed()
 	if (bDisableKeyInput) return;
 	if (Combat == nullptr) return;
 
-	if (Combat->bCanDash == true && Combat->CombatState == ECombatState::ECS_Idle)
+	if (Combat->bCanDash && Combat->CombatState == ECombatState::ECS_Idle)
 	{
 		FVector InputVector = GetLastMovementInputVector().GetSafeNormal();
 		Combat->DashButtonPressed(InputVector);

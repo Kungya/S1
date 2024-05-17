@@ -92,7 +92,6 @@ void ASpearmanPlayerController::SetHUDHp(float Hp, float MaxHp)
 	}
 	else
 	{
-		bInitializeCharacterOverlay = true;
 		HUDHp = Hp;
 		HUDMaxHp = MaxHp;
 	}
@@ -237,7 +236,8 @@ void ASpearmanPlayerController::ServerRequestServerTime_Implementation(float Cli
 void ASpearmanPlayerController::ClientReportServerTime_Implementation(float ClientRequestTime, float ServerReportTime, float ServerReportTickRate)
 { // CurrentServerTime = ServerTime + 1/2RTT;
 	const float RoundTripTime = GetWorld()->GetTimeSeconds() - ClientRequestTime;
-	const float CurrentServerTime = ServerReportTime + (0.5f * RoundTripTime);
+	SingleTripTime = (0.5f * RoundTripTime);
+	const float CurrentServerTime = ServerReportTime + SingleTripTime;
 	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
 	ServerTickRate = ServerReportTickRate;
 }
