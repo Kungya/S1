@@ -37,8 +37,13 @@ public:
 	void TurnOnAttackCollision();
 	void TurnOffAttackCollision();
 	
+	void AnimStateAttack();
+
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastHit(AActor* HitActor, int32 InDamage, FVector_NetQuantize HitPoint, bool bHeadShot);
+
+	UPROPERTY()
+	TSet<AActor*> HitSet;
 
 protected:
 	virtual void BeginPlay() override;
@@ -103,8 +108,7 @@ private:
 
 	bool bAttackCollisionTrace = false;
 
-	UPROPERTY()
-	TSet<AActor*> HitSet;
+	
 
 	ASpearmanCharacter* OwnerSpearmanCharacter;
 	ASpearmanPlayerController* OwnerSpearmanPlayerController;
@@ -117,5 +121,4 @@ public:
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE float GetDamage() const { return Damage; }
 	FORCEINLINE float GetHeadShotDamage() const { return HeadShotDamage; }
-	FORCEINLINE TSet<AActor*> GetHitSet() const { return HitSet; }
 };

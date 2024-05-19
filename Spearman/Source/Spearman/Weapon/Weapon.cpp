@@ -88,22 +88,46 @@ void AWeapon::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// TODO : Refactor to AnimState
-	/* if (bUseReiwnd) : Client, else : Server */
+	// if (bUseReiwnd) : Client, else : Server */
 	if (bAttackCollisionTrace)
 	{
 		if (bUseRewind)
 		{
 			AttackCollisionCheckByRewind();
 		}
-		else if (!bUseRewind)
+		else if (!bUseRewind && HasAuthority())
 		{
 			AttackCollisionCheckByServer();
 		}
 	}
+
+}
+
+void AWeapon::AnimStateAttack()
+{
+	if (HasAuthority())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Tick Server"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Tick Client"));
+	}
+
+	if (bUseRewind && !HasAuthority())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ByRewind In Client"));
+		AttackCollisionCheckByRewind();
+	}
+	else if (!bUseRewind && HasAuthority())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ByServer in Server"));
+		AttackCollisionCheckByServer();
+	}
 }
 
 void AWeapon::AttackCollisionCheckByRewind()
-{ /* Client Only */
+{ /* Client Only, Simulate In Client First */
 	FVector Start = TraceStartBox->GetComponentLocation();
 	FVector End = TraceEndBox->GetComponentLocation();
 	FHitResult HitResult;
@@ -120,7 +144,10 @@ void AWeapon::AttackCollisionCheckByRewind()
 	OwnerSpearmanPlayerController = (OwnerSpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(OwnerSpearmanCharacter->GetController()) : OwnerSpearmanPlayerController;
 	if (OwnerSpearmanPlayerController == nullptr) return;
 
-	bool bHeadShot = false;
+	/*
+	* TODO : double check Dupplication in client
+	*/
+
 	ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(HitResult.GetActor());
 	if (HitSpearmanCharacter)
 	{ /* Hit SpearmanCharacter */
@@ -129,7 +156,7 @@ void AWeapon::AttackCollisionCheckByRewind()
 		OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequest(HitSpearmanCharacter, Start, HitResult.ImpactPoint, CurrentClientTime, this);
 	}
 
-	/* TODO : Rewind BasicMonster */
+	/* TODO : Rewind BasicMonster, all Actors that can Take Damage */
 }
 
 void AWeapon::AttackCollisionCheckByServer()
@@ -199,7 +226,7 @@ void AWeapon::AttackCollisionCheckByServer()
 }
 
 void AWeapon::MulticastHit_Implementation(AActor* HitActor, int32 InDamage, FVector_NetQuantize HitPoint, bool bHeadShot)
-{
+{ /* Unreliable */
 	IWeaponHitInterface* WeaponHitInterface = Cast<IWeaponHitInterface>(HitActor);
 	if (WeaponHitInterface)
 	{ // Cast will succeed if BasicMonster, since BasicMonster inherits from WeaponHitInterface

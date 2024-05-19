@@ -69,8 +69,7 @@ void ULagCompensationComponent::SaveFrame(FSavedFrame& OUT Frame)
 void ULagCompensationComponent::ServerRewindRequest_Implementation(ASpearmanCharacter* HitSpearmanCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, AWeapon* Weapon)
 {
 	if (HitSpearmanCharacter == nullptr || Weapon == nullptr) return;
-	if (Weapon->GetHitSet().Contains(HitSpearmanCharacter)) return;
-	Weapon->GetHitSet().Add(HitSpearmanCharacter);
+	if (Weapon->HitSet.Contains(HitSpearmanCharacter)) return;
 
 	FRewindResult RewindResult = Rewind(HitSpearmanCharacter, TraceStart, HitLocation, HitTime, Weapon);
 
@@ -95,6 +94,7 @@ void ULagCompensationComponent::ServerRewindRequest_Implementation(ASpearmanChar
 		/* Execute visual effect when hit, Unreliable */
 		Weapon->MulticastHit(HitSpearmanCharacter, FMath::CeilToInt(InDamage), HitLocation, bHeadShot);
 		UE_LOG(LogTemp, Warning, TEXT("Rewind Success"));
+		Weapon->HitSet.Add(HitSpearmanCharacter);
 	}
 	else
 	{
