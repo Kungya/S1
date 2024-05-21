@@ -359,11 +359,14 @@ void ASpearmanCharacter::OnRep_Hp(float LastHp)
 	{ // TODO : 피격자가 입은 데미지만 공격자 입장에서 표시 -> 우선은 피격자, 서버를 제외하고 전부 표시
 		// TODO : 수정 필요
 		const float Damage = LastHp - Hp;
-		HitDamageWidget->SetHitDamageText(Damage);
-		ShowHitDamage(true);
-		HpBarWidget->SetHpBar(GetHpRatio());
+		if (Damage > 0.f)
+		{
+			HitDamageWidget->SetHitDamageText(Damage);
+			ShowHitDamage(true);
+			HpBarWidget->SetHpBar(GetHpRatio());
 
-		GetWorldTimerManager().SetTimer(HitDamageTimerHandle, this, &ASpearmanCharacter::HideHitDamage, 2.f, false);
+			GetWorldTimerManager().SetTimer(HitDamageTimerHandle, this, &ASpearmanCharacter::HideHitDamage, 2.f, false);
+		}
 	}
 	UpdateHUDHp();
 

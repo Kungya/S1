@@ -13,6 +13,7 @@
 #include "Spearman/Interfaces/WeaponHitInterface.h"
 #include "Spearman/Monster/BasicMonster.h"
 #include "Spearman/SpearComponents/LagCompensationComponent.h"
+#include "DrawDebugHelpers.h"
 
 AWeapon::AWeapon()
 {
@@ -50,6 +51,7 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponState);
+	DOREPLIFETIME_CONDITION(AWeapon, bAttackCollisionTrace, COND_OwnerOnly);
 }
 
 void AWeapon::BeginPlay()
@@ -91,38 +93,16 @@ void AWeapon::Tick(float DeltaTime)
 	// if (bUseReiwnd) : Client, else : Server */
 	if (bAttackCollisionTrace)
 	{
-		if (bUseRewind)
+		if (bUseRewind && !HasAuthority())
 		{
+			// UE_LOG(LogTemp, Warning, TEXT(" bUseRewind in Tick, Client"))
 			AttackCollisionCheckByRewind();
 		}
 		else if (!bUseRewind && HasAuthority())
 		{
+			// UE_LOG(LogTemp, Warning, TEXT(" !bUseRewind in Tick, Server"))
 			AttackCollisionCheckByServer();
 		}
-	}
-
-}
-
-void AWeapon::AnimStateAttack()
-{
-	if (HasAuthority())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Tick Server"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Tick Client"));
-	}
-
-	if (bUseRewind && !HasAuthority())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ByRewind In Client"));
-		AttackCollisionCheckByRewind();
-	}
-	else if (!bUseRewind && HasAuthority())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ByServer in Server"));
-		AttackCollisionCheckByServer();
 	}
 }
 
@@ -136,26 +116,33 @@ void AWeapon::AttackCollisionCheckByRewind()
 	Params.AddIgnoredActor(GetOwner());
 
 	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
+	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.f);
 
-	if (HitResult.GetActor() == nullptr) return;
+	if (HitResult.GetActor() == nullptr || HitSet.Contains(HitResult.GetActor())) return;
+	HitSet.Add(HitResult.GetActor());
 	
 	OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter;
 	if (OwnerSpearmanCharacter == nullptr) return;
 	OwnerSpearmanPlayerController = (OwnerSpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(OwnerSpearmanCharacter->GetController()) : OwnerSpearmanPlayerController;
 	if (OwnerSpearmanPlayerController == nullptr) return;
 
-	/*
-	* TODO : double check Dupplication in client
-	*/
-
 	ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(HitResult.GetActor());
 	if (HitSpearmanCharacter)
 	{ /* Hit SpearmanCharacter */
 		UE_LOG(LogTemp, Warning, TEXT("Hit in Client"));
-		const float CurrentClientTime = OwnerSpearmanPlayerController->GetServerTime() - OwnerSpearmanPlayerController->GetSingleTripTime();
-		OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequest(HitSpearmanCharacter, Start, HitResult.ImpactPoint, CurrentClientTime, this);
+		if (OwnerSpearmanPlayerController && OwnerSpearmanCharacter && OwnerSpearmanCharacter->GetLagCompensation())
+		{
+			const float CurrentClientTime = OwnerSpearmanPlayerController->GetServerTime() - OwnerSpearmanPlayerController->GetSingleTripTime();
+			UE_LOG(LogTemp, Warning, TEXT("ServerTime : %f, 1/2RTT : %f, CurrentClientTime : %f"), OwnerSpearmanPlayerController->GetServerTime(), OwnerSpearmanPlayerController->GetSingleTripTime(), CurrentClientTime);
+			OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequest(HitSpearmanCharacter, Start, HitResult.ImpactPoint, CurrentClientTime, this);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("LagCompensation Component nullptr"));
+		}
 	}
 
+	/* TODO : double check about Hit Dupplication in client */
 	/* TODO : Rewind BasicMonster, all Actors that can Take Damage */
 }
 
@@ -169,6 +156,7 @@ void AWeapon::AttackCollisionCheckByServer()
 	Params.AddIgnoredActor(GetOwner());
 	
 	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
+	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.f);
 
 	if (HitResult.GetActor() == nullptr || HitSet.Contains(HitResult.GetActor())) return;
 	HitSet.Add(HitResult.GetActor());
@@ -192,7 +180,6 @@ void AWeapon::AttackCollisionCheckByServer()
 			bHeadShot = true;
 			HitPartDamage = Damage;
 		}
-		UE_LOG(LogTemp, Warning, TEXT("Hit Spearman Component : %s"), *HitResult.BoneName.ToString());
 		
 		const float Dist = FVector::Distance(OwnerSpearmanCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
 		FVector2D InRange(60.f, 240.f);
@@ -294,13 +281,36 @@ void AWeapon::Dropped()
 }
 
 void AWeapon::TurnOnAttackCollision()
-{ /* Server Only */
-	HitSet.Empty();
-	bAttackCollisionTrace = true;
+{ 
+	if (bUseRewind && !HasAuthority())
+	{ /* Client Only */
+		HitSet.Empty();
+	}
+	else if (!bUseRewind && HasAuthority())
+	{ /* Server Only */
+		HitSet.Empty();
+	}
+
+	if (HasAuthority())
+	{
+		bAttackCollisionTrace = true;
+	}
 }
 
 void AWeapon::TurnOffAttackCollision()
 { /* Server Only */
-	HitSet.Empty();
-	bAttackCollisionTrace = false;
+	
+	if (bUseRewind && !HasAuthority())
+	{ /* Client Only */
+		HitSet.Empty();
+	}
+	else if (!bUseRewind && HasAuthority())
+	{ /* Server Only */
+		HitSet.Empty();
+	}
+
+	if (HasAuthority())
+	{
+		bAttackCollisionTrace = false;
+	}
 }

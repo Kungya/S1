@@ -68,11 +68,14 @@ void ULagCompensationComponent::SaveFrame(FSavedFrame& OUT Frame)
 
 void ULagCompensationComponent::ServerRewindRequest_Implementation(ASpearmanCharacter* HitSpearmanCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, AWeapon* Weapon)
 {
+	UE_LOG(LogTemp, Warning, TEXT("First In Rewind Request, Server"));
 	if (HitSpearmanCharacter == nullptr || Weapon == nullptr) return;
-	if (Weapon->HitSet.Contains(HitSpearmanCharacter)) return;
+	// if (Weapon->HitSet.Contains(HitSpearmanCharacter)) return;
 
+	UE_LOG(LogTemp, Warning, TEXT("pre Rewind"));
+	// FRewindResult RewindResult = { true, false };
 	FRewindResult RewindResult = Rewind(HitSpearmanCharacter, TraceStart, HitLocation, HitTime, Weapon);
-
+	UE_LOG(LogTemp, Warning, TEXT("Success to receive RewindResult !"));
 	if (RewindResult.bHit)
 	{
 		bool bHeadShot = false;
@@ -94,7 +97,7 @@ void ULagCompensationComponent::ServerRewindRequest_Implementation(ASpearmanChar
 		/* Execute visual effect when hit, Unreliable */
 		Weapon->MulticastHit(HitSpearmanCharacter, FMath::CeilToInt(InDamage), HitLocation, bHeadShot);
 		UE_LOG(LogTemp, Warning, TEXT("Rewind Success"));
-		Weapon->HitSet.Add(HitSpearmanCharacter);
+		// Weapon->HitSet.Add(HitSpearmanCharacter);
 	}
 	else
 	{
@@ -136,7 +139,7 @@ FRewindResult ULagCompensationComponent::Rewind(ASpearmanCharacter* HitSpearmanC
 
 		if (NextNodeOfHitTime->GetValue().Time > HitTime)
 		{
-			NextNodeOfHitTime = PrevNodeOfHitTime;
+			PrevNodeOfHitTime = NextNodeOfHitTime;
 		}
 	}
 	/*                                      ********     (       )     ********                                         */

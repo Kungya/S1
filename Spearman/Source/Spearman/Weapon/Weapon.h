@@ -36,8 +36,6 @@ public:
 
 	void TurnOnAttackCollision();
 	void TurnOffAttackCollision();
-	
-	void AnimStateAttack();
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastHit(AActor* HitActor, int32 InDamage, FVector_NetQuantize HitPoint, bool bHeadShot);
@@ -106,6 +104,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	UWidgetComponent* PickupWidget;
 
+	UPROPERTY(Replicated)
 	bool bAttackCollisionTrace = false;
 
 	
