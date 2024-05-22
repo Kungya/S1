@@ -47,7 +47,6 @@ void ULagCompensationComponent::SaveCurrentFrame()
 	}
 }
 
-
 void ULagCompensationComponent::SaveFrame(FSavedFrame& OUT Frame)
 { /* Server Only, Save Current Frame's HitBox Information */
 	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : SpearmanCharacter; 
@@ -55,7 +54,7 @@ void ULagCompensationComponent::SaveFrame(FSavedFrame& OUT Frame)
 	{
 		Frame.Time = GetWorld()->GetTimeSeconds();
 
-		for (UBoxComponent*& Box : SpearmanCharacter->HitBoxArray)
+		for (UBoxComponent* Box : SpearmanCharacter->HitBoxArray)
 		{
 			FHitBox HitBox;
 			HitBox.Location = Box->GetComponentLocation();
@@ -68,14 +67,9 @@ void ULagCompensationComponent::SaveFrame(FSavedFrame& OUT Frame)
 
 void ULagCompensationComponent::ServerRewindRequest_Implementation(ASpearmanCharacter* HitSpearmanCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, AWeapon* Weapon)
 {
-	UE_LOG(LogTemp, Warning, TEXT("First In Rewind Request, Server"));
 	if (HitSpearmanCharacter == nullptr || Weapon == nullptr) return;
-	// if (Weapon->HitSet.Contains(HitSpearmanCharacter)) return;
 
-	UE_LOG(LogTemp, Warning, TEXT("pre Rewind"));
-	// FRewindResult RewindResult = { true, false };
 	FRewindResult RewindResult = Rewind(HitSpearmanCharacter, TraceStart, HitLocation, HitTime, Weapon);
-	UE_LOG(LogTemp, Warning, TEXT("Success to receive RewindResult !"));
 	if (RewindResult.bHit)
 	{
 		bool bHeadShot = false;
@@ -97,7 +91,6 @@ void ULagCompensationComponent::ServerRewindRequest_Implementation(ASpearmanChar
 		/* Execute visual effect when hit, Unreliable */
 		Weapon->MulticastHit(HitSpearmanCharacter, FMath::CeilToInt(InDamage), HitLocation, bHeadShot);
 		UE_LOG(LogTemp, Warning, TEXT("Rewind Success"));
-		// Weapon->HitSet.Add(HitSpearmanCharacter);
 	}
 	else
 	{
@@ -130,6 +123,9 @@ FRewindResult ULagCompensationComponent::Rewind(ASpearmanCharacter* HitSpearmanC
 	TDoubleLinkedList<FSavedFrame>::TDoubleLinkedListNode* NextNodeOfHitTime = Buffer.GetHead();
 	TDoubleLinkedList<FSavedFrame>::TDoubleLinkedListNode* PrevNodeOfHitTime = Buffer.GetHead();
 
+	/*                   [                 ] - [       ] - [                 ]                      */
+	/* (Old) - [Frame] - [NextNodeOfHitTime] - [HitTime] - [PrevNodeOfHitTime] - [Frame] - (Recent) */
+
 	/* Search until Next of HitTime	*/
 	while (NextNodeOfHitTime->GetValue().Time > HitTime)
 	{
@@ -142,8 +138,6 @@ FRewindResult ULagCompensationComponent::Rewind(ASpearmanCharacter* HitSpearmanC
 			PrevNodeOfHitTime = NextNodeOfHitTime;
 		}
 	}
-	/*                                      ********     (       )     ********                                         */
-	/* (Old) - [Frame] - [Frame] - [NextNodeOfHitTime] - [HitTime] - [PrevNodeOfHitTime] - [Frame] - [Frame] - (Recent) */
 	
 	FrameToSimulate = GetInterpFrame(NextNodeOfHitTime->GetValue(), PrevNodeOfHitTime->GetValue(), HitTime);
 
@@ -178,14 +172,14 @@ FRewindResult ULagCompensationComponent::SimulateHit(ASpearmanCharacter* HitSpea
 {
 	if (HitSpearmanCharacter == nullptr) return FRewindResult();
 	
-	/* [Reserve HitBoxes from Current Frame] -> [MoveHitBoxes For Simulate Hit] -> [Return Result] -> [Reset HitBoxes to Reserved Current Frame] */
+	/* [Reserve HitBoxes of Current Frame] -> [MoveHitBoxes For Simulate Hit] -> [Return Result] -> [Reset HitBoxes to Reserved Current Frame] */
 	FSavedFrame CurrentFrame;
 	ReserveCurrentFrame(HitSpearmanCharacter, CurrentFrame);
 	MoveHitBoxes(HitSpearmanCharacter, Frame);
 	HitSpearmanCharacter->GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	/* Enable Collision */
-	UBoxComponent*& HeadBox = HitSpearmanCharacter->HitBoxArray[0];
+	UBoxComponent* HeadBox = HitSpearmanCharacter->HitBoxArray[0];
 	HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	HeadBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 
@@ -193,21 +187,21 @@ FRewindResult ULagCompensationComponent::SimulateHit(ASpearmanCharacter* HitSpea
 	const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.2f;
 	UWorld* World = GetWorld();
 	if (World)
-	{
+	{ /* Check Head Hit */
 		FCollisionQueryParams Params;
 		Params.AddIgnoredActor(GetOwner());
 		Params.AddIgnoredActor(Weapon);
 		World->LineTraceSingleByChannel(SimulateHitResult, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, Params);
 
 		if (SimulateHitResult.bBlockingHit)
-		{ /* Reset to Reserved Current Frame's Hitbox Position */
+		{ /* Head Hit, Reset to Reserved Current Frame's Hitbox Position */
 			ResetHitBoxes(HitSpearmanCharacter, CurrentFrame);
 			HitSpearmanCharacter->GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 			return FRewindResult{ true, true };
 		}
 		else
-		{
-			for (UBoxComponent*& HitBox : HitSpearmanCharacter->HitBoxArray)
+		{ /* Check Body Hit */
+			for (UBoxComponent* HitBox : HitSpearmanCharacter->HitBoxArray)
 			{
 				if (HitBox)
 				{
@@ -219,7 +213,7 @@ FRewindResult ULagCompensationComponent::SimulateHit(ASpearmanCharacter* HitSpea
 			World->LineTraceSingleByChannel(SimulateHitResult, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, Params);
 
 			if (SimulateHitResult.bBlockingHit)
-			{
+			{ /* Body Hit, Reset to Reserved Current Frame's Hitbox Position */
 				ResetHitBoxes(HitSpearmanCharacter, CurrentFrame);
 				HitSpearmanCharacter->GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 				return FRewindResult{ true, false };
@@ -232,11 +226,11 @@ FRewindResult ULagCompensationComponent::SimulateHit(ASpearmanCharacter* HitSpea
 	return FRewindResult{ false, false };
 }
 
-void ULagCompensationComponent::ReserveCurrentFrame(ASpearmanCharacter* HitSpearmanCharacter, FSavedFrame& OUT Frame)
-{
+void ULagCompensationComponent::ReserveCurrentFrame(ASpearmanCharacter* HitSpearmanCharacter, FSavedFrame& OUT ReservedFrame)
+{ /* Reserve HitBoxes of Current Frame to restore original position */
 	if (HitSpearmanCharacter == nullptr) return;
 
-	for (UBoxComponent*& Box : HitSpearmanCharacter->HitBoxArray)
+	for (UBoxComponent* Box : HitSpearmanCharacter->HitBoxArray)
 	{
 		if (Box)
 		{
@@ -244,34 +238,34 @@ void ULagCompensationComponent::ReserveCurrentFrame(ASpearmanCharacter* HitSpear
 			HitBox.Location = Box->GetComponentLocation();
 			HitBox.Rotation = Box->GetComponentRotation();
 			HitBox.Extent = Box->GetScaledBoxExtent();
-			Frame.SavedHitBoxArray.Add(HitBox);
+			ReservedFrame.SavedHitBoxArray.Add(HitBox);
 		}
 	}
 }
 
-void ULagCompensationComponent::MoveHitBoxes(ASpearmanCharacter* HitSpearmanCharacter, const FSavedFrame& Frame)
+void ULagCompensationComponent::MoveHitBoxes(ASpearmanCharacter* HitSpearmanCharacter, const FSavedFrame& FrameToMove)
 {
 	if (HitSpearmanCharacter == nullptr) return;
 
 	const TArray<UBoxComponent*>& HitSpearmanCharacterHitBoxArray = HitSpearmanCharacter->HitBoxArray;
 	for (int32 idx = 0; idx < HitSpearmanCharacterHitBoxArray.Num(); idx++)
 	{
-		HitSpearmanCharacterHitBoxArray[idx]->SetWorldLocation(Frame.SavedHitBoxArray[idx].Location);
-		HitSpearmanCharacterHitBoxArray[idx]->SetWorldRotation(Frame.SavedHitBoxArray[idx].Rotation);
-		HitSpearmanCharacterHitBoxArray[idx]->SetBoxExtent(Frame.SavedHitBoxArray[idx].Extent);
+		HitSpearmanCharacterHitBoxArray[idx]->SetWorldLocation(FrameToMove.SavedHitBoxArray[idx].Location);
+		HitSpearmanCharacterHitBoxArray[idx]->SetWorldRotation(FrameToMove.SavedHitBoxArray[idx].Rotation);
+		HitSpearmanCharacterHitBoxArray[idx]->SetBoxExtent(FrameToMove.SavedHitBoxArray[idx].Extent);
 	}
 }
 
-void ULagCompensationComponent::ResetHitBoxes(ASpearmanCharacter* HitSpearmanCharacter, const FSavedFrame& Frame)
+void ULagCompensationComponent::ResetHitBoxes(ASpearmanCharacter* HitSpearmanCharacter, const FSavedFrame& ReservedFrame)
 {
 	if (HitSpearmanCharacter == nullptr) return;
 
 	const TArray<UBoxComponent*>& HitSpearmanCharacterHitBoxArray = HitSpearmanCharacter->HitBoxArray;
 	for (int32 idx = 0; idx < HitSpearmanCharacterHitBoxArray.Num(); idx++)
 	{
-		HitSpearmanCharacterHitBoxArray[idx]->SetWorldLocation(Frame.SavedHitBoxArray[idx].Location);
-		HitSpearmanCharacterHitBoxArray[idx]->SetWorldRotation(Frame.SavedHitBoxArray[idx].Rotation);
-		HitSpearmanCharacterHitBoxArray[idx]->SetBoxExtent(Frame.SavedHitBoxArray[idx].Extent);
+		HitSpearmanCharacterHitBoxArray[idx]->SetWorldLocation(ReservedFrame.SavedHitBoxArray[idx].Location);
+		HitSpearmanCharacterHitBoxArray[idx]->SetWorldRotation(ReservedFrame.SavedHitBoxArray[idx].Rotation);
+		HitSpearmanCharacterHitBoxArray[idx]->SetBoxExtent(ReservedFrame.SavedHitBoxArray[idx].Extent);
 		HitSpearmanCharacterHitBoxArray[idx]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 }

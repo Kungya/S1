@@ -33,7 +33,7 @@ void UItemInstance::PostInitProperties()
 }
 
 void UItemInstance::Init(int32 num)
-{ // Server Only
+{ /* Server Only */
 	if (num <= 0) return;
 
 	S1GameInstance = (S1GameInstance == nullptr) ? Cast<US1GameInstance>(GetWorld()->GetGameInstance()) : S1GameInstance;
@@ -47,9 +47,6 @@ void UItemInstance::Init(int32 num)
 	Cost = S1GameInstance->GetItemData(ItemId)->Cost;
 	Weight = S1GameInstance->GetItemData(ItemId)->Weight;
 	ItemDataIdx = S1GameInstance->GetItemData(ItemId)->ItemDataIdx;
-	/*StaticMeshIdx = S1GameInstance->GetItemData(ItemId)->StaticMeshIdx;*/
-	// Icon = S1GameInstance->GetItemData(ItemId)->Texture;
-	// StaticMesh = S1GameInstance->GetItemData(ItemId)->StaticMesh;
 
 	Item = (Item == nullptr) ? GetTypedOuter<AItem>() : Item;
 	if (Item)

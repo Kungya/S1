@@ -129,7 +129,6 @@ void US1InventorySlotsWidget::OnInventoryItemInfoChanged(const FIntPoint& InItem
 		}
 		else
 		{ // To
-			// TODO : ItemCount 정책
 			ItemInfoWidget->Init(this, Item, 1);
 		}
 	}
@@ -143,7 +142,6 @@ void US1InventorySlotsWidget::OnInventoryItemInfoChanged(const FIntPoint& InItem
 		CanvasPanelSlot->SetPosition(FVector2D(InItemSlotPos.X * 50, InItemSlotPos.Y * 50));
 
 		// Caching
-		// TODO : ItemCount 정책
 		ItemInfoWidget->Init(this, Item, 1);
 	}
 }

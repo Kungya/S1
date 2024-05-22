@@ -45,22 +45,12 @@ bool AItem::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FRepli
 	return bWroteSomething;
 }
 
-//void AItem::Multicast_SetStaticMesh_Implementaiton()
-//{
-//	ItemMesh->SetStaticMesh()
-//}
-
 void AItem::Init(int32 num)
 { // Server Only
 	if (ItemInstance == nullptr)
 	{
 		ItemInstance = NewObject<UItemInstance>(this);
 		ItemInstance->Init(num);
-		//UStaticMesh* StaticMesh = ItemInstance->GetStaticMesh();
-		//if (StaticMesh)
-		//{ // 서버에서만 설정을해서 안보는거였음 -> 모든 클라와 서버에서 StaticMesh Array를 들고 있다가, iDX만 넘겨줘서 그걸로 설정하면 어떨까
-		//	ItemMesh->SetStaticMesh(StaticMesh);
-		//}
 	}
 }
 

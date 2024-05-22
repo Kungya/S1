@@ -357,7 +357,6 @@ void ASpearmanCharacter::OnRep_Hp(float LastHp)
 {
 	if (!IsLocallyControlled())
 	{ // TODO : 피격자가 입은 데미지만 공격자 입장에서 표시 -> 우선은 피격자, 서버를 제외하고 전부 표시
-		// TODO : 수정 필요
 		const float Damage = LastHp - Hp;
 		if (Damage > 0.f)
 		{
@@ -477,7 +476,7 @@ void ASpearmanCharacter::CalculateAO_Pitch()
 		// [270, 360) -> [-90, 0)
 		AO_Pitch -= 360.f;
 	}
-	// 상하 Weapon각 제한
+	// Limit Pitch Angle
 	AO_Pitch = FMath::ClampAngle(AO_Pitch, -45.f, 45.f);
 }
 
@@ -515,7 +514,7 @@ void ASpearmanCharacter::TurnInPlace()
 }
 
 void ASpearmanCharacter::ServerEquipButtonPressed_Implementation()
-{ // server-side
+{ /* Server Only */
 	if (Combat)
 	{
 		Combat->EquipWeapon(OverlappingWeapon);
@@ -563,7 +562,7 @@ void ASpearmanCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 		OverlappingWeapon->ShowPickupWidget(true);
 	}
 	if (LastWeapon)
-	{  // OverlappingWeapon이 다시 nullptr로 replicated 되기 직전 마지막 값
+	{  // Last Value before nullptr (OverlappingWeapon)
 		LastWeapon->ShowPickupWidget(false);
 	}
 }

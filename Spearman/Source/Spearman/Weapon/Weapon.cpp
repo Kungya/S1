@@ -133,7 +133,6 @@ void AWeapon::AttackCollisionCheckByRewind()
 		if (OwnerSpearmanPlayerController && OwnerSpearmanCharacter && OwnerSpearmanCharacter->GetLagCompensation())
 		{
 			const float CurrentClientTime = OwnerSpearmanPlayerController->GetServerTime() - OwnerSpearmanPlayerController->GetSingleTripTime();
-			UE_LOG(LogTemp, Warning, TEXT("ServerTime : %f, 1/2RTT : %f, CurrentClientTime : %f"), OwnerSpearmanPlayerController->GetServerTime(), OwnerSpearmanPlayerController->GetSingleTripTime(), CurrentClientTime);
 			OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequest(HitSpearmanCharacter, Start, HitResult.ImpactPoint, CurrentClientTime, this);
 		}
 		else
@@ -165,7 +164,7 @@ void AWeapon::AttackCollisionCheckByServer()
 	if (OwnerSpearmanCharacter == nullptr) return;
 	OwnerSpearmanPlayerController = (OwnerSpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(OwnerSpearmanCharacter->GetController()) : OwnerSpearmanPlayerController;
 	if (OwnerSpearmanPlayerController == nullptr) return;
-
+	
 	bool bHeadShot = false;
 	ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(HitResult.GetActor());
 	if (HitSpearmanCharacter)
@@ -180,14 +179,13 @@ void AWeapon::AttackCollisionCheckByServer()
 			bHeadShot = true;
 			HitPartDamage = Damage;
 		}
-		
 		const float Dist = FVector::Distance(OwnerSpearmanCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
 		FVector2D InRange(60.f, 240.f);
 		FVector2D OutRange(HitPartDamage / 3.f, HitPartDamage);
 		const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
-		
 		UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerSpearmanPlayerController, this, UDamageType::StaticClass());
-		MulticastHit(HitResult.GetActor(), FMath::FloorToInt(InDamage), HitResult.ImpactPoint, bHeadShot);
+		
+		MulticastHit(HitResult.GetActor(), FMath::CeilToInt(InDamage), HitResult.ImpactPoint, bHeadShot);
 	}
 	ABasicMonster* HitMonster = Cast<ABasicMonster>(HitResult.GetActor());
 	if (HitMonster)
