@@ -178,7 +178,6 @@ FRewindResult ULagCompensationComponent::SimulateHit(ASpearmanCharacter* HitSpea
 	MoveHitBoxes(HitSpearmanCharacter, Frame);
 	HitSpearmanCharacter->GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	/* Enable Collision */
 	UBoxComponent* HeadBox = HitSpearmanCharacter->HitBoxArray[0];
 	HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	HeadBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
@@ -209,7 +208,6 @@ FRewindResult ULagCompensationComponent::SimulateHit(ASpearmanCharacter* HitSpea
 					HitBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 				}
 			}
-
 			World->LineTraceSingleByChannel(SimulateHitResult, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, Params);
 
 			if (SimulateHitResult.bBlockingHit)

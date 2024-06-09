@@ -6,67 +6,51 @@
 #include "GameFramework/Actor.h"
 #include "BlueZone.generated.h"
 
-class UCapsuleComponent;
+USTRUCT(BlueprintType)
+struct FBlueZoneInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = "BlueZoneInfo")
+	float WaitingTime;
+
+	UPROPERTY(EditAnywhere, Category = "BlueZoneInfo")
+	float MovingTime;
+
+	UPROPERTY(EditAnywhere, Category = "BlueZoneInfo")
+	float ScaleToDecrease;
+};
 
 UCLASS()
 class SPEARMAN_API ABlueZone : public AActor
 {
 	GENERATED_BODY()
-	
+
 public:	
 	ABlueZone();
-	
-	virtual void Tick(float DeltaTime) override;
+
+	void StartMovingBlueZone();
 
 protected:
 	virtual void BeginPlay() override;
-
-	UFUNCTION()
-	virtual void OnBlueZoneBeginOverlap(
-			UPrimitiveComponent* OverlappedComponent,
-			AActor* OtherActor,
-			UPrimitiveComponent* OtherComp,
-			int32 OtherBodyIndex,
-			bool bFromSweep,
-			const FHitResult& SweepResult
-		);
-
-	UFUNCTION()
-	virtual void OnSafeZoneBeginOverlap(
-		UPrimitiveComponent* OverlappedComponent,
-		AActor* OtherActor,
-		UPrimitiveComponent* OtherComp,
-		int32 OtherBodyIndex,
-		bool bFromSweep,
-		const FHitResult& SweepResult
-	);
-
-	UFUNCTION()
-	virtual void OnSafeZoneEndOverlap(
-			UPrimitiveComponent* OverlappedComponent,
-			AActor* OtherActor,
-			UPrimitiveComponent* OtherComp,
-			int32 OtherBodyIndex
-		);
+	virtual void Tick(float DeltaTime) override;
 	
 private:
-	UPROPERTY(VisibleAnywhere, Category = "Component")
-	USceneComponent* Scene;
 	
-	UPROPERTY(EditAnywhere, Category = "Component")
-	UCapsuleComponent* SafeZone;
+	UPROPERTY(EditAnywhere, Category = "Components")
+	UStaticMeshComponent* ZoneMesh;
 	
-	UPROPERTY(EditAnywhere, Category = "Component")
-	UStaticMeshComponent* SafeZoneMesh;
-
-	UPROPERTY(EditAnywhere, Category = "Component")
-	UCapsuleComponent* BlueZone;
-
-
+	// Bluezone Info per Phase 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BlueZoneInfo", meta = (AllowPrivateAccess = "true"))
+	TArray<FBlueZoneInfo> BlueZoneInfoArray;
 	
+	UPROPERTY()
+	int32 CurrentPhase;
 
-	float DefaultCapsuleHalfHeight = 2000.f;
-	float DefaultCapsuleRadius = 1500.f;
+	FTimerHandle MovingTimerHandle;
+
+	void ReduceBlueZone();
+	void StopBlueZone();
 
 public:
 

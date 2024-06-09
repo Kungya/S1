@@ -4,6 +4,7 @@
 #include "SpearmanGameMode.h"
 #include "Spearman/Character/SpearmanCharacter.h"
 #include "Spearman/PlayerController/SpearmanPlayerController.h"
+#include "Spearman/GameMode/BlueZone.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerStart.h"
 
@@ -56,20 +57,6 @@ void ASpearmanGameMode::Tick(float DeltaTime)
 	}
 }
 
-void ASpearmanGameMode::OnMatchStateSet()
-{
-	Super::OnMatchStateSet();
-
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
-	{
-		ASpearmanPlayerController* SpearmanPlayerController = Cast<ASpearmanPlayerController>(*It);
-		if (SpearmanPlayerController)
-		{
-			SpearmanPlayerController->OnMatchStateSet(MatchState);
-		}
-	}
-}
-
 void ASpearmanGameMode::PlayerDeath(ASpearmanCharacter* DeadCharacter, ASpearmanPlayerController* DeadController, ASpearmanPlayerController* AttackerController)
 {
 	if (DeadCharacter)
@@ -92,4 +79,44 @@ void ASpearmanGameMode::RequestRespawn(ASpearmanCharacter* DeadCharacter, AContr
 		int32 SelectedIdx = FMath::RandRange(0, PlayerStarts.Num() - 1);
 		RestartPlayerAtPlayerStart(DeadController, PlayerStarts[SelectedIdx]);
 	}
+}
+
+void ASpearmanGameMode::OnMatchStateSet()
+{
+	Super::OnMatchStateSet();
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+	{
+		ASpearmanPlayerController* SpearmanPlayerController = Cast<ASpearmanPlayerController>(*It);
+		if (SpearmanPlayerController)
+		{
+			SpearmanPlayerController->OnMatchStateSet(MatchState);
+		}
+	}
+}
+
+void ASpearmanGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+
+	ASpearmanPlayerController* NewSpearmanPlayer = Cast<ASpearmanPlayerController>(NewPlayer);
+	if (NewSpearmanPlayer)
+	{
+		SpearmanPlayerControllerArray.AddUnique(NewSpearmanPlayer);
+	}
+}
+
+void ASpearmanGameMode::HandleMatchHasStarted()
+{
+	Super::HandleMatchHasStarted();
+
+	FTimerHandle SpawnBlueZoneTimer;
+	GetWorld()->GetTimerManager().SetTimer(SpawnBlueZoneTimer, this, &ASpearmanGameMode::SpawnBlueZone, BlueZoneSpawnDelay, false);
+}
+
+void ASpearmanGameMode::SpawnBlueZone()
+{
+	BlueZone = GetWorld()->SpawnActor<ABlueZone>(BlueZoneClass, BlueZoneTransform);
+
+	BlueZone->StartMovingBlueZone();
 }
