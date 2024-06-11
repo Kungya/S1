@@ -25,6 +25,7 @@ class UParticleSystem;
 class UBoxComponent;
 class UCapsuleComponent;
 
+
 UCLASS()
 class SPEARMAN_API ASpearmanCharacter : public ACharacter, public IWeaponHitInterface
 {
@@ -74,7 +75,6 @@ protected:
 	void ServerInteract();
 
 	void InventoryButtonPressed();
-	void InventoryButtonReleased();
 
 	void HideCameraIfCharacterTooClose();
 	void CalculateAO_Pitch();
@@ -92,6 +92,9 @@ protected:
 
 	void ShowHpBar();
 	void HideHpBar();
+
+	void TakeDamageIfNotInBlueZone();
+
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -218,6 +221,21 @@ private:
 	UParticleSystem* HitParticles;
 
 	/*
+	* BlueZone
+	*/
+
+	/* false : apply damage */
+	UPROPERTY(ReplicatedUsing = OnRep_bIsInBlueZone, VisibleAnywhere)
+	bool bIsInBlueZone = true;
+
+	UFUNCTION()
+	void OnRep_bIsInBlueZone();
+
+	FTimerHandle BlueZoneTimerHandle;
+
+
+
+	/*
 	* Hit Box
 	*/
 
@@ -286,7 +304,7 @@ public:
 	FORCEINLINE UTexture2D* GetCrosshairCircle() const { return CrosshairCircle; }
 	FORCEINLINE UTexture2D* GetCrosshairDot() const { return CrosshairDot; }
 	FORCEINLINE bool IsDead() const { return bDeath; }
-	FORCEINLINE void SetHp(float NewHp) { Hp = NewHp; }
+	FORCEINLINE void SetHp(const float NewHp) { Hp = NewHp; }
 	FORCEINLINE float GetHp() const { return Hp; }
 	FORCEINLINE float GetMaxHp() const { return MaxHp; }
 	FORCEINLINE float GetHpRatio() const { return Hp / MaxHp; }
@@ -294,4 +312,5 @@ public:
 	FORCEINLINE UBuffComponent* GetBuff() const { return Buff; }
 	FORCEINLINE UInventoryComponent* GetInventory() const { return Inventory; }
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const { return LagCompensation; }
+	FORCEINLINE void SetbIsInBlueZone(const bool NewbIsInBlueZone) { bIsInBlueZone = NewbIsInBlueZone; };
 };

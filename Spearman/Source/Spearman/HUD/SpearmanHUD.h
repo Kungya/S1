@@ -7,6 +7,8 @@
 #include "SpearmanHUD.generated.h"
 
 class UUserWidget;
+class UCharacterOverlay;
+class UCharacterOverlayNotice;
 class UTexture2D;
 
 USTRUCT(BlueprintType)
@@ -36,10 +38,10 @@ public:
 	TSubclassOf<UUserWidget> CharacterOverlayNoticeClass;
 
 	UPROPERTY()
-	class UCharacterOverlay* CharacterOverlay;
+	UCharacterOverlay* CharacterOverlay;
 
 	UPROPERTY()
-	class UCharacterOverlayNotice* CharacterOverlayNotice;
+	UCharacterOverlayNotice* CharacterOverlayNotice;
 	
 	void AddCharacterOverlay();
 	void AddCharacterOverlayNotice();

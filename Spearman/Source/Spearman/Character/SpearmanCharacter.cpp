@@ -30,6 +30,8 @@
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Spearman/SpearComponents/LagCompensationComponent.h"
+#include "Spearman/HUD/SpearmanHUD.h"
+#include "Components/Image.h"
 
 ASpearmanCharacter::ASpearmanCharacter()
 {
@@ -194,6 +196,7 @@ void ASpearmanCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME_CONDITION(ASpearmanCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(ASpearmanCharacter, Hp);
 	DOREPLIFETIME(ASpearmanCharacter, bDisableKeyInput);
+	DOREPLIFETIME(ASpearmanCharacter, bIsInBlueZone);
 }
 
 void ASpearmanCharacter::PostInitializeComponents()
@@ -261,6 +264,8 @@ void ASpearmanCharacter::BeginPlay()
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ASpearmanCharacter::OnAttacked);
+
+		GetWorld()->GetTimerManager().SetTimer(BlueZoneTimerHandle, this, &ASpearmanCharacter::TakeDamageIfNotInBlueZone, 1.f, true);
 	}
 
 	GetWorldTimerManager().SetTimer(TestTimer, this, &ASpearmanCharacter::TestToggleVector, 2.f, true);
@@ -336,7 +341,7 @@ void ASpearmanCharacter::OnAttacked(AActor* DamagedActor, float Damage, const UD
 		ASpearmanGameMode* SpearmanGameMode = GetWorld()->GetAuthGameMode<ASpearmanGameMode>();
 		if (SpearmanGameMode)
 		{
-			SpearmanPlayerController = SpearmanPlayerController == nullptr ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
+			SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
 			ASpearmanPlayerController* AttackerController = Cast<ASpearmanPlayerController>(InstigatorController);
 			SpearmanGameMode->PlayerDeath(this, SpearmanPlayerController, AttackerController);
 		}
@@ -712,9 +717,43 @@ void ASpearmanCharacter::ServerInteract_Implementation()
 
 void ASpearmanCharacter::InventoryButtonPressed()
 {
+	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
 	if (SpearmanPlayerController)
 	{
 		SpearmanPlayerController->ShowInventoryWidget();
 		SpearmanPlayerController->SetInputMode(FInputModeUIOnly());
 	}	
+}
+
+void ASpearmanCharacter::TakeDamageIfNotInBlueZone()
+{ /* Server Only */
+	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
+
+	if (!bIsInBlueZone)
+	{
+		if (SpearmanPlayerController)
+		{
+			UGameplayStatics::ApplyDamage(this, 1.f, SpearmanPlayerController, this, UDamageType::StaticClass());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("SpearmanPlayerController is nullptr"));
+		}
+	}
+}
+
+void ASpearmanCharacter::OnRep_bIsInBlueZone()
+{
+	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
+	if (SpearmanPlayerController)
+	{
+		if (bIsInBlueZone)
+		{
+			SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->BlueZoneImage->SetVisibility(ESlateVisibility::Hidden);
+		}
+		else
+		{
+			SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->BlueZoneImage->SetVisibility(ESlateVisibility::Visible);
+		}
+	}
 }

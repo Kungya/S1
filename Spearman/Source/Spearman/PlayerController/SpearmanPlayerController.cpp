@@ -13,6 +13,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Spearman/HUD/S1InventoryWidget.h"
 #include "GameFramework/PlayerState.h"
+#include "Components/Image.h"
 
 
 void ASpearmanPlayerController::BeginPlay()
@@ -190,6 +191,7 @@ void ASpearmanPlayerController::HUDInit()
 			{
 				SetHUDHp(HUDHp, HUDMaxHp);
 				CharacterOverlay->InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
+				CharacterOverlay->BlueZoneImage->SetVisibility(ESlateVisibility::Hidden);
 			}
 		}
 	}

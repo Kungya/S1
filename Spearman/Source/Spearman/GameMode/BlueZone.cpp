@@ -3,6 +3,7 @@
 
 #include "BlueZone.h"
 #include "Components/CapsuleComponent.h"
+#include "Spearman/Character/SpearmanCharacter.h"
 
 ABlueZone::ABlueZone()
 {
@@ -21,11 +22,20 @@ void ABlueZone::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FBlueZoneInfo BlueZoneInfoPhase0 = { 5.f, 5.f, 1.f };
-	BlueZoneInfoArray.Add(BlueZoneInfoPhase0);
+	if (HasAuthority())
+	{
+		FBlueZoneInfo BlueZoneInfoPhase0 = { 5.f, 10.f, 1.f };
+		BlueZoneInfoArray.Add(BlueZoneInfoPhase0);
 
-	FBlueZoneInfo BlueZoneInfoPhase1 = { 5.f, 15.f, 0.01f };
-	BlueZoneInfoArray.Add(BlueZoneInfoPhase1);
+		FBlueZoneInfo BlueZoneInfoPhase1 = { 5.f, 5.f, 0.5f };
+		BlueZoneInfoArray.Add(BlueZoneInfoPhase1);
+
+		FBlueZoneInfo BlueZoneInfoPhase2 = { 5.f, 5.f, 0.5f };
+		BlueZoneInfoArray.Add(BlueZoneInfoPhase2);
+
+		ZoneMesh->OnComponentBeginOverlap.AddDynamic(this, &ABlueZone::OnBlueZoneBeginOverlap);
+		ZoneMesh->OnComponentEndOverlap.AddDynamic(this, &ABlueZone::OnBlueZoneEndOverlap);
+	}
 }
 
 void ABlueZone::Tick(float DeltaTime)
@@ -34,12 +44,38 @@ void ABlueZone::Tick(float DeltaTime)
 
 }
 
+void ABlueZone::OnBlueZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{ /* Server Only */
+	UE_LOG(LogTemp, Warning, TEXT("Begin Overlap"));
+
+	ASpearmanCharacter* OverlappedSpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
+	if (OverlappedSpearmanCharacter)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SetbIsInBlueZone(true)"));
+
+		OverlappedSpearmanCharacter->SetbIsInBlueZone(true);
+	}
+}
+
+void ABlueZone::OnBlueZoneEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{ /* Server Only */
+	UE_LOG(LogTemp, Warning, TEXT("End Overlap"));
+
+	ASpearmanCharacter* OverlappedSpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
+	if (OverlappedSpearmanCharacter)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SetbIsInBlueZone(false)"));
+
+		OverlappedSpearmanCharacter->SetbIsInBlueZone(false);
+	}
+}
+
 void ABlueZone::StartMovingBlueZone()
 { /* Server Only */
 	if (CurrentPhase < BlueZoneInfoArray.Num())
 	{
 		// Start reducing the BlueZone
-		GetWorld()->GetTimerManager().SetTimer(MovingTimerHandle, this, &ABlueZone::ReduceBlueZone, 0.05, true);
+		GetWorld()->GetTimerManager().SetTimer(MovingTimerHandle, this, &ABlueZone::ReduceBlueZone, 0.2, true);
 		
 		// Stop Reducing BlueZone if moving time is reached
 		FTimerHandle LocalHandle1;
@@ -53,24 +89,27 @@ void ABlueZone::StartMovingBlueZone()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Current Phase is Over"));
+		UE_LOG(LogTemp, Warning, TEXT("Overall Phase is Over"));
 	}
 }
 
 void ABlueZone::ReduceBlueZone()
-{
+{ /* Server Only */
 	const FVector ScaleToReduce = GetActorScale3D() - FVector(BlueZoneInfoArray[CurrentPhase].ScaleToDecrease, BlueZoneInfoArray[CurrentPhase].ScaleToDecrease, 0.f);
-	UE_LOG(LogTemp, Warning, TEXT("Current Scale : %s"), *ScaleToReduce.ToString());
+	UE_LOG(LogTemp, Warning, TEXT("Current Phase : %d, Current Scale : %s"), CurrentPhase, *ScaleToReduce.ToString());
 	SetActorScale3D(ScaleToReduce);
 }
 
 void ABlueZone::StopBlueZone()
-{
+{ /* Server Only */
+	GetWorld()->GetTimerManager().ClearTimer(MovingTimerHandle);
+
 	if (CurrentPhase < BlueZoneInfoArray.Num() - 1)
 	{
 		CurrentPhase++;
 	}
-
-	GetWorld()->GetTimerManager().ClearTimer(MovingTimerHandle);
-	MovingTimerHandle.Invalidate();
+	else
+	{
+		Destroy();
+	}
 }

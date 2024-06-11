@@ -7,6 +7,10 @@
 //#include "Blueprint/UserWidget.h"
 #include "CharacterOverlay.generated.h"
 
+class UCanvasPanel;
+class UProgressBar;
+class UTextBlock;
+class UImage;
 class US1InventoryWidget;
 class US1InventorySlotsWidget;
 
@@ -33,13 +37,13 @@ private:
 	
 public:
 	UPROPERTY(meta = (BindWidget))
-	class UCanvasPanel* Root_CanvasPanel;
+	UCanvasPanel* Root_CanvasPanel;
 
 	UPROPERTY(meta = (BindWidget))
-	class UProgressBar* HpBar;
+	UProgressBar* HpBar;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* HpText;
+	UTextBlock* HpText;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* MatchCountdownText;
@@ -55,4 +59,7 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ServerTick_Text;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* BlueZoneImage;
 };
