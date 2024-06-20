@@ -14,13 +14,16 @@
 #include "Spearman/HUD/S1InventoryWidget.h"
 #include "GameFramework/PlayerState.h"
 #include "Components/Image.h"
-
+#include "Components/SceneCaptureComponent2D.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "Spearman/Character/SpearmanCharacter.h"
 
 void ASpearmanPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
 	SpearmanHUD = Cast<ASpearmanHUD>(GetHUD());
+	SpearmanCharacter = Cast<ASpearmanCharacter>(GetPawn());
 
 	// Client should get MatchState from Server asap.
 	ServerRequestMatchState();
@@ -59,7 +62,8 @@ void ASpearmanPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 void ASpearmanPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	ASpearmanCharacter* SpearmanCharacter = Cast<ASpearmanCharacter>(InPawn);
+	
+	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(InPawn) : SpearmanCharacter;
 	if (SpearmanCharacter)
 	{
 		SetHUDHp(SpearmanCharacter->GetHp(), SpearmanCharacter->GetMaxHp());
@@ -192,6 +196,24 @@ void ASpearmanPlayerController::HUDInit()
 				SetHUDHp(HUDHp, HUDMaxHp);
 				CharacterOverlay->InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
 				CharacterOverlay->BlueZoneImage->SetVisibility(ESlateVisibility::Hidden);
+
+				SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetPawn()) : SpearmanCharacter;
+				if (SpearmanCharacter && IsLocalController())
+				{ // TODO : Should Test in packaged version. (Multiplayer Render Target)
+					static UMaterialInterface* MinimapMatInst = LoadObject<UMaterialInterface>(nullptr, TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Assets/Textures/Minimap/RenderTarget_Mat_Inst.RenderTarget_Mat_Inst'"));
+					if (MinimapMatInst)
+					{
+						UMaterialInstanceDynamic* MiniMapMatInstDynamic = UMaterialInstanceDynamic::Create(MinimapMatInst, nullptr);
+						if (MiniMapMatInstDynamic)
+						{
+							if (SpearmanCharacter->RenderTargetMinimap)
+							{
+								MiniMapMatInstDynamic->SetTextureParameterValue(FName("MinimapParam"), SpearmanCharacter->RenderTargetMinimap);
+								CharacterOverlay->Minimap->SetBrushFromMaterial(MiniMapMatInstDynamic);
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -283,7 +305,7 @@ void ASpearmanPlayerController::HandleCooldown()
 			SpearmanHUD->CharacterOverlayNotice->WarmupNoticeText->SetText(FText::FromString(NoticeText));
 		}
 	}
-	ASpearmanCharacter* SpearmanCharacter = Cast<ASpearmanCharacter>(GetPawn());
+	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetPawn()) : SpearmanCharacter;
 	if (SpearmanCharacter)
 	{
 		SpearmanCharacter->bDisableKeyInput = true;

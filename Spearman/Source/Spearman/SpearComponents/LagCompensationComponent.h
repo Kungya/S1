@@ -57,6 +57,7 @@ class SPEARMAN_API ULagCompensationComponent : public UActorComponent
 public:	
 	ULagCompensationComponent();
 	friend class ASpearmanCharacter;
+
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 	void ShowSavedFrame(const FSavedFrame& Frame, const FColor& Color);
@@ -67,7 +68,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	void SaveFrame(FSavedFrame& OUT Frame);
+	void SaveFrame(FSavedFrame& OutFrame);
 	
 	FSavedFrame GetInterpFrame(const FSavedFrame& Next, const FSavedFrame& Prev, float HitTime);
 	FRewindResult Rewind(ASpearmanCharacter* HitSpearmanCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTimem, AWeapon* Weapon);
@@ -79,7 +80,6 @@ protected:
 	void SaveCurrentFrame();
 
 private:
-
 	UPROPERTY()
 	ASpearmanCharacter* SpearmanCharacter;
 
@@ -87,11 +87,13 @@ private:
 	ASpearmanPlayerController* SpearmanPlayerController;
 
 	/*
-	* Recorded Frame
+	* Recorded Frame per Tick
 	*/
 
 	TDoubleLinkedList<FSavedFrame> HistoricalBuffer;
 	
+
+	// LimitTime, 1.f == 1000ms
 	UPROPERTY(EditAnywhere)
 	float RewindLimitTime = 3.f;
 

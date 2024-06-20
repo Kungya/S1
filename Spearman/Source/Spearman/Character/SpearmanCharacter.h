@@ -10,6 +10,9 @@
 
 class USpringArmComponent;
 class UCameraComponent;
+class USceneCaptureComponent2D;
+class UPaperSpriteComponent;
+class UTextureRenderTarget2D;
 class AWeapon;
 class UTexture2D;
 class UWidgetComponent;
@@ -24,7 +27,6 @@ class ASpearmanPlayerController;
 class UParticleSystem;
 class UBoxComponent;
 class UCapsuleComponent;
-
 
 UCLASS()
 class SPEARMAN_API ASpearmanCharacter : public ACharacter, public IWeaponHitInterface
@@ -57,6 +59,9 @@ public:
 
 	UPROPERTY()
 	TArray<UBoxComponent*> HitBoxArray;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Minimap)
+	UTextureRenderTarget2D* RenderTargetMinimap;
 
 protected:
 	virtual void BeginPlay() override;
@@ -97,11 +102,29 @@ protected:
 
 
 private:
+
+	/*
+	* Camera
+	*/
+
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	USpringArmComponent* CameraBoom;
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	UCameraComponent* FollowCamera;
+
+	/*
+	* Minimap
+	*/
+
+	UPROPERTY(VisibleAnywhere, Category = Minimap)
+	USpringArmComponent* MinimapSpringArm;
+
+	UPROPERTY(VisibleAnywhere, Category = Minimap)
+	UPaperSpriteComponent* MinimapCursor;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Minimap, meta = (AllowPrivateAccess))
+	USceneCaptureComponent2D* MinimapSceneCapture;
 
 	UPROPERTY (ReplicatedUsing = OnRep_OverlappingWeapon)
 	AWeapon* OverlappingWeapon;
@@ -313,4 +336,5 @@ public:
 	FORCEINLINE UInventoryComponent* GetInventory() const { return Inventory; }
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const { return LagCompensation; }
 	FORCEINLINE void SetbIsInBlueZone(const bool NewbIsInBlueZone) { bIsInBlueZone = NewbIsInBlueZone; };
+	FORCEINLINE UTextureRenderTarget2D* GetRenderTargetMinimap() const { return RenderTargetMinimap; }
 };

@@ -46,26 +46,22 @@ void ABlueZone::Tick(float DeltaTime)
 
 void ABlueZone::OnBlueZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 { /* Server Only */
-	UE_LOG(LogTemp, Warning, TEXT("Begin Overlap"));
+	// UE_LOG(LogTemp, Warning, TEXT("Begin Overlap"));
 
 	ASpearmanCharacter* OverlappedSpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
 	if (OverlappedSpearmanCharacter)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SetbIsInBlueZone(true)"));
-
 		OverlappedSpearmanCharacter->SetbIsInBlueZone(true);
 	}
 }
 
 void ABlueZone::OnBlueZoneEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 { /* Server Only */
-	UE_LOG(LogTemp, Warning, TEXT("End Overlap"));
+	// UE_LOG(LogTemp, Warning, TEXT("End Overlap"));
 
 	ASpearmanCharacter* OverlappedSpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
 	if (OverlappedSpearmanCharacter)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SetbIsInBlueZone(false)"));
-
 		OverlappedSpearmanCharacter->SetbIsInBlueZone(false);
 	}
 }
@@ -96,7 +92,7 @@ void ABlueZone::StartMovingBlueZone()
 void ABlueZone::ReduceBlueZone()
 { /* Server Only */
 	const FVector ScaleToReduce = GetActorScale3D() - FVector(BlueZoneInfoArray[CurrentPhase].ScaleToDecrease, BlueZoneInfoArray[CurrentPhase].ScaleToDecrease, 0.f);
-	UE_LOG(LogTemp, Warning, TEXT("Current Phase : %d, Current Scale : %s"), CurrentPhase, *ScaleToReduce.ToString());
+	// UE_LOG(LogTemp, Warning, TEXT("Current Phase : %d, Current Scale : %s"), CurrentPhase, *ScaleToReduce.ToString());
 	SetActorScale3D(ScaleToReduce);
 }
 

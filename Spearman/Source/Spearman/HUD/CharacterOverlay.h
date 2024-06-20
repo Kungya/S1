@@ -62,4 +62,7 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* BlueZoneImage;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* Minimap;
 };

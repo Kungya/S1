@@ -4,6 +4,7 @@
 #include "SpearmanCharacter.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "PaperSpriteComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Spearman/SpearComponents/CombatComponent.h"
 #include "Spearman/SpearComponents/BuffComponent.h"
@@ -32,6 +33,9 @@
 #include "Spearman/SpearComponents/LagCompensationComponent.h"
 #include "Spearman/HUD/SpearmanHUD.h"
 #include "Components/Image.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Engine/TextureRenderTarget2D.h"
+
 
 ASpearmanCharacter::ASpearmanCharacter()
 {
@@ -47,7 +51,28 @@ ASpearmanCharacter::ASpearmanCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
-	// 마우스 회전
+	MinimapSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapSpringArm"));
+	MinimapSpringArm->SetupAttachment(GetMesh());
+	MinimapSpringArm->TargetArmLength = 300.f;
+	MinimapSpringArm->SetRelativeRotation(FQuat(FRotator(270.f, 0.f, 0.f)));
+	MinimapSpringArm->bUsePawnControlRotation = false;
+
+	MinimapSceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("MinimapSceneCapture"));
+	MinimapSceneCapture->SetupAttachment(MinimapSpringArm, USpringArmComponent::SocketName);
+	MinimapSceneCapture->SetIsReplicated(false);
+
+	MinimapCursor = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("MinimapCursor"));
+	MinimapCursor->SetupAttachment(GetMesh());
+	MinimapCursor->bVisibleInSceneCaptureOnly = true;
+	MinimapCursor->bOwnerNoSee = true;
+
+	static ConstructorHelpers::FObjectFinder<UTextureRenderTarget2D> RT(TEXT("/Script/Engine.TextureRenderTarget2D'/Game/Assets/Textures/Minimap/RenderTargetMinimap.RenderTargetMinimap'"));
+	if (RT.Succeeded() && RT.Object)
+	{
+		RenderTargetMinimap = RT.Object;
+	}
+
+	// Mouse Rotation
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
@@ -225,7 +250,6 @@ void ASpearmanCharacter::PostInitializeComponents()
 
 	GetMesh()->HideBoneByName(TEXT("weapon"), EPhysBodyOp::PBO_None);
 
-	// TODO : if statement IsLocallyControleld
 	HitDamage->InitWidget();
 	HitDamageWidget = Cast<UHitDamageWidget>(HitDamage->GetUserWidgetObject());
 	
@@ -259,6 +283,15 @@ void ASpearmanCharacter::BeginPlay()
 	if (IsLocallyControlled())
 	{
 		HpBar->SetVisibility(false);
+	}
+
+	if (RenderTargetMinimap)
+	{
+		if (SpearmanPlayerController && SpearmanPlayerController->IsLocalController())
+		{
+			MinimapSceneCapture->TextureTarget = RenderTargetMinimap;
+			UE_LOG(LogTemp, Warning, TEXT("Set in LocallController"));
+		}
 	}
 
 	if (HasAuthority())
@@ -601,12 +634,10 @@ void ASpearmanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Inventory", IE_Pressed, this, &ASpearmanCharacter::InventoryButtonPressed);
 	PlayerInputComponent->BindAction("TriggerMove", IE_Pressed, this, &ASpearmanCharacter::TriggerMove);
 
-
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASpearmanCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ASpearmanCharacter::MoveRight);
 	PlayerInputComponent->BindAxis("Turn", this, &ASpearmanCharacter::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &ASpearmanCharacter::LookUp);
-	
 }
 
 void ASpearmanCharacter::MoveForward(float Value)

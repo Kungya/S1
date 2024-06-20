@@ -8,6 +8,8 @@
 
 class ASpearmanHUD;
 class ASpearmanGameMode;
+class UCharacterOverlay;
+class ASpearmanCharacter;
 
 UCLASS()
 class SPEARMAN_API ASpearmanPlayerController : public APlayerController
@@ -66,6 +68,9 @@ private:
 	UPROPERTY()
 	ASpearmanGameMode* SpearmanGameMode;
 
+	UPROPERTY()
+	ASpearmanCharacter* SpearmanCharacter;
+
 	// Client should get MatchTime from Server, not in Client
 	float BeginPlayTime = 0.f;
 	float WarmupTime = 0.f;
@@ -82,7 +87,7 @@ private:
 	void OnRep_MatchState();
 
 	UPROPERTY()
-	class UCharacterOverlay* CharacterOverlay;
+	UCharacterOverlay* CharacterOverlay;
 	
 	float HUDHp;
 	float HUDMaxHp;

@@ -224,7 +224,7 @@ FRewindResult ULagCompensationComponent::SimulateHit(ASpearmanCharacter* HitSpea
 	return FRewindResult{ false, false };
 }
 
-void ULagCompensationComponent::ReserveCurrentFrame(ASpearmanCharacter* HitSpearmanCharacter, FSavedFrame& OUT ReservedFrame)
+void ULagCompensationComponent::ReserveCurrentFrame(ASpearmanCharacter* HitSpearmanCharacter, FSavedFrame& OutReservedFrame)
 { /* Reserve HitBoxes of Current Frame to restore original position */
 	if (HitSpearmanCharacter == nullptr) return;
 
@@ -236,7 +236,7 @@ void ULagCompensationComponent::ReserveCurrentFrame(ASpearmanCharacter* HitSpear
 			HitBox.Location = Box->GetComponentLocation();
 			HitBox.Rotation = Box->GetComponentRotation();
 			HitBox.Extent = Box->GetScaledBoxExtent();
-			ReservedFrame.SavedHitBoxArray.Add(HitBox);
+			OutReservedFrame.SavedHitBoxArray.Add(HitBox);
 		}
 	}
 }
