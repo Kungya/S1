@@ -26,6 +26,10 @@ public:
 	ABasicMonster();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
+
+	UPROPERTY()
+	TArray<UBoxComponent*> HitBoxArray;
+
 protected:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -201,6 +205,48 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Drop")
 	TSubclassOf<AItem> ItemClass;
+
+	/*
+	* Hit Box
+	*/
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* head;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* nose;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* neck;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* pelvis;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* spine;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* spine_1;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* forearm_l;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* forearm_r;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* calf_l;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* calf_r;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* horselink_l;
+
+	UPROPERTY(EditAnywhere, Category = "Hit Box")
+	UBoxComponent* horselink_r;
+
+
 	
 
 public:

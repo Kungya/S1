@@ -185,7 +185,7 @@ void ASpearmanPlayerController::SetHUDTime()
 }
 
 void ASpearmanPlayerController::HUDInit()
-{ // BeginPlay에서도 CharacterOverlay가 null일 경우가 있어, Tick에서 대기해서 처리
+{ // Sometimes Character is nullptr in Beginplay, so Initialize HUD in Tick just once
 	if (CharacterOverlay == nullptr)
 	{
 		if (SpearmanHUD && SpearmanHUD->CharacterOverlay)
@@ -204,13 +204,10 @@ void ASpearmanPlayerController::HUDInit()
 					if (MinimapMatInst)
 					{
 						UMaterialInstanceDynamic* MiniMapMatInstDynamic = UMaterialInstanceDynamic::Create(MinimapMatInst, nullptr);
-						if (MiniMapMatInstDynamic)
+						if (MiniMapMatInstDynamic && SpearmanCharacter->RenderTargetMinimap)
 						{
-							if (SpearmanCharacter->RenderTargetMinimap)
-							{
-								MiniMapMatInstDynamic->SetTextureParameterValue(FName("MinimapParam"), SpearmanCharacter->RenderTargetMinimap);
-								CharacterOverlay->Minimap->SetBrushFromMaterial(MiniMapMatInstDynamic);
-							}
+							MiniMapMatInstDynamic->SetTextureParameterValue(FName("MinimapParam"), SpearmanCharacter->RenderTargetMinimap);
+							CharacterOverlay->Minimap->SetBrushFromMaterial(MiniMapMatInstDynamic);
 						}
 					}
 				}

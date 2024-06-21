@@ -111,104 +111,88 @@ ASpearmanCharacter::ASpearmanCharacter()
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 	/*
-	* Hit Box, WARNING : Never RELOCATE HitBox's Order, "HitBoxArray[0] => head"
+	* Hit Box, WARNING : Never RELOCATE HitBox's Order, "HitBoxArray[0] => head" (0 index is head)
 	*/
 
 	head = CreateDefaultSubobject<UBoxComponent>(TEXT("head"));
 	head->SetupAttachment(GetMesh(), FName("head"));
 	head->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	head->SetRelativeRotation(FRotator(90.f, 0.f, 0.f));
-	HitBoxes.Add(FName("head"), head);
 	HitBoxArray.Add(head);
 
 	pelvis = CreateDefaultSubobject<UBoxComponent>(TEXT("pelvis"));
 	pelvis->SetupAttachment(GetMesh(), FName("pelvis"));
 	pelvis->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("pelvis"), pelvis);
 	HitBoxArray.Add(pelvis);
 
 	spine_02 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_02"));
 	spine_02->SetupAttachment(GetMesh(), FName("spine_02"));
 	spine_02->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("spine_02"), spine_02);
 	HitBoxArray.Add(spine_02);
 
 	spine_03 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_03"));
 	spine_03->SetupAttachment(GetMesh(), FName("spine_03"));
 	spine_03->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("spine_03"), spine_03);
 	HitBoxArray.Add(spine_03);
 
 	upperarm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("upperarm_l"));
 	upperarm_l->SetupAttachment(GetMesh(), FName("upperarm_l"));
 	upperarm_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("upperarm_l"), upperarm_l);
 	HitBoxArray.Add(upperarm_l);
 
 	upperarm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("upperarm_r"));
 	upperarm_r->SetupAttachment(GetMesh(), FName("upperarm_r"));
 	upperarm_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("upperarm_r"), upperarm_r);
 	HitBoxArray.Add(upperarm_r);
 
 	lowerarm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_l"));
 	lowerarm_l->SetupAttachment(GetMesh(), FName("lowerarm_l"));
 	lowerarm_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("lowerarm_l"), lowerarm_l);
 	HitBoxArray.Add(lowerarm_l);
 
 	lowerarm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_r"));
 	lowerarm_r->SetupAttachment(GetMesh(), FName("lowerarm_r"));
 	lowerarm_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("lowerarm_r"), lowerarm_r);
 	HitBoxArray.Add(lowerarm_r);
 
 	hand_l = CreateDefaultSubobject<UBoxComponent>(TEXT("hand_l"));
 	hand_l->SetupAttachment(GetMesh(), FName("hand_l"));
 	hand_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("hand_l"), hand_l);
 	HitBoxArray.Add(hand_l);
 
 	hand_r = CreateDefaultSubobject<UBoxComponent>(TEXT("hand_r"));
 	hand_r->SetupAttachment(GetMesh(), FName("hand_r"));
 	hand_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("hand_r"), hand_r);
 	HitBoxArray.Add(hand_r);
 
 	thigh_l = CreateDefaultSubobject<UBoxComponent>(TEXT("thigh_l"));
 	thigh_l->SetupAttachment(GetMesh(), FName("thigh_l"));
 	thigh_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("thigh_l"), thigh_l);
 	HitBoxArray.Add(thigh_l);
 
 	thigh_r = CreateDefaultSubobject<UBoxComponent>(TEXT("thigh_r"));
 	thigh_r->SetupAttachment(GetMesh(), FName("thigh_r"));
 	thigh_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("thigh_r"), thigh_r);
 	HitBoxArray.Add(thigh_r);
 
 	calf_l = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_l"));
 	calf_l->SetupAttachment(GetMesh(), FName("calf_l"));
 	calf_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("calf_l"), calf_l);
 	HitBoxArray.Add(calf_l);
 
 	calf_r = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_r"));
 	calf_r->SetupAttachment(GetMesh(), FName("calf_r"));
 	calf_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("calf_r"), calf_r);
 	HitBoxArray.Add(calf_r);
 
 	foot_l = CreateDefaultSubobject<UBoxComponent>(TEXT("foot_l"));
 	foot_l->SetupAttachment(GetMesh(), FName("foot_l"));
 	foot_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("foot_l"), foot_l);
 	HitBoxArray.Add(foot_l);
 
 	foot_r = CreateDefaultSubobject<UBoxComponent>(TEXT("foot_r"));
 	foot_r->SetupAttachment(GetMesh(), FName("foot_r"));
 	foot_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxes.Add(FName("foot_r"), foot_r);
 	HitBoxArray.Add(foot_r);
 
 
@@ -241,11 +225,6 @@ void ASpearmanCharacter::PostInitializeComponents()
 	if (LagCompensation)
 	{
 		LagCompensation->SpearmanCharacter = this;
-
-		if (Controller)
-		{
-			LagCompensation->SpearmanPlayerController = Cast<ASpearmanPlayerController>(Controller);
-		}
 	}
 
 	GetMesh()->HideBoneByName(TEXT("weapon"), EPhysBodyOp::PBO_None);

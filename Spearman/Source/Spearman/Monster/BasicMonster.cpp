@@ -45,6 +45,67 @@ ABasicMonster::ABasicMonster()
 	AttackCollisionBox->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	AttackCollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	AttackCollisionBox->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Overlap);
+
+	/*
+	* Hit Box, WARNING : Never RELOCATE HitBox's Order, "HitBoxArray[0] => head" (0 index is head)
+	*/
+
+	head = CreateDefaultSubobject<UBoxComponent>(TEXT("head"));
+	head->SetupAttachment(GetMesh(), FName("PIG_-Head"));
+	head->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	head->SetRelativeRotation(FRotator(90.f, 0.f, 0.f));
+	HitBoxArray.Add(head);
+
+	nose = CreateDefaultSubobject<UBoxComponent>(TEXT("nose"));
+	nose->SetupAttachment(GetMesh(), FName("Pig_Nose"));
+	nose->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxArray.Add(nose);
+
+	neck = CreateDefaultSubobject<UBoxComponent>(TEXT("neck"));
+	neck->SetupAttachment(GetMesh(), FName("PIG_-Neck"));
+	neck->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxArray.Add(neck);
+
+	spine = CreateDefaultSubobject<UBoxComponent>(TEXT("spine"));
+	spine->SetupAttachment(GetMesh(), FName("PIG_-Spine"));
+	spine->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxArray.Add(spine);
+
+	spine_1 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_1"));
+	spine_1->SetupAttachment(GetMesh(), FName("PIG_-Spine1"));
+	spine_1->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxArray.Add(spine_1);
+
+	forearm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("forearm_l"));
+	forearm_l->SetupAttachment(GetMesh(), FName("PIG_-L-Forearm"));
+	forearm_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxArray.Add(forearm_l);
+
+	forearm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("forearm_r"));
+	forearm_r->SetupAttachment(GetMesh(), FName("PIG_-R-Forearm"));
+	forearm_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxArray.Add(forearm_r);
+
+	calf_l = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_l"));
+	calf_l->SetupAttachment(GetMesh(), FName("PIG_-L-Calf"));
+	calf_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxArray.Add(calf_l);
+
+	calf_r = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_r"));
+	calf_r->SetupAttachment(GetMesh(), FName("PIG_-R-Calf"));
+	calf_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxArray.Add(calf_r);
+
+	horselink_l = CreateDefaultSubobject<UBoxComponent>(TEXT("horselink_l"));
+	horselink_l->SetupAttachment(GetMesh(), FName("PIG_-L-HorseLink"));
+	horselink_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxArray.Add(horselink_l);
+
+	horselink_r = CreateDefaultSubobject<UBoxComponent>(TEXT("horselink_r"));
+	horselink_r->SetupAttachment(GetMesh(), FName("PIG_-R-HorseLink"));
+	horselink_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxArray.Add(horselink_r);
+
 }
 
 void ABasicMonster::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

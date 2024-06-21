@@ -2,11 +2,10 @@
 
 
 #include "LagCompensationComponent.h"
-#include "Spearman/Character/SpearmanCharacter.h"
 #include "Components/BoxComponent.h"
 #include "DrawDebugHelpers.h"
-#include "Spearman/SpearComponents/CombatComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Spearman/Character/SpearmanCharacter.h"
 #include "Spearman/Weapon/Weapon.h"
 
 ULagCompensationComponent::ULagCompensationComponent()
@@ -30,6 +29,7 @@ void ULagCompensationComponent::SaveCurrentFrame()
 { /* Server Only */
 	if (SpearmanCharacter && SpearmanCharacter->HasAuthority())
 	{
+		/** keep Time length of HistroicalBuffer at RewindLimitTime  */
 		/* (Old) [Tail] - [Frame] - [Frame] - [...] - [Frame] - [Frame] - [Head] (Recent) */
 		if (HistoricalBuffer.Num() >= 2)
 		{
@@ -47,12 +47,12 @@ void ULagCompensationComponent::SaveCurrentFrame()
 	}
 }
 
-void ULagCompensationComponent::SaveFrame(FSavedFrame& OUT Frame)
+void ULagCompensationComponent::SaveFrame(FSavedFrame& OutFrame)
 { /* Server Only, Save Current Frame's HitBox Information */
 	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : SpearmanCharacter; 
 	if (SpearmanCharacter)
 	{
-		Frame.Time = GetWorld()->GetTimeSeconds();
+		OutFrame.Time = GetWorld()->GetTimeSeconds();
 
 		for (UBoxComponent* Box : SpearmanCharacter->HitBoxArray)
 		{
@@ -60,7 +60,7 @@ void ULagCompensationComponent::SaveFrame(FSavedFrame& OUT Frame)
 			HitBox.Location = Box->GetComponentLocation();
 			HitBox.Rotation = Box->GetComponentRotation();
 			HitBox.Extent = Box->GetScaledBoxExtent();
-			Frame.SavedHitBoxArray.Add(HitBox);
+			OutFrame.SavedHitBoxArray.Add(HitBox);
 		}
 	}
 }
@@ -99,7 +99,7 @@ void ULagCompensationComponent::ServerRewindRequest_Implementation(ASpearmanChar
 }
 
 FRewindResult ULagCompensationComponent::Rewind(ASpearmanCharacter* HitSpearmanCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTime, AWeapon* Weapon)
-{
+{ /** Rewind */
 	if (HitSpearmanCharacter == nullptr || HitSpearmanCharacter->GetLagCompensation() == nullptr) return FRewindResult();
 	if (HitSpearmanCharacter->GetLagCompensation()->HistoricalBuffer.GetHead() == nullptr || HitSpearmanCharacter->GetLagCompensation()->HistoricalBuffer.GetTail() == nullptr) return FRewindResult();
 
@@ -120,26 +120,27 @@ FRewindResult ULagCompensationComponent::Rewind(ASpearmanCharacter* HitSpearmanC
 		return SimulateHit(HitSpearmanCharacter, TraceStart, FrameToSimulate, HitLocation, Weapon);
 	}
 
-	TDoubleLinkedList<FSavedFrame>::TDoubleLinkedListNode* NextNodeOfHitTime = Buffer.GetHead();
-	TDoubleLinkedList<FSavedFrame>::TDoubleLinkedListNode* PrevNodeOfHitTime = Buffer.GetHead();
+	TDoubleLinkedList<FSavedFrame>::TDoubleLinkedListNode* HitTimeNextNode = Buffer.GetHead();
+	TDoubleLinkedList<FSavedFrame>::TDoubleLinkedListNode* HitTimePrevNode = Buffer.GetHead();
 
 	/*                   [                 ] - [       ] - [                 ]                      */
 	/* (Old) - [Frame] - [NextNodeOfHitTime] - [HitTime] - [PrevNodeOfHitTime] - [Frame] - (Recent) */
 
 	/* Search until Next of HitTime	*/
-	while (NextNodeOfHitTime->GetValue().Time > HitTime)
+	while (HitTimeNextNode->GetValue().Time > HitTime)
 	{
-		if (NextNodeOfHitTime->GetNextNode() == nullptr) break;
+		if (HitTimeNextNode->GetNextNode() == nullptr) break;
 
-		NextNodeOfHitTime = NextNodeOfHitTime->GetNextNode();
+		HitTimeNextNode = HitTimeNextNode->GetNextNode();
 
-		if (NextNodeOfHitTime->GetValue().Time > HitTime)
+		/* HitTimePrevNode continuously follow HitTimeNextNode if HitTimeNextNode's Time didn't pass HitTime yet*/
+		if (HitTimeNextNode->GetValue().Time > HitTime)
 		{
-			PrevNodeOfHitTime = NextNodeOfHitTime;
+			HitTimePrevNode = HitTimeNextNode;
 		}
 	}
 	
-	FrameToSimulate = GetInterpFrame(NextNodeOfHitTime->GetValue(), PrevNodeOfHitTime->GetValue(), HitTime);
+	FrameToSimulate = GetInterpFrame(HitTimeNextNode->GetValue(), HitTimePrevNode->GetValue(), HitTime);
 
 	return SimulateHit(HitSpearmanCharacter, TraceStart, FrameToSimulate, HitLocation, Weapon);
 }

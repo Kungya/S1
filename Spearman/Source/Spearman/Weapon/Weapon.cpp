@@ -122,9 +122,8 @@ void AWeapon::AttackCollisionCheckByRewind()
 	HitSet.Add(HitResult.GetActor());
 	
 	OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter;
-	if (OwnerSpearmanCharacter == nullptr) return;
 	OwnerSpearmanPlayerController = (OwnerSpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(OwnerSpearmanCharacter->GetController()) : OwnerSpearmanPlayerController;
-	if (OwnerSpearmanPlayerController == nullptr) return;
+	if (OwnerSpearmanCharacter == nullptr || OwnerSpearmanPlayerController == nullptr) return;
 
 	ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(HitResult.GetActor());
 	if (HitSpearmanCharacter)

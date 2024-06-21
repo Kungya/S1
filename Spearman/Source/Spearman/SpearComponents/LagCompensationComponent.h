@@ -7,7 +7,7 @@
 #include "LagCompensationComponent.generated.h"
 
 class ASpearmanCharacter;
-class ASpearmanPlayerController;
+class ABasicMonster;
 class AWeapon;
 
 USTRUCT(BlueprintType)
@@ -37,6 +37,7 @@ struct FSavedFrame
 	TArray<FHitBox> SavedHitBoxArray;
 };
 
+/* {false, false}, {true, false}, {true, true} */
 USTRUCT(BlueprintType)
 struct FRewindResult
 {
@@ -74,7 +75,7 @@ protected:
 	FRewindResult Rewind(ASpearmanCharacter* HitSpearmanCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTimem, AWeapon* Weapon);
 	FRewindResult SimulateHit(ASpearmanCharacter* HitSpearmanCharacter, const FVector_NetQuantize& TraceStart, const FSavedFrame& Frame, const FVector_NetQuantize& HitLocation, AWeapon* Weapon);
 
-	void ReserveCurrentFrame(ASpearmanCharacter* HitSpearmanCharacter, FSavedFrame& OUT Frame);
+	void ReserveCurrentFrame(ASpearmanCharacter* HitSpearmanCharacter, FSavedFrame& OutFrame);
 	void MoveHitBoxes(ASpearmanCharacter* HitSpearmanCharacter, const FSavedFrame& Frame);
 	void ResetHitBoxes(ASpearmanCharacter* HitSpearmanCharacter, const FSavedFrame& Frame);
 	void SaveCurrentFrame();
@@ -83,19 +84,15 @@ private:
 	UPROPERTY()
 	ASpearmanCharacter* SpearmanCharacter;
 
-	UPROPERTY()
-	ASpearmanPlayerController* SpearmanPlayerController;
-
 	/*
 	* Recorded Frame per Tick
 	*/
 
 	TDoubleLinkedList<FSavedFrame> HistoricalBuffer;
-	
 
 	// LimitTime, 1.f == 1000ms
 	UPROPERTY(EditAnywhere)
-	float RewindLimitTime = 3.f;
+	float RewindLimitTime = 1.f;
 
 public:
 

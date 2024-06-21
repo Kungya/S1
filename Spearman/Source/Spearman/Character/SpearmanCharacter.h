@@ -55,9 +55,6 @@ public:
 	bool bDisableKeyInput = false;
 
 	UPROPERTY()
-	TMap<FName, UBoxComponent*> HitBoxes;
-
-	UPROPERTY()
 	TArray<UBoxComponent*> HitBoxArray;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Minimap)
@@ -196,7 +193,7 @@ private:
 	float AO_Pitch;
 	FRotator StartingAimRotation;
 
-	// AnimBP에서 일정 틱마다 TurnInPlace 애니메이션을 실행할건지 상태를 나타냄
+	/* Enum class for Turn In Place in AnimBP */
 	ETurnInPlace TIPState;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
@@ -255,8 +252,6 @@ private:
 	void OnRep_bIsInBlueZone();
 
 	FTimerHandle BlueZoneTimerHandle;
-
-
 
 	/*
 	* Hit Box
