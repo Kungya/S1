@@ -6,6 +6,8 @@
 #include "Animation/AnimInstance.h"
 #include "BasicMonsterAnimInstance.generated.h"
 
+class ABasicMonster;
+
 /**
  * 
  */
@@ -32,7 +34,7 @@ public:
 	
 private:
 	UPROPERTY(BlueprintReadOnly, Category = BasicMonster, meta = (AllowPrivateAccess = "true"))
-	class ABasicMonster* BasicMonster;
+	ABasicMonster* BasicMonster;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	float Speed;

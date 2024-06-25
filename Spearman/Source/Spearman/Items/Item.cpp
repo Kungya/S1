@@ -46,7 +46,7 @@ bool AItem::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FRepli
 }
 
 void AItem::Init(int32 num)
-{ // Server Only
+{ /* Server Only */
 	if (ItemInstance == nullptr)
 	{
 		ItemInstance = NewObject<UItemInstance>(this);
@@ -55,7 +55,7 @@ void AItem::Init(int32 num)
 }
 
 void AItem::Interact()
-{ // Server Only
+{ /* Server Only */
 
 	Destroy();
 }

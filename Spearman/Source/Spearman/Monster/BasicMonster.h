@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Spearman/Character/RewindableCharacter.h"
 #include "Spearman/Interfaces/WeaponHitInterface.h"
 #include "BasicMonster.generated.h"
 
@@ -18,7 +19,7 @@ class USphereComponent;
 class UBoxComponent;
 
 UCLASS()
-class SPEARMAN_API ABasicMonster : public ACharacter, public IWeaponHitInterface
+class SPEARMAN_API ABasicMonster : public ARewindableCharacter, public IWeaponHitInterface
 {
 	GENERATED_BODY()
 
@@ -26,9 +27,6 @@ public:
 	ABasicMonster();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
-
-	UPROPERTY()
-	TArray<UBoxComponent*> HitBoxArray;
 
 protected:
 	virtual void Tick(float DeltaTime) override;
@@ -158,7 +156,8 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Behavior Tree", meta = (AllowPrivateAccess = "true", MakeEditWidget = "true"))
 	FVector PatrolPoint2;
-
+	
+	UPROPERTY(VisibleAnywhere)
 	ABasicMonsterAIController* BasicMonsterAIController;
 
 	/*
@@ -220,9 +219,6 @@ private:
 	UBoxComponent* neck;
 
 	UPROPERTY(EditAnywhere, Category = "Hit Box")
-	UBoxComponent* pelvis;
-
-	UPROPERTY(EditAnywhere, Category = "Hit Box")
 	UBoxComponent* spine;
 
 	UPROPERTY(EditAnywhere, Category = "Hit Box")
@@ -235,17 +231,10 @@ private:
 	UBoxComponent* forearm_r;
 
 	UPROPERTY(EditAnywhere, Category = "Hit Box")
-	UBoxComponent* calf_l;
-
-	UPROPERTY(EditAnywhere, Category = "Hit Box")
-	UBoxComponent* calf_r;
-
-	UPROPERTY(EditAnywhere, Category = "Hit Box")
 	UBoxComponent* horselink_l;
 
 	UPROPERTY(EditAnywhere, Category = "Hit Box")
 	UBoxComponent* horselink_r;
-
 
 	
 

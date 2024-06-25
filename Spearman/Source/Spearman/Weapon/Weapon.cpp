@@ -125,14 +125,14 @@ void AWeapon::AttackCollisionCheckByRewind()
 	OwnerSpearmanPlayerController = (OwnerSpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(OwnerSpearmanCharacter->GetController()) : OwnerSpearmanPlayerController;
 	if (OwnerSpearmanCharacter == nullptr || OwnerSpearmanPlayerController == nullptr) return;
 
-	ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(HitResult.GetActor());
-	if (HitSpearmanCharacter)
-	{ /* Hit SpearmanCharacter */
+	ARewindableCharacter* HitRewindableCharacter = Cast<ARewindableCharacter>(HitResult.GetActor());
+	if (HitRewindableCharacter)
+	{ /* HitCharacter Can be SpearmanCharacter or BasicMonster so far. */
 		UE_LOG(LogTemp, Warning, TEXT("Hit in Client"));
 		if (OwnerSpearmanPlayerController && OwnerSpearmanCharacter && OwnerSpearmanCharacter->GetLagCompensation())
 		{
 			const float CurrentClientTime = OwnerSpearmanPlayerController->GetServerTime() - OwnerSpearmanPlayerController->GetSingleTripTime();
-			OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequest(HitSpearmanCharacter, Start, HitResult.ImpactPoint, CurrentClientTime, this);
+			OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequest(HitRewindableCharacter, Start, HitResult.ImpactPoint, CurrentClientTime, this);
 		}
 		else
 		{
@@ -203,8 +203,8 @@ void AWeapon::AttackCollisionCheckByServer()
 		FVector2D InRange(60.f, 240.f);
 		FVector2D OutRange(HitPartDamage / 3.f, HitPartDamage);
 		const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
-		
 		UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerSpearmanPlayerController, this, UDamageType::StaticClass());
+		
 		MulticastHit(HitResult.GetActor(), FMath::FloorToInt(InDamage), HitResult.ImpactPoint, bHeadShot);
 	}
 }

@@ -47,7 +47,7 @@ ABasicMonster::ABasicMonster()
 	AttackCollisionBox->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Overlap);
 
 	/*
-	* Hit Box, WARNING : Never RELOCATE HitBox's Order, "HitBoxArray[0] => head" (0 index is head)
+	* Hit Box, WARNING : Never RELOCATE HitBox's Order, "HitBoxArray[0] => head, HitBoxArray[1] => nose"
 	*/
 
 	head = CreateDefaultSubobject<UBoxComponent>(TEXT("head"));
@@ -85,16 +85,6 @@ ABasicMonster::ABasicMonster()
 	forearm_r->SetupAttachment(GetMesh(), FName("PIG_-R-Forearm"));
 	forearm_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitBoxArray.Add(forearm_r);
-
-	calf_l = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_l"));
-	calf_l->SetupAttachment(GetMesh(), FName("PIG_-L-Calf"));
-	calf_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxArray.Add(calf_l);
-
-	calf_r = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_r"));
-	calf_r->SetupAttachment(GetMesh(), FName("PIG_-R-Calf"));
-	calf_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HitBoxArray.Add(calf_r);
 
 	horselink_l = CreateDefaultSubobject<UBoxComponent>(TEXT("horselink_l"));
 	horselink_l->SetupAttachment(GetMesh(), FName("PIG_-L-HorseLink"));

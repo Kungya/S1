@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Spearman/Character/RewindableCharacter.h"
 #include "Spearman/SpearmanTypes/TurnInPlace.h"
 #include "Spearman/Interfaces/WeaponHitInterface.h"
 #include "SpearmanCharacter.generated.h"
@@ -22,6 +23,7 @@ class UCombatComponent;
 class UBuffComponent;
 class UInventoryComponent;
 class ULagCompensationComponent;
+class UHistoryComponent;
 class UAnimMontage;
 class ASpearmanPlayerController;
 class UParticleSystem;
@@ -29,7 +31,7 @@ class UBoxComponent;
 class UCapsuleComponent;
 
 UCLASS()
-class SPEARMAN_API ASpearmanCharacter : public ACharacter, public IWeaponHitInterface
+class SPEARMAN_API ASpearmanCharacter : public ARewindableCharacter, public IWeaponHitInterface
 {
 	GENERATED_BODY()
 
@@ -53,9 +55,6 @@ public:
 	// Disable Key Input if Character Dies or Match is Ended...
 	UPROPERTY(Replicated)
 	bool bDisableKeyInput = false;
-
-	UPROPERTY()
-	TArray<UBoxComponent*> HitBoxArray;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Minimap)
 	UTextureRenderTarget2D* RenderTargetMinimap;
@@ -164,7 +163,7 @@ private:
 	FTimerHandle HpBarTimer;
 	
 	/*
-	* Spearman Components
+	* ActorComponents
 	*/
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = "ActorComponent")
@@ -175,6 +174,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "ActorComponent")
 	ULagCompensationComponent* LagCompensation;
+
+	//UPROPERTY(VisibleAnywhere, Category = "ActorComponent")
+	//UHistoryComponent* History;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = "ActorComponent")
 	UInventoryComponent* Inventory;
