@@ -13,9 +13,6 @@ ABlueZone::ABlueZone()
 	ZoneMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ZoneMesh"));
 	ZoneMesh->SetIsReplicated(true);
 	SetRootComponent(ZoneMesh);
-
-	// For testing : Character should be able to see Bluezone in Everywhere
-	// bAlwaysRelevant = true;
 }
 
 void ABlueZone::BeginPlay()
@@ -23,15 +20,19 @@ void ABlueZone::BeginPlay()
 	Super::BeginPlay();
 
 	if (HasAuthority())
-	{
-		FBlueZoneInfo BlueZoneInfoPhase0 = { 5.f, 10.f, 1.f };
+	{ // BlueZone Information for phase
+		// { WaitingTime, MovingTime, ScaleToDecreasePerLoop }, Reduction Amount per Pahse : MovingTime * ScaleToDecreasePerLoop
+		FBlueZoneInfo BlueZoneInfoPhase0 = { 5.f, 10.f, 1.25f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase0);
 
-		FBlueZoneInfo BlueZoneInfoPhase1 = { 5.f, 5.f, 0.5f };
+		FBlueZoneInfo BlueZoneInfoPhase1 = { 5.f, 5.f, 0.75f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase1);
 
 		FBlueZoneInfo BlueZoneInfoPhase2 = { 5.f, 5.f, 0.5f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase2);
+
+		FBlueZoneInfo BlueZoneInfoPhase3 = { 5.f, 5.f, 0.5f };
+		BlueZoneInfoArray.Add(BlueZoneInfoPhase3);
 
 		ZoneMesh->OnComponentBeginOverlap.AddDynamic(this, &ABlueZone::OnBlueZoneBeginOverlap);
 		ZoneMesh->OnComponentEndOverlap.AddDynamic(this, &ABlueZone::OnBlueZoneEndOverlap);
@@ -46,8 +47,6 @@ void ABlueZone::Tick(float DeltaTime)
 
 void ABlueZone::OnBlueZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 { /* Server Only */
-	// UE_LOG(LogTemp, Warning, TEXT("Begin Overlap"));
-
 	ASpearmanCharacter* OverlappedSpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
 	if (OverlappedSpearmanCharacter)
 	{
@@ -57,8 +56,6 @@ void ABlueZone::OnBlueZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 
 void ABlueZone::OnBlueZoneEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 { /* Server Only */
-	// UE_LOG(LogTemp, Warning, TEXT("End Overlap"));
-
 	ASpearmanCharacter* OverlappedSpearmanCharacter = Cast<ASpearmanCharacter>(OtherActor);
 	if (OverlappedSpearmanCharacter)
 	{
@@ -68,20 +65,18 @@ void ABlueZone::OnBlueZoneEndOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 void ABlueZone::StartMovingBlueZone()
 { /* Server Only */
-	if (CurrentPhase < BlueZoneInfoArray.Num())
+	if (CurrentPhase < BlueZoneInfoArray.Num() - 1)
 	{
-		// Start reducing the BlueZone
+		// Start reducing the BlueZone (Loop) until MovingTime
 		GetWorld()->GetTimerManager().SetTimer(MovingTimerHandle, this, &ABlueZone::ReduceBlueZone, 0.2, true);
 		
-		// Stop Reducing BlueZone if moving time is reached
-		FTimerHandle LocalHandle1;
-		GetWorld()->GetTimerManager().SetTimer(LocalHandle1, this, &ABlueZone::StopBlueZone, BlueZoneInfoArray[CurrentPhase].MovingTime, false);
+		// Stop Reducing BlueZone if MovingTime is reached
+		FTimerHandle StopHandle;
+		GetWorld()->GetTimerManager().SetTimer(StopHandle, this, &ABlueZone::StopBlueZone, BlueZoneInfoArray[CurrentPhase].MovingTime, false);
 		
 		const float TotalTimeForNextPhase = BlueZoneInfoArray[CurrentPhase].WaitingTime + BlueZoneInfoArray[CurrentPhase].MovingTime;
-		
-		// Recursive call after TotalTimeForNextPhase
-		FTimerHandle LocalHandle2;
-		GetWorld()->GetTimerManager().SetTimer(LocalHandle2, this, &ABlueZone::StartMovingBlueZone, TotalTimeForNextPhase, false);
+		FTimerHandle RecursiveHandle;
+		GetWorld()->GetTimerManager().SetTimer(RecursiveHandle, this, &ABlueZone::StartMovingBlueZone, TotalTimeForNextPhase, false);
 	}
 	else
 	{
@@ -91,21 +86,34 @@ void ABlueZone::StartMovingBlueZone()
 
 void ABlueZone::ReduceBlueZone()
 { /* Server Only */
-	const FVector ScaleToReduce = GetActorScale3D() - FVector(BlueZoneInfoArray[CurrentPhase].ScaleToDecrease, BlueZoneInfoArray[CurrentPhase].ScaleToDecrease, 0.f);
-	// UE_LOG(LogTemp, Warning, TEXT("Current Phase : %d, Current Scale : %s"), CurrentPhase, *ScaleToReduce.ToString());
-	SetActorScale3D(ScaleToReduce);
+	const FVector ReducedScale = GetActorScale3D() - FVector(BlueZoneInfoArray[CurrentPhase].ScaleToDecreasePerLoop, BlueZoneInfoArray[CurrentPhase].ScaleToDecreasePerLoop, 0.f);
+	SetActorScale3D(ReducedScale);
+
+	if (CurrentPhase >= 1)
+	{ // Move
+		const FVector NewLocation(GetActorLocation() + NormalizedRandomVector * 100.f);
+		SetActorLocation(NewLocation);
+	}
 }
 
 void ABlueZone::StopBlueZone()
-{ /* Server Only */
+{ /* Server Only, Prepare next Phase, next Phase gonna start after WaitingTime */
 	GetWorld()->GetTimerManager().ClearTimer(MovingTimerHandle);
 
 	if (CurrentPhase < BlueZoneInfoArray.Num() - 1)
-	{
+	{ // To Next Phase
 		CurrentPhase++;
+
+		CalcMoveVector();
 	}
 	else
-	{
-		Destroy();
+	{ // End
+		UE_LOG(LogTemp, Warning, TEXT("x : %f, y : %f"), GetActorScale().X, GetActorScale().Y);
 	}
+}
+
+void ABlueZone::CalcMoveVector()
+{
+	FVector RandomizedVector(FMath::RandRange(-1.f, 1.f), FMath::RandRange(-1.f, 1.f), 0.f);
+	NormalizedRandomVector = RandomizedVector.GetSafeNormal();
 }

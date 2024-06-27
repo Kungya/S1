@@ -11,14 +11,14 @@ struct FBlueZoneInfo
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, Category = "BlueZoneInfo")
+	UPROPERTY()
 	float WaitingTime;
 
-	UPROPERTY(EditAnywhere, Category = "BlueZoneInfo")
+	UPROPERTY()
 	float MovingTime;
 
-	UPROPERTY(EditAnywhere, Category = "BlueZoneInfo")
-	float ScaleToDecrease;
+	UPROPERTY()
+	float ScaleToDecreasePerLoop;
 };
 
 UCLASS()
@@ -30,6 +30,10 @@ public:
 	ABlueZone();
 
 	void StartMovingBlueZone();
+	void ReduceBlueZone();
+	void StopBlueZone();
+
+	void CalcMoveVector();
 
 protected:
 	virtual void BeginPlay() override;
@@ -62,13 +66,15 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BlueZoneInfo", meta = (AllowPrivateAccess = "true"))
 	TArray<FBlueZoneInfo> BlueZoneInfoArray;
 	
-	UPROPERTY()
-	int32 CurrentPhase;
+	UPROPERTY(EditAnywhere, Category = "BlueZoneInfo")
+	int32 CurrentPhase = 0;
+
+	UPROPERTY(EditAnyWhere, Category = "BlueZoneInfo")
+	float TimerInterval = 0.2f;
+
+	FVector NormalizedRandomVector = FVector::ZeroVector;
 
 	FTimerHandle MovingTimerHandle;
-
-	void ReduceBlueZone();
-	void StopBlueZone();
 
 public:
 

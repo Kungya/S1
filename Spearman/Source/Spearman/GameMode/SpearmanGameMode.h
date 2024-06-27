@@ -33,8 +33,6 @@ public:
 	void MoveBlueZone();
 
 
-
-
 	float BeginPlayTime = 0.f;
 
 	UPROPERTY(EditDefaultsOnly)
@@ -70,7 +68,7 @@ private:
 	FTransform BlueZoneTransform;
 
 	UPROPERTY(EditAnywhere, Category = "BlueZone")
-	float BlueZoneSpawnDelay;
+	float BlueZoneSpawnDelay = 3.f;
 
 public:
 	FORCEINLINE float GetCountdownTime() const { return CountdownTime; }
