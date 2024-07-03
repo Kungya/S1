@@ -89,18 +89,15 @@ void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// TODO : Refactor to AnimState
 	// if (bUseReiwnd) : Client, else : Server */
 	if (bAttackCollisionTrace)
 	{
 		if (bUseRewind && !HasAuthority())
 		{
-			// UE_LOG(LogTemp, Warning, TEXT(" bUseRewind in Tick, Client"))
 			AttackCollisionCheckByRewind();
 		}
 		else if (!bUseRewind && HasAuthority())
 		{
-			// UE_LOG(LogTemp, Warning, TEXT(" !bUseRewind in Tick, Server"))
 			AttackCollisionCheckByServer();
 		}
 	}
@@ -127,7 +124,7 @@ void AWeapon::AttackCollisionCheckByRewind()
 
 	ARewindableCharacter* HitRewindableCharacter = Cast<ARewindableCharacter>(HitResult.GetActor());
 	if (HitRewindableCharacter)
-	{ /* HitCharacter Can be SpearmanCharacter or BasicMonster so far. */
+	{ /* HitCharacter Can be SpearmanCharacter or BasicMonster. */
 		UE_LOG(LogTemp, Warning, TEXT("Hit in Client"));
 		if (OwnerSpearmanPlayerController && OwnerSpearmanCharacter && OwnerSpearmanCharacter->GetLagCompensation())
 		{
@@ -141,7 +138,6 @@ void AWeapon::AttackCollisionCheckByRewind()
 	}
 
 	/* TODO : double check about Hit Dupplication in client */
-	/* TODO : Rewind BasicMonster, all Actors that can Take Damage */
 }
 
 void AWeapon::AttackCollisionCheckByServer()

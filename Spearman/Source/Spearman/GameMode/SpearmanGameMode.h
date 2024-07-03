@@ -47,7 +47,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void OnMatchStateSet() override;
 	virtual void HandleMatchHasStarted() override;
-	
+
 	/* Add PlayerController in TArray for manage player list to damage in blue zone */
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
@@ -69,6 +69,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "BlueZone")
 	float BlueZoneSpawnDelay = 3.f;
+
+	UPROPERTY(EditAnywhere, Category = "BlueZone")
+	bool bActivateBlueZone;
 
 public:
 	FORCEINLINE float GetCountdownTime() const { return CountdownTime; }

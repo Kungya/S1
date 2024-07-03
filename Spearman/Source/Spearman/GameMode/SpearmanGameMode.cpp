@@ -110,8 +110,11 @@ void ASpearmanGameMode::HandleMatchHasStarted()
 {
 	Super::HandleMatchHasStarted();
 
-	FTimerHandle SpawnBlueZoneTimer;
-	GetWorld()->GetTimerManager().SetTimer(SpawnBlueZoneTimer, this, &ASpearmanGameMode::SpawnBlueZone, BlueZoneSpawnDelay, false);
+	if (bActivateBlueZone)
+	{
+		FTimerHandle SpawnBlueZoneTimer;
+		GetWorld()->GetTimerManager().SetTimer(SpawnBlueZoneTimer, this, &ASpearmanGameMode::SpawnBlueZone, BlueZoneSpawnDelay, false);
+	}
 }
 
 void ASpearmanGameMode::SpawnBlueZone()

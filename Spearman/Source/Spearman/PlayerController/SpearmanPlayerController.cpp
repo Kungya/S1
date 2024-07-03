@@ -60,14 +60,13 @@ void ASpearmanPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 }
 
 void ASpearmanPlayerController::OnPossess(APawn* InPawn)
-{
+{ /* Server Only */
 	Super::OnPossess(InPawn);
 	
-	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(InPawn) : SpearmanCharacter;
-	if (SpearmanCharacter)
-	{
-		SetHUDHp(SpearmanCharacter->GetHp(), SpearmanCharacter->GetMaxHp());
-	}
+	PlayerCameraManager->ViewPitchMin = -45.f;
+	PlayerCameraManager->ViewPitchMax = 45.f;
+
+	InitRenderTargetIfServer(InPawn);
 }
 
 void ASpearmanPlayerController::ReceivedPlayer()
@@ -199,11 +198,11 @@ void ASpearmanPlayerController::HUDInit()
 
 				SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetPawn()) : SpearmanCharacter;
 				if (SpearmanCharacter && IsLocalController())
-				{ // TODO : Should Test in packaged version. (Multiplayer Render Target)
-					static UMaterialInterface* MinimapMatInst = LoadObject<UMaterialInterface>(nullptr, TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Assets/Textures/Minimap/RenderTarget_Mat_Inst.RenderTarget_Mat_Inst'"));
+				{
+					UMaterialInstance* MinimapMatInst = LoadObject<UMaterialInstance>(nullptr, TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Assets/Textures/Minimap/RenderTarget_Mat_Inst.RenderTarget_Mat_Inst'"));
 					if (MinimapMatInst)
 					{
-						UMaterialInstanceDynamic* MiniMapMatInstDynamic = UMaterialInstanceDynamic::Create(MinimapMatInst, nullptr);
+						UMaterialInstanceDynamic* MiniMapMatInstDynamic = UMaterialInstanceDynamic::Create(MinimapMatInst, this);
 						if (MiniMapMatInstDynamic && SpearmanCharacter->RenderTargetMinimap)
 						{
 							MiniMapMatInstDynamic->SetTextureParameterValue(FName("MinimapParam"), SpearmanCharacter->RenderTargetMinimap);
@@ -245,6 +244,27 @@ void ASpearmanPlayerController::SetHUDTickRate(float ClientTick, float ServerTic
 		CharacterOverlay->ClientTick_Text->SetText(FText::FromString(ClientTickText));
 		FString ServerTickText = FString::Printf(TEXT("%d"), FMath::FloorToInt(ServerTick));
 		CharacterOverlay->ServerTick_Text->SetText(FText::FromString(ServerTickText));
+	}
+}
+
+void ASpearmanPlayerController::InitRenderTargetIfServer(APawn* InPawn)
+{
+	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(InPawn) : SpearmanCharacter;
+	if (SpearmanCharacter && IsLocalController())
+	{
+		SetHUDHp(SpearmanCharacter->GetHp(), SpearmanCharacter->GetMaxHp());
+
+		UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>(this);
+		if (RenderTarget)
+		{
+			RenderTarget->InitAutoFormat(1024, 1024);
+			RenderTarget->UpdateResource();
+			SpearmanCharacter->RenderTargetMinimap = RenderTarget;
+		}
+		if (SpearmanCharacter->RenderTargetMinimap)
+		{
+			SpearmanCharacter->MinimapSceneCapture->TextureTarget = SpearmanCharacter->RenderTargetMinimap;
+		}
 	}
 }
 

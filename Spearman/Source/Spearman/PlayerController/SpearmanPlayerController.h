@@ -10,6 +10,7 @@ class ASpearmanHUD;
 class ASpearmanGameMode;
 class UCharacterOverlay;
 class ASpearmanCharacter;
+class USceneCaptureComponent2D;
 
 UCLASS()
 class SPEARMAN_API ASpearmanPlayerController : public APlayerController
@@ -40,6 +41,8 @@ protected:
 	void SetHUDPing(float DeltaTime);
 	
 	void SetHUDTickRate(float ClientTick, float ServerTick);
+
+	void InitRenderTargetIfServer(APawn* InPawn);
 
 	/*
 	* Sync time

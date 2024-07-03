@@ -8,7 +8,7 @@ public class Spearman : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "UMG", "NavigationSystem", "AIModule", "GameplayTasks", "GameplayTags", "Paper2D" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "UMG", "NavigationSystem", "AIModule", "GameplayTasks", "GameplayTags", "Paper2D", "OnlineSubsystemSteam", "OnlineSubsystem" });
 
         PrivateDependencyModuleNames.AddRange(new string[] {  });
 

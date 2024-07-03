@@ -23,7 +23,6 @@ class UCombatComponent;
 class UBuffComponent;
 class UInventoryComponent;
 class ULagCompensationComponent;
-class UHistoryComponent;
 class UAnimMontage;
 class ASpearmanPlayerController;
 class UParticleSystem;
@@ -55,6 +54,9 @@ public:
 	// Disable Key Input if Character Dies or Match is Ended...
 	UPROPERTY(Replicated)
 	bool bDisableKeyInput = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Minimap, meta = (AllowPrivateAccess))
+	USceneCaptureComponent2D* MinimapSceneCapture;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Minimap)
 	UTextureRenderTarget2D* RenderTargetMinimap;
@@ -94,6 +96,8 @@ protected:
 	void ShowHpBar();
 	void HideHpBar();
 
+	void InitRenderTargetIfOwningClient();
+
 	void TakeDamageIfNotInBlueZone();
 
 
@@ -118,9 +122,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = Minimap)
 	UPaperSpriteComponent* MinimapCursor;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Minimap, meta = (AllowPrivateAccess))
-	USceneCaptureComponent2D* MinimapSceneCapture;
 
 	UPROPERTY (ReplicatedUsing = OnRep_OverlappingWeapon)
 	AWeapon* OverlappingWeapon;
@@ -174,9 +175,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "ActorComponent")
 	ULagCompensationComponent* LagCompensation;
-
-	//UPROPERTY(VisibleAnywhere, Category = "ActorComponent")
-	//UHistoryComponent* History;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = "ActorComponent")
 	UInventoryComponent* Inventory;

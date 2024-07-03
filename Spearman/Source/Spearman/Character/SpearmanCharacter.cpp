@@ -66,11 +66,11 @@ ASpearmanCharacter::ASpearmanCharacter()
 	MinimapCursor->bVisibleInSceneCaptureOnly = true;
 	MinimapCursor->bOwnerNoSee = true;
 
-	static ConstructorHelpers::FObjectFinder<UTextureRenderTarget2D> RT(TEXT("/Script/Engine.TextureRenderTarget2D'/Game/Assets/Textures/Minimap/RenderTargetMinimap.RenderTargetMinimap'"));
+	/*static ConstructorHelpers::FObjectFinder<UTextureRenderTarget2D> RT(TEXT("/Script/Engine.TextureRenderTarget2D'/Game/Assets/Textures/Minimap/RenderTargetMinimap.RenderTargetMinimap'"));
 	if (RT.Succeeded() && RT.Object)
 	{
 		RenderTargetMinimap = RT.Object;
-	}
+	}*/
 
 	// Mouse Rotation
 	bUseControllerRotationYaw = false;
@@ -242,7 +242,7 @@ void ASpearmanCharacter::BeginPlay()
 
 	GetMesh()->HideBoneByName(TEXT("sword_bottom"), EPhysBodyOp::PBO_None);
 
-	SpearmanPlayerController = SpearmanPlayerController == nullptr ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
+	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
 	if (SpearmanPlayerController)
 	{
 		if (SpearmanPlayerController->PlayerCameraManager)
@@ -257,21 +257,9 @@ void ASpearmanCharacter::BeginPlay()
 	UpdateHUDHp();
 
 	HpBarWidget->SetHpBar(GetHpRatio());
-	HpBar->SetVisibility(false);
+	HpBarWidget->SetVisibility(ESlateVisibility::Hidden);
 
-	if (IsLocallyControlled())
-	{
-		HpBar->SetVisibility(false);
-	}
-
-	if (RenderTargetMinimap)
-	{
-		if (SpearmanPlayerController && SpearmanPlayerController->IsLocalController())
-		{
-			MinimapSceneCapture->TextureTarget = RenderTargetMinimap;
-			UE_LOG(LogTemp, Warning, TEXT("Set in LocallController"));
-		}
-	}
+	InitRenderTargetIfOwningClient();
 
 	if (HasAuthority())
 	{
@@ -380,6 +368,7 @@ void ASpearmanCharacter::OnRep_Hp(float LastHp)
 			HitDamageWidget->SetHitDamageText(Damage);
 			ShowHitDamage(true);
 			HpBarWidget->SetHpBar(GetHpRatio());
+			HpBarWidget->SetVisibility(ESlateVisibility::Visible);
 
 			GetWorldTimerManager().SetTimer(HitDamageTimerHandle, this, &ASpearmanCharacter::HideHitDamage, 2.f, false);
 		}
@@ -391,7 +380,7 @@ void ASpearmanCharacter::OnRep_Hp(float LastHp)
 		HideHpBar();
 	}
 	else if (Hp < LastHp)
-	{ /* Play HitReactMontage when Hp is only decreaseed */
+	{
 		PlayHitReactMontage();
 	}
 }
@@ -419,31 +408,66 @@ void ASpearmanCharacter::UpdateHUDHp()
 }
 void ASpearmanCharacter::ShowHitDamage(bool bShowHitDamage)
 {
-	if (HitDamage)
+	if (HitDamageWidget)
 	{
-		HitDamage->SetVisibility(bShowHitDamage);
+		if (bShowHitDamage)
+		{
+			HitDamageWidget->SetVisibility(ESlateVisibility::Visible);
+		}
+		else
+		{
+			HitDamageWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
 		// TODO : Animation
 	}
 }
 
 void ASpearmanCharacter::HideHitDamage()
 {
-	if (HitDamage)
+	if (HitDamageWidget && HpBarWidget)
 	{
-		HitDamage->SetVisibility(false);
+		HitDamageWidget->SetVisibility(ESlateVisibility::Hidden);
+		HpBarWidget->SetVisibility(ESlateVisibility::Hidden);
 	}
 }
 
 void ASpearmanCharacter::ShowHpBar()
 {
-	HpBar->SetVisibility(true);
+	if (HpBarWidget)
+	{
+		HpBarWidget->SetVisibility(ESlateVisibility::Visible);
+	}
 	GetWorldTimerManager().ClearTimer(HpBarTimer);
 	GetWorldTimerManager().SetTimer(HpBarTimer, this, &ASpearmanCharacter::HideHpBar, HpBarDisplayTime);
 }
 
 void ASpearmanCharacter::HideHpBar()
 {
-	HpBar->SetVisibility(false);
+	if (HpBarWidget)
+	{
+		HpBarWidget->SetVisibility(ESlateVisibility::Hidden);
+	}
+}
+
+void ASpearmanCharacter::InitRenderTargetIfOwningClient()
+{
+	if (!HasAuthority())
+	{
+		RenderTargetMinimap = NewObject<UTextureRenderTarget2D>(this);
+		RenderTargetMinimap->InitAutoFormat(1024, 1024);
+		RenderTargetMinimap->UpdateResource();
+		if (RenderTargetMinimap)
+		{
+			SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
+			if (SpearmanPlayerController)
+			{
+				if (SpearmanPlayerController->IsLocalController())
+				{
+					MinimapSceneCapture->TextureTarget = RenderTargetMinimap;
+				}
+			}
+		}
+	}
 }
 
 void ASpearmanCharacter::OnRep_ReplicatedMovement()
