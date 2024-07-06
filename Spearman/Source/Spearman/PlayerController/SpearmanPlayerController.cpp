@@ -17,6 +17,7 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Spearman/Character/SpearmanCharacter.h"
+#include "Spearman/HUD/ReturnToMainMenu.h"
 
 void ASpearmanPlayerController::BeginPlay()
 {
@@ -77,6 +78,15 @@ void ASpearmanPlayerController::ReceivedPlayer()
 	{
 		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
 	}
+}
+
+void ASpearmanPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+	if (InputComponent == nullptr) return;
+
+	InputComponent->BindAction("Quit", IE_Pressed, this, &ASpearmanPlayerController::ShowReturnToMainMenu);
+	
 }
 
 void ASpearmanPlayerController::SetHUDHp(float Hp, float MaxHp)
@@ -396,4 +406,26 @@ void ASpearmanPlayerController::ClientReportMatchState_Implementation(FName Serv
 	{
 		SpearmanHUD->AddCharacterOverlayNotice();
 	}
+}
+
+void ASpearmanPlayerController::ShowReturnToMainMenu()
+{
+	if (ReturnToMainMenuWidget == nullptr) return;
+	if (ReturnToMainMenu == nullptr)
+	{
+		ReturnToMainMenu = CreateWidget<UReturnToMainMenu>(this, ReturnToMainMenuWidget);
+	}
+	if (ReturnToMainMenu)
+	{
+		bReturnToMainMenuOpen = !bReturnToMainMenuOpen;
+		if (bReturnToMainMenuOpen)
+		{
+			ReturnToMainMenu->MenuSetup();
+		}
+		else
+		{
+			ReturnToMainMenu->MenuTearDown();
+		}
+	}
+
 }

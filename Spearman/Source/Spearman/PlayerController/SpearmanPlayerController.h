@@ -11,6 +11,7 @@ class ASpearmanGameMode;
 class UCharacterOverlay;
 class ASpearmanCharacter;
 class USceneCaptureComponent2D;
+class UReturnToMainMenu;
 
 UCLASS()
 class SPEARMAN_API ASpearmanPlayerController : public APlayerController
@@ -36,6 +37,8 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void SetupInputComponent() override;
+
 	void SetHUDTime();
 	void HUDInit();
 	void SetHUDPing(float DeltaTime);
@@ -64,16 +67,9 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void ClientReportMatchState(FName ServerMatchState, float ServerBeginPlayTime, float ServerWarmupTime, float ServerMatchTime, float ServerCooldownTime);
 	
+	void ShowReturnToMainMenu();
+
 private:
-	UPROPERTY()
-	ASpearmanHUD* SpearmanHUD;
-
-	UPROPERTY()
-	ASpearmanGameMode* SpearmanGameMode;
-
-	UPROPERTY()
-	ASpearmanCharacter* SpearmanCharacter;
-
 	// Client should get MatchTime from Server, not in Client
 	float BeginPlayTime = 0.f;
 	float WarmupTime = 0.f;
@@ -90,6 +86,15 @@ private:
 	void OnRep_MatchState();
 
 	UPROPERTY()
+	ASpearmanCharacter* SpearmanCharacter;
+
+	UPROPERTY()
+	ASpearmanGameMode* SpearmanGameMode;
+
+	UPROPERTY()
+	ASpearmanHUD* SpearmanHUD;
+
+	UPROPERTY()
 	UCharacterOverlay* CharacterOverlay;
 	
 	float HUDHp;
@@ -100,6 +105,18 @@ private:
 	float LocalTickRate = 0.f;
 	float ServerTickRate = 0.f;
 
+	/*
+	* ReturnToMainMenu
+	*/
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> ReturnToMainMenuWidget;
+	
+	UPROPERTY()
+	UReturnToMainMenu* ReturnToMainMenu;
+
+	bool bReturnToMainMenuOpen = false;
+	
 
 public:
 	FORCEINLINE ASpearmanHUD* GetSpearmanHUD() const { return SpearmanHUD;  }

@@ -8,6 +8,7 @@
 #include "S1GameInstance.generated.h"
 
 class UTexture2D;
+class UDataTable;
 
 USTRUCT()
 struct FItemData : public FTableRowBase
@@ -49,7 +50,7 @@ public:
 private:
 
 	UPROPERTY(EditAnywhere)
-	class UDataTable* ItemDataTable;
+	UDataTable* ItemDataTable;
 
 	/* Mapping [Random Number] -> [DataTable Idx] */
 	UPROPERTY()
