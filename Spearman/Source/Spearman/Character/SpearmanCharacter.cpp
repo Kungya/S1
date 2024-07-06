@@ -724,7 +724,7 @@ void ASpearmanCharacter::Interact()
 }
 
 void ASpearmanCharacter::ServerInteract_Implementation()
-{ // server only
+{ /* Server Only */
 	FVector Start = FollowCamera->GetComponentLocation();
 	FVector End = Start + FollowCamera->GetForwardVector() * 1'000.f;
 	FHitResult HitResult;
@@ -738,7 +738,7 @@ void ASpearmanCharacter::ServerInteract_Implementation()
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Interact, Params))
 	{
 		if (AItem* Item = Cast<AItem>(HitResult.GetActor()))
-		{ // TODO : 복사해서 넘겨줘야할지?
+		{
 			Inventory->AddItem(Item->GetItemInstance());
 		}
 
@@ -755,7 +755,6 @@ void ASpearmanCharacter::InventoryButtonPressed()
 	if (SpearmanPlayerController)
 	{
 		SpearmanPlayerController->ShowInventoryWidget();
-		SpearmanPlayerController->SetInputMode(FInputModeUIOnly());
 	}	
 }
 

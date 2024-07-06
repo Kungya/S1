@@ -116,6 +116,7 @@ private:
 	UReturnToMainMenu* ReturnToMainMenu;
 
 	bool bReturnToMainMenuOpen = false;
+	bool bInventoryWidgetOpen = false;
 	
 
 public:

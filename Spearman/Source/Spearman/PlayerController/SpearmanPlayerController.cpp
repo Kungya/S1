@@ -342,13 +342,26 @@ void ASpearmanPlayerController::HandleCooldown()
 void ASpearmanPlayerController::ShowInventoryWidget()
 {
 	SpearmanHUD = (SpearmanHUD == nullptr) ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
-
 	if (SpearmanHUD && CharacterOverlay)
 	{
 		US1InventoryWidget* InventoryWidget = SpearmanHUD->CharacterOverlay->InventoryWidget;
 		if (InventoryWidget)
 		{
-			InventoryWidget->SetVisibility(ESlateVisibility::Visible);
+			bInventoryWidgetOpen = !bInventoryWidgetOpen;
+			if (bInventoryWidgetOpen)
+			{
+				InventoryWidget->SetVisibility(ESlateVisibility::Visible);
+				FInputModeUIOnly InputModeData;
+				SetInputMode(InputModeData);
+				SetShowMouseCursor(true);
+			}
+			else
+			{
+				InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
+				FInputModeGameOnly InputModeData;
+				SetInputMode(InputModeData);
+				SetShowMouseCursor(false);
+			}
 		}
 	}
 }
