@@ -7,6 +7,9 @@
 #include "Spearman/SpearmanTypes/CombatState.h"
 #include "CombatComponent.generated.h"
 
+class ASpearmanCharacter;
+class ASpearmanPlayerController;
+class ASpearmanHUD;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SPEARMAN_API UCombatComponent : public UActorComponent
@@ -23,7 +26,7 @@ public:
 
 	// 현재 캐릭터의 전투 상태, 이거 하나로 동작 사용가능 유무를 판단
 	UPROPERTY(Replicated, EditAnywhere)
-	ECombatState CombatState;
+	ECombatState CombatState = ECombatState::ECS_Idle;
 
 protected:
 	virtual void BeginPlay() override;
@@ -33,7 +36,7 @@ protected:
 
 	void Dash(const FVector& DashDirection);
 
-	// TODO : OnRep_EquipWeapon
+	void DropEquippedWeapon();
 
 	UFUNCTION(Server, Reliable)
 	void ServerSpearAttack();
@@ -47,9 +50,14 @@ protected:
 	void SetHUDCrosshairs(float DeltaTime);
 
 private:
-	class ASpearmanCharacter* Character;
-	class ASpearmanPlayerController* Controller;
-	class ASpearmanHUD* HUD;
+	UPROPERTY()
+	ASpearmanCharacter* Character;
+	
+	UPROPERTY()
+	ASpearmanPlayerController* Controller;
+	
+	UPROPERTY()
+	ASpearmanHUD* HUD;
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;

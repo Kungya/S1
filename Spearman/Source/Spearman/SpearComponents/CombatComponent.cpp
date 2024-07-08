@@ -82,6 +82,14 @@ void UCombatComponent::Dash(const FVector& DashDirection)
 	Character->GetWorldTimerManager().SetTimer(DashTimer, this, &UCombatComponent::SetDashCooldown, 2.f, false);
 }
 
+void UCombatComponent::DropEquippedWeapon()
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->Dropped();
+	}
+}
+
 void UCombatComponent::MulticastSpearAttack_Implementation()
 {
 	if (Character && CombatState == ECombatState::ECS_Idle)
@@ -108,8 +116,10 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 { /* Server Only */
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
 
+	DropEquippedWeapon();
 	EquippedWeapon = WeaponToEquip;
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+	
 	const USkeletalMeshSocket* RightHandWeaponSocket = Character->GetMesh()->GetSocketByName(FName("WeaponSocket"));
 	if (RightHandWeaponSocket)
 	{
@@ -126,12 +136,12 @@ void UCombatComponent::OnRep_EquippedWeapon()
 	if (EquippedWeapon && Character)
 	{
 		EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+		Character->bUseControllerRotationYaw = true;
 		const USkeletalMeshSocket* RightHandWeaponSocket = Character->GetMesh()->GetSocketByName(FName("WeaponSocket"));
 		if (RightHandWeaponSocket)
 		{
 			RightHandWeaponSocket->AttachActor(EquippedWeapon, Character->GetMesh());
 		}
-		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-		Character->bUseControllerRotationYaw = true;
 	}
 }

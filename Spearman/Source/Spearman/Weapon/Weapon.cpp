@@ -236,6 +236,8 @@ void AWeapon::SetWeaponState(EWeaponState State)
 		WeaponMesh->SetSimulatePhysics(true);
 		WeaponMesh->SetEnableGravity(true);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 		break;
 	}
 }
@@ -266,21 +268,23 @@ void AWeapon::ShowPickupWidget(bool bShowPickupWidget)
 }
 
 void AWeapon::Dropped()
-{ /* Server Only, Called in SpearmanCharacter::Death() */
+{ /* Server Only */
 	SetWeaponState(EWeaponState::EWS_Dropped);
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 	WeaponMesh->DetachFromComponent(DetachRules);
 	SetOwner(nullptr);
+	OwnerSpearmanCharacter = nullptr;
+	OwnerSpearmanPlayerController = nullptr;
 }
 
 void AWeapon::TurnOnAttackCollision()
 { 
 	if (bUseRewind && !HasAuthority())
-	{ /* Client Only */
+	{
 		HitSet.Empty();
 	}
 	else if (!bUseRewind && HasAuthority())
-	{ /* Server Only */
+	{
 		HitSet.Empty();
 	}
 
@@ -294,11 +298,11 @@ void AWeapon::TurnOffAttackCollision()
 { /* Server Only */
 	
 	if (bUseRewind && !HasAuthority())
-	{ /* Client Only */
+	{
 		HitSet.Empty();
 	}
 	else if (!bUseRewind && HasAuthority())
-	{ /* Server Only */
+	{
 		HitSet.Empty();
 	}
 

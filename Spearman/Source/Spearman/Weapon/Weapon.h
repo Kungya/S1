@@ -107,7 +107,10 @@ private:
 	UPROPERTY(Replicated)
 	bool bAttackCollisionTrace = false;
 
+	UPROPERTY()
 	ASpearmanCharacter* OwnerSpearmanCharacter;
+
+	UPROPERTY()
 	ASpearmanPlayerController* OwnerSpearmanPlayerController;
 	
 public:
