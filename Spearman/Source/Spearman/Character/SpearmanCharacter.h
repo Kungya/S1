@@ -84,6 +84,7 @@ protected:
 	void TurnInPlace();
 
 	void PlaySpearAttackMontage();
+	void PlayThrustMontage();
 	void PlayHitReactMontage();
 	void PlayDeathMontage();
 	void PlayDashMontage(const bool bLeft);
@@ -186,6 +187,7 @@ private:
 	
 	void DashButtonPressed();
 	void AttackButtonPressed();
+	void ThrustButtonPressed();
 	
 	/*
 	* Animation
@@ -200,6 +202,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* SpearAttackMontage;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* ThrustMontage;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* HitReactMontage;

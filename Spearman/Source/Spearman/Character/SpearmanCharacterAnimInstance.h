@@ -28,7 +28,7 @@ public:
 	void AnimNotify_AttackCollisionOff();
 
 	UFUNCTION()
-	void AnimNotify_SetCanAttack();
+	void AnimNotify_SetStateIdle();
 
 	UFUNCTION()
 	void AnimNotify_HitReactEnd();

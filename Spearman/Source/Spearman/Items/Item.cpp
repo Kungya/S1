@@ -16,6 +16,7 @@ AItem::AItem()
 
 	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
 	ItemMesh->SetupAttachment(GetRootComponent());
+	ItemMesh->SetSimulatePhysics(true);
 }
 
 void AItem::BeginPlay()

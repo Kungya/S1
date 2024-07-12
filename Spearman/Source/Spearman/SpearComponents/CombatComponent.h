@@ -48,6 +48,12 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastSpearAttack();
 
+	UFUNCTION(Server, Reliable)
+	void ServerThrust();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastThrust();
+
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
 

@@ -98,6 +98,14 @@ void UCombatComponent::DropEquippedWeapon()
 	}
 }
 
+void UCombatComponent::ServerSpearAttack_Implementation()
+{
+	if (CombatState == ECombatState::ECS_Idle)
+	{
+		MulticastSpearAttack();
+	}
+}
+
 void UCombatComponent::MulticastSpearAttack_Implementation()
 {
 	if (Character && CombatState == ECombatState::ECS_Idle)
@@ -107,11 +115,20 @@ void UCombatComponent::MulticastSpearAttack_Implementation()
 	}
 }
 
-void UCombatComponent::ServerSpearAttack_Implementation()
+void UCombatComponent::ServerThrust_Implementation()
 {
 	if (CombatState == ECombatState::ECS_Idle)
 	{
-		MulticastSpearAttack();
+		MulticastThrust();
+	}
+}
+
+void UCombatComponent::MulticastThrust_Implementation()
+{
+	if (CombatState == ECombatState::ECS_Idle)
+	{
+		CombatState = ECombatState::ECS_Attacking;
+		Character->PlayThrustMontage();
 	}
 }
 

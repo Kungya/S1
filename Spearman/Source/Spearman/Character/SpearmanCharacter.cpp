@@ -300,6 +300,17 @@ void ASpearmanCharacter::PlaySpearAttackMontage()
 	}
 }
 
+void ASpearmanCharacter::PlayThrustMontage()
+{
+	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ThrustMontage)
+	{
+		AnimInstance->Montage_Play(ThrustMontage);
+	}
+}
+
 void ASpearmanCharacter::PlayHitReactMontage()
 { /* be Called in OnAttacked() or OnRep_HP() */
 	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
@@ -591,6 +602,15 @@ void ASpearmanCharacter::AttackButtonPressed()
 	}
 }
 
+void ASpearmanCharacter::ThrustButtonPressed()
+{
+	if (bDisableKeyInput) return;
+	if (Combat && Combat->CombatState == ECombatState::ECS_Idle)
+	{
+		Combat->ServerThrust();
+	}
+}
+
 void ASpearmanCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
 	if (OverlappingWeapon)
@@ -649,6 +669,7 @@ void ASpearmanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &ASpearmanCharacter::DashButtonPressed);
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ASpearmanCharacter::EquipButtonPressed);
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &ASpearmanCharacter::AttackButtonPressed);
+	PlayerInputComponent->BindAction("Thrust", IE_Pressed, this, &ASpearmanCharacter::ThrustButtonPressed);
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASpearmanCharacter::InteractButtonPressed);
 	PlayerInputComponent->BindAction("Inventory", IE_Pressed, this, &ASpearmanCharacter::InventoryButtonPressed);
 	PlayerInputComponent->BindAction("TriggerMove", IE_Pressed, this, &ASpearmanCharacter::TriggerMove);
@@ -752,10 +773,13 @@ void ASpearmanCharacter::ServerInteract_Implementation()
 		Params.AddIgnoredActor(Combat->EquippedWeapon);
 	}
 
+	UE_LOG(LogTemp, Warning, TEXT("ServerInteract"));
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Interact, Params))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("ServerInteract, LineTrace Catch"));
 		if (AItem* Item = Cast<AItem>(HitResult.GetActor()))
 		{
+			UE_LOG(LogTemp, Warning, TEXT("AddItem"));
 			Inventory->AddItem(Item->GetItemInstance());
 		}
 

@@ -83,7 +83,7 @@ void USpearmanCharacterAnimInstance::AnimNotify_AttackCollisionOff()
 	}
 }
 
-void USpearmanCharacterAnimInstance::AnimNotify_SetCanAttack()
+void USpearmanCharacterAnimInstance::AnimNotify_SetStateIdle()
 {
 	if (SpearmanCharacter && SpearmanCharacter->HasAuthority())
 	{
