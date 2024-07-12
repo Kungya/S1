@@ -7,6 +7,9 @@
 #include "Spearman/SpearmanTypes/TurnInPlace.h"
 #include "SpearmanCharacterAnimInstance.generated.h"
 
+class ASpearmanCharacter;
+class AWeapon;
+
 /**
  * 
  */
@@ -17,8 +20,6 @@ class SPEARMAN_API USpearmanCharacterAnimInstance : public UAnimInstance
 public:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaTime) override;
-
-	// LineTrace On, Off
 
 	UFUNCTION()
 	void AnimNotify_AttackCollisionOn();
@@ -32,12 +33,18 @@ public:
 	UFUNCTION()
 	void AnimNotify_HitReactEnd();
 
+	UFUNCTION()
+	void AnimNotify_DashEnd();
+
+	UFUNCTION()
+	void AnimNotify_ParriedEnd();
+
 private:
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
-	class ASpearmanCharacter* SpearmanCharacter;
+	ASpearmanCharacter* SpearmanCharacter;
 
 	UPROPERTY(BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
-	class AWeapon* EquippedWeapon;
+	AWeapon* EquippedWeapon;
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	float Speed;

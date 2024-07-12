@@ -9,10 +9,11 @@
 #include "Spearman/Monster/BasicMonster.h"
 #include "Spearman/Weapon/Weapon.h"
 #include "Spearman/SpearComponents/HistoryComponent.h"
+#include "Spearman/SpearComponents/CombatComponent.h"
 
 ULagCompensationComponent::ULagCompensationComponent()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
 }
 
 void ULagCompensationComponent::BeginPlay()
@@ -20,6 +21,16 @@ void ULagCompensationComponent::BeginPlay()
 	Super::BeginPlay();
 
 	SpearmanCharacter = Cast<ASpearmanCharacter>(GetOwner());
+}
+
+void ULagCompensationComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (SpearmanCharacter == nullptr)
+	{
+		SpearmanCharacter = Cast<ASpearmanCharacter>(GetOwner());
+	}
 }
 
 void ULagCompensationComponent::ServerRewindRequest_Implementation(ARewindableCharacter* HitRewindableCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, AWeapon* Weapon)
@@ -45,8 +56,7 @@ void ULagCompensationComponent::ServerRewindRequest_Implementation(ARewindableCh
 		const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
 
 		UGameplayStatics::ApplyDamage(HitRewindableCharacter, InDamage, SpearmanCharacter->Controller, Weapon, UDamageType::StaticClass());
-		/* Execute visual effect when hit, Unreliable */
-		Weapon->MulticastHit(HitRewindableCharacter, FMath::CeilToInt(InDamage), HitLocation, bHeadShot);
+		Weapon->MulticastHitEffect(HitRewindableCharacter, FMath::CeilToInt(InDamage), HitLocation, bHeadShot);
 		UE_LOG(LogTemp, Warning, TEXT("Rewind Success"));
 	}
 	else
@@ -56,11 +66,10 @@ void ULagCompensationComponent::ServerRewindRequest_Implementation(ARewindableCh
 }
 
 FRewindResult ULagCompensationComponent::Rewind(ARewindableCharacter* HitRewindableCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTime, AWeapon* Weapon)
-{ /** Rewind */
+{
 	if (HitRewindableCharacter == nullptr) return FRewindResult();
 
 	UHistoryComponent* HitHistory = HitRewindableCharacter->GetHistory();
-
 	if (HitHistory == nullptr || HitHistory->HistoricalBuffer.GetHead() == nullptr || HitHistory->HistoricalBuffer.GetTail() == nullptr) return FRewindResult();
 
 	// Historical Buffer of HitRewindableCharacter, Not Attacker
@@ -80,8 +89,6 @@ FRewindResult ULagCompensationComponent::Rewind(ARewindableCharacter* HitRewinda
 
 	TDoubleLinkedList<FSavedFrame>::TDoubleLinkedListNode* HitTimeNextNode = Buffer.GetHead();
 	TDoubleLinkedList<FSavedFrame>::TDoubleLinkedListNode* HitTimePrevNode = Buffer.GetHead();
-
-	/*                   [               ] - (       ) - [               ]                      */
 	/* (Old) - [Frame] - [HitTimeNextNode] - (HitTime) - [HitTimePrevNode] - [Frame] - (Recent) */
 
 	/* Search until Next of HitTime	*/
@@ -128,16 +135,16 @@ FSavedFrame ULagCompensationComponent::GetInterpFrame(const FSavedFrame& Next, c
 }
 
 FRewindResult ULagCompensationComponent::SimulateHit(ARewindableCharacter* HitRewindableCharacter, const FVector_NetQuantize& TraceStart, const FSavedFrame& Frame, const FVector_NetQuantize& HitLocation, AWeapon* Weapon)
-{
+{ // TODO : Visibility, ECR_Block은 미리 해두는걸 고려 (현재로썬 굳이 런타임에 할 필요가 없어보임)
 	if (HitRewindableCharacter == nullptr) return FRewindResult();
 	
 	/* [Reserve HitBoxes of Current Frame] -> [MoveHitBoxes For Simulate Hit] -> [Return Result] -> [Reset HitBoxes to Reserved Current Frame] */
 	FSavedFrame CurrentFrame;
+	/* Reserve Current Frame's HItBoxes before Rewind*/
 	ReserveCurrentFrame(HitRewindableCharacter, CurrentFrame);
 	MoveHitBoxes(HitRewindableCharacter, Frame);
 	HitRewindableCharacter->GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	// TODO : BasicMonster has 3 Boxes for Neck, Head, Nose 
 	UBoxComponent* HeadBox = HitRewindableCharacter->HitBoxArray[0];
 	HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	HeadBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);

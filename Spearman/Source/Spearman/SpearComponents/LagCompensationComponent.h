@@ -14,7 +14,11 @@ class ARewindableCharacter;
 class AHistoryCoomponent;
 struct FSavedFrame;
 
-/* {false, false}, {true, false}, {true, true} */
+/*
+** HeadShot	: { true, true }
+** BodyShot	: { true, false }
+** MIss		: { false, false }
+*/
 USTRUCT(BlueprintType)
 struct FRewindResult
 {
@@ -43,6 +47,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 	FSavedFrame GetInterpFrame(const FSavedFrame& Next, const FSavedFrame& Prev, float HitTime);
 	FRewindResult Rewind(ARewindableCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTimem, AWeapon* Weapon);

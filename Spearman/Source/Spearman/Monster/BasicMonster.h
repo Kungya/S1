@@ -98,9 +98,6 @@ private:
 
 	UFUNCTION()
 	void OnRep_Hp(float LastHp);
-	
-	UPROPERTY(EditAnywhere, Category = Combat)
-	FString HeadBone;
 
 	/*
 	* Widget
@@ -265,7 +262,6 @@ public:
 	void DropItems();
 
 public:
-	FORCEINLINE FString GetHeadBone() const { return HeadBone; }
 	FORCEINLINE float GetHpRatio() const { return Hp / MaxHp; }
 	FORCEINLINE UBehaviorTree* GetBehaviorTree() const { return BehaviorTree; }
 };

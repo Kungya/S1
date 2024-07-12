@@ -61,25 +61,33 @@ void UCombatComponent::SetHUDCrosshairs(float DeltaTime)
 	}
 }
 
-void UCombatComponent::DashButtonPressed_Implementation(const FVector& DashDirection)
+void UCombatComponent::ServerDash_Implementation(FVector_NetQuantize DashDirection)
 { /* Server Only */
 	// TODO : SetCombatState : SuperArmor, Timer Cooldown
-	if (DashDirection == FVector::ZeroVector || Character->GetMovementComponent()->IsFalling()) return;
-	if (bCanDash == false) return;
+	if (Character->GetMovementComponent()->IsFalling()) return;
+	if (bCanDash == false || EquippedWeapon == nullptr) return;
 	if (CombatState != ECombatState::ECS_Idle) return;
-
-	float DotProduct = FVector::DotProduct(DashDirection, Character->GetActorForwardVector());
-	if (EquippedWeapon && FMath::IsNearlyEqual(DotProduct, 0.f, 0.1f))
-	{
-		Dash(DashDirection);
-	}
+	
+	// const float DotProduct = FVector::DotProduct(DashDirection, Character->GetActorForwardVector());
+	MulticastDash(DashDirection);
 }
 
-void UCombatComponent::Dash(const FVector& DashDirection)
-{ /* Server Only */
+void UCombatComponent::MulticastDash_Implementation(const FVector& DashDirection)
+{
 	bCanDash = false;
-	Character->LaunchCharacter(DashDirection * 4500.f, true, true);
+	CombatState = ECombatState::ECS_SuperArmor;
+	
+	bool bDashLeft = (DashDirection.Y < -0.5f) ? true : false;
+	Character->PlayDashMontage(bDashLeft);
+
 	Character->GetWorldTimerManager().SetTimer(DashTimer, this, &UCombatComponent::SetDashCooldown, 2.f, false);
+}
+
+void UCombatComponent::MulticastParried_Implementation()
+{
+	CombatState = ECombatState::ECS_Stunned;
+
+	Character->PlayParriedMontage();
 }
 
 void UCombatComponent::DropEquippedWeapon()
@@ -127,12 +135,17 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	}
 
 	EquippedWeapon->SetOwner(Character);
+	EquippedWeapon->GetWeaponMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	EquippedWeapon->GetWeaponMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
+	/* for Parring in Server Rewind */
+	// TODO : dont naive Add for HitBox (if equipweapon many)
 }
 
 void UCombatComponent::OnRep_EquippedWeapon()
-{ /* Client Only */
+{
 	if (EquippedWeapon && Character)
 	{
 		EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);

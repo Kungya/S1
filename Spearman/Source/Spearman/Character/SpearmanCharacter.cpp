@@ -66,13 +66,6 @@ ASpearmanCharacter::ASpearmanCharacter()
 	MinimapCursor->bVisibleInSceneCaptureOnly = true;
 	MinimapCursor->bOwnerNoSee = true;
 
-	/*static ConstructorHelpers::FObjectFinder<UTextureRenderTarget2D> RT(TEXT("/Script/Engine.TextureRenderTarget2D'/Game/Assets/Textures/Minimap/RenderTargetMinimap.RenderTargetMinimap'"));
-	if (RT.Succeeded() && RT.Object)
-	{
-		RenderTargetMinimap = RT.Object;
-	}*/
-
-	// Mouse Rotation
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
@@ -82,7 +75,6 @@ ASpearmanCharacter::ASpearmanCharacter()
 	Buff = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
 	Buff->SetIsReplicated(true);
 
-	/* Server Only Component */
 	LagCompensation = CreateDefaultSubobject<ULagCompensationComponent>(TEXT("LagCompensationComponent"));
 
 	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
@@ -98,10 +90,11 @@ ASpearmanCharacter::ASpearmanCharacter()
 	HpBar->SetDrawSize(FVector2D(125.f, 20.f));
 
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Interact, ECollisionResponse::ECR_Overlap);
+
 	GetMesh()->SetCollisionObjectType(ECC_SkeletalMesh);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Overlap);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
 	TIPState = ETurnInPlace::ETIP_NotTurn;
 	NetUpdateFrequency = 66.f;
@@ -194,8 +187,6 @@ ASpearmanCharacter::ASpearmanCharacter()
 	foot_r->SetupAttachment(GetMesh(), FName("foot_r"));
 	foot_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitBoxArray.Add(foot_r);
-
-
 }
 
 void ASpearmanCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -240,8 +231,6 @@ void ASpearmanCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GetMesh()->HideBoneByName(TEXT("sword_bottom"), EPhysBodyOp::PBO_None);
-
 	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
 	if (SpearmanPlayerController)
 	{
@@ -268,6 +257,7 @@ void ASpearmanCharacter::BeginPlay()
 		GetWorld()->GetTimerManager().SetTimer(BlueZoneTimerHandle, this, &ASpearmanCharacter::TakeDamageIfNotInBlueZone, 1.f, true);
 	}
 
+	/* Temporary, test for rewind */
 	GetWorldTimerManager().SetTimer(TestTimer, this, &ASpearmanCharacter::TestToggleVector, 2.f, true);
 }
 
@@ -276,10 +266,16 @@ void ASpearmanCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	if (bMove)
-	{
+	{ /* Temporary, Test for Rewind */
 		FVector MoveVector;
 		MoveVector = GetActorForwardVector() * TimerVector;
 		AddMovementInput(MoveVector);
+	}
+
+	if (bTestAttack)
+	{
+		bTestAttack = false;
+		AttackButtonPressed();
 	}
 
 	TimeSinceLastMovementReplication += DeltaTime;
@@ -305,7 +301,7 @@ void ASpearmanCharacter::PlaySpearAttackMontage()
 }
 
 void ASpearmanCharacter::PlayHitReactMontage()
-{
+{ /* be Called in OnAttacked() or OnRep_HP() */
 	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
 
 	Combat->CombatState = ECombatState::ECS_Stunned;
@@ -325,12 +321,35 @@ void ASpearmanCharacter::PlayDeathMontage()
 	if (AnimInstance && DeathMontage)
 	{
 		AnimInstance->Montage_Play(DeathMontage);
-		// TODO : 기능을 추가한다면 피격 방향에 따른 JumpToSection
+	}
+}
+
+void ASpearmanCharacter::PlayDashMontage(const bool bLeft)
+{
+	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DashMontage)
+	{
+		AnimInstance->Montage_Play(DashMontage);
+		FName SectionName = (bLeft == true) ? "DashLeft" : "DashRight";
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void ASpearmanCharacter::PlayParriedMontage()
+{
+	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DashMontage)
+	{
+		AnimInstance->Montage_Play(ParriedMontage);
 	}
 }
 
 void ASpearmanCharacter::OnAttacked(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
-{ // in server
+{ /* Server Only */
 	if (bDeath) return;
 
 	Hp = FMath::Clamp(Hp - Damage, 0.f, MaxHp);
@@ -400,7 +419,7 @@ void ASpearmanCharacter::WeaponHit_Implementation(int32 Damage, FVector_NetQuant
 
 void ASpearmanCharacter::UpdateHUDHp()
 {
-	SpearmanPlayerController = SpearmanPlayerController == nullptr ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
+	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
 	if (SpearmanPlayerController)
 	{
 		SpearmanPlayerController->SetHUDHp(Hp, MaxHp);
@@ -418,7 +437,6 @@ void ASpearmanCharacter::ShowHitDamage(bool bShowHitDamage)
 		{
 			HitDamageWidget->SetVisibility(ESlateVisibility::Hidden);
 		}
-		// TODO : Animation
 	}
 }
 
@@ -451,20 +469,18 @@ void ASpearmanCharacter::HideHpBar()
 
 void ASpearmanCharacter::InitRenderTargetIfOwningClient()
 {
-	if (!HasAuthority())
+	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
+	if (SpearmanPlayerController && SpearmanPlayerController->IsLocalController())
 	{
-		RenderTargetMinimap = NewObject<UTextureRenderTarget2D>(this);
-		RenderTargetMinimap->InitAutoFormat(1024, 1024);
-		RenderTargetMinimap->UpdateResource();
-		if (RenderTargetMinimap)
+		if (!HasAuthority())
 		{
-			SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
-			if (SpearmanPlayerController)
+			RenderTargetMinimap = NewObject<UTextureRenderTarget2D>(this);
+			RenderTargetMinimap->InitAutoFormat(1024, 1024);
+			RenderTargetMinimap->UpdateResource();
+
+			if (RenderTargetMinimap)
 			{
-				if (SpearmanPlayerController->IsLocalController())
-				{
-					MinimapSceneCapture->TextureTarget = RenderTargetMinimap;
-				}
+				MinimapSceneCapture->TextureTarget = RenderTargetMinimap;
 			}
 		}
 	}
@@ -483,6 +499,7 @@ void ASpearmanCharacter::Death()
 	if (Combat && Combat->EquippedWeapon)
 	{
 		Combat->EquippedWeapon->Dropped();
+		Combat->EquippedWeapon->SetbAttackCollisionTrace();
 	}
 	MulticastDeath();
 	GetWorldTimerManager().SetTimer(DeathTimer, this, &ASpearmanCharacter::DeathTimerFinished, DeathDelay);
@@ -513,11 +530,10 @@ void ASpearmanCharacter::CalculateAO_Pitch()
 {
 	AO_Pitch = GetBaseAimRotation().Pitch;
 	if (AO_Pitch > 90.f && !IsLocallyControlled())
-	{
-		// [270, 360) -> [-90, 0)
+	{ // [270, 360) ->[-90, 0)
 		AO_Pitch -= 360.f;
 	}
-	// Limit Pitch Angle
+	
 	AO_Pitch = FMath::ClampAngle(AO_Pitch, -45.f, 45.f);
 }
 
@@ -592,7 +608,7 @@ void ASpearmanCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 }
 
 bool ASpearmanCharacter::IsWeaponEquipped()
-{ // bool로 AnimInstance에서 사용, AnimBP를 위함임
+{
 	return (Combat && Combat->EquippedWeapon);
 }
 
@@ -609,7 +625,7 @@ void ASpearmanCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 }
 
 void ASpearmanCharacter::HideCameraIfCharacterTooClose()
-{ // client-side
+{ /* Client Only */
 	if (!IsLocallyControlled()) return;
 	if ((FollowCamera->GetComponentLocation() - GetActorLocation()).Size() < 100.f)
 	{
@@ -636,6 +652,7 @@ void ASpearmanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASpearmanCharacter::InteractButtonPressed);
 	PlayerInputComponent->BindAction("Inventory", IE_Pressed, this, &ASpearmanCharacter::InventoryButtonPressed);
 	PlayerInputComponent->BindAction("TriggerMove", IE_Pressed, this, &ASpearmanCharacter::TriggerMove);
+	PlayerInputComponent->BindAction("TriggerAttack", IE_Pressed, this, &ASpearmanCharacter::StartAttackTest);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASpearmanCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ASpearmanCharacter::MoveRight);
@@ -686,12 +703,12 @@ void ASpearmanCharacter::Jump()
 void ASpearmanCharacter::DashButtonPressed()
 {
 	if (bDisableKeyInput) return;
-	if (Combat == nullptr) return;
+	if (Combat == nullptr || !IsWeaponEquipped()) return;
 
 	if (Combat->bCanDash && Combat->CombatState == ECombatState::ECS_Idle)
 	{
-		FVector InputVector = GetLastMovementInputVector().GetSafeNormal();
-		Combat->DashButtonPressed(InputVector);
+		FVector_NetQuantize InputVector = GetLastMovementInputVector().GetSafeNormal();
+		Combat->ServerDash(InputVector);
 	}
 }
 
@@ -701,11 +718,11 @@ void ASpearmanCharacter::EquipButtonPressed()
 	if (Combat)
 	{
 		if (HasAuthority())
-		{ // 서버에서 조종할 때 처리
+		{
 			Combat->EquipWeapon(OverlappingWeapon);
 		}
 		else
-		{ // RPC,
+		{
 			ServerEquipButtonPressed();
 		}
 	}

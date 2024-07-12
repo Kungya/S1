@@ -182,23 +182,17 @@ void ABasicMonster::OnAttacked(AActor* DamagedActor, float Damage, const UDamage
 	{ // Set Target Attacker
 		if (DamageCauser)
 		{
-			AWeapon* AttackerWeapon = Cast<AWeapon>(DamageCauser);
-			if (AttackerWeapon)
-			{
-				BasicMonsterAIController->GetBlackboardComponent()->SetValueAsObject(FName("Target"), AttackerWeapon->GetOwner());
-			}
+			BasicMonsterAIController->GetBlackboardComponent()->SetValueAsObject(FName("Target"), DamageCauser->GetOwner());
 		}
 	}
 
 	Hp = FMath::Clamp(Hp - Damage, 0.f, MaxHp);
 	if (FMath::IsNearlyZero(Hp))
-	{ // Death
-		// TODO : GameMode, SpearmanCharacter->GameState?
-		// TODO : Warning use Widget After Destory kinda Timer
+	{
 		Death();
 	}
 	else
-	{ // Hit
+	{
 		const float Stunned = FMath::FRandRange(0.f, 1.f);
 		if (Stunned <= StunChance)
 		{
@@ -210,20 +204,8 @@ void ABasicMonster::OnAttacked(AActor* DamagedActor, float Damage, const UDamage
 
 void ABasicMonster::ShowHitDamage(int32 Damage, FVector_NetQuantize HitLocation, bool bHeadShot)
 {
-	/*FVector2D HitDamagePosition;
-
-	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
-	if (PlayerController)
-	{
-		UGameplayStatics::ProjectWorldToScreen(PlayerController, HitLocation, HitDamagePosition);
-	}*/
-	/*const float RandX = FMath::RandRange(HitDamagePosition.X - 100.f, HitDamagePosition.X + 100.f);
-	const float RandY = FMath::RandRange(HitDamagePosition.Y - 100.f, HitDamagePosition.Y + 100.f);
-	HitDamagePosition = FVector2D(RandX, RandY);*/
-
 	HitDamage->SetHitDamageText(Damage);
 	HitDamage->AddToViewport();
-	//HitDamageWidget->SetPositionInViewport(HitDamagePosition);
 	HitDamage->PlayHitDamageAnimation(bHeadShot);
 	StoreHitDamage(HitDamage, HitLocation);
 }

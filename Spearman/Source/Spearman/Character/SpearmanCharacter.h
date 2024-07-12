@@ -86,6 +86,8 @@ protected:
 	void PlaySpearAttackMontage();
 	void PlayHitReactMontage();
 	void PlayDeathMontage();
+	void PlayDashMontage(const bool bLeft);
+	void PlayParriedMontage();
 
 	UFUNCTION()
 	void OnAttacked(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
@@ -205,6 +207,12 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* DeathMontage;
 
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* DashMontage;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* ParriedMontage;
+
 	float TurnThreshold = 15.f;
 	FRotator RotationPrevFrame;
 	FRotator RotationNowFrame;
@@ -221,9 +229,6 @@ private:
 
 	UFUNCTION()
 	void OnRep_Hp(float LastHp);
-
-	UPROPERTY(EditAnywhere, Category = Combat)
-	FString HeadBone;
 
 	UPROPERTY()
 	ASpearmanPlayerController* SpearmanPlayerController;
@@ -305,16 +310,21 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Hit Box")
 	UBoxComponent* foot_r;
 
-	/* Test for Rewind*/
+	/* Temporary, Test for Rewind*/
 	FTimerHandle TestTimer;
 	float TimerVector = 1.f;
 	void TestToggleVector() { TimerVector *= -1.f; };
 	bool bMove = false;
 	void TriggerMove() { bMove = true; };
 
+	FTimerHandle TestTimer2;
+	bool bTestAttack = false;
+	void StartAttackTest(){ if (!HasAuthority()) GetWorld()->GetTimerManager().SetTimer(TestTimer2, this, &ASpearmanCharacter::TriggerAttack, 5.f, true, 5.f); }
+	void TriggerAttack() { bTestAttack = true; }
+
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);
-	bool IsWeaponEquipped();
+	FORCEINLINE bool IsWeaponEquipped();
 	FORCEINLINE UCombatComponent* GetCombat() const { return Combat; }
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
@@ -326,7 +336,6 @@ public:
 	FORCEINLINE float GetHp() const { return Hp; }
 	FORCEINLINE float GetMaxHp() const { return MaxHp; }
 	FORCEINLINE float GetHpRatio() const { return Hp / MaxHp; }
-	FORCEINLINE FString GetHeadBone() const { return HeadBone; }
 	FORCEINLINE UBuffComponent* GetBuff() const { return Buff; }
 	FORCEINLINE UInventoryComponent* GetInventory() const { return Inventory; }
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const { return LagCompensation; }

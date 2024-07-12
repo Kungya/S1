@@ -38,7 +38,7 @@ public:
 	void TurnOffAttackCollision();
 
 	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastHit(AActor* HitActor, int32 InDamage, FVector_NetQuantize HitPoint, bool bHeadShot);
+	void MulticastHitEffect(AActor* HitActor, int32 InDamage, FVector_NetQuantize HitPoint, bool bHeadShot);
 
 	UPROPERTY()
 	TSet<AActor*> HitSet;
@@ -116,9 +116,12 @@ private:
 public:
 	// 드랍되거나, 장착될 때마다 변경해줘야 함
 	void SetWeaponState(EWeaponState State);
+	void SetbAttackCollisionTrace() { bAttackCollisionTrace = false; }
+	void SetOwnerSpearmanCharacter() { OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter; }
 	FORCEINLINE void SetWeaponVisibility(bool bNewVisibility) const { WeaponMesh->SetVisibility(bNewVisibility); }
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE float GetDamage() const { return Damage; }
 	FORCEINLINE float GetHeadShotDamage() const { return HeadShotDamage; }
+	FORCEINLINE UBoxComponent* GetAttackCollisionBox() const { return AttackCollisionBox; }
 };

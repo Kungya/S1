@@ -98,3 +98,19 @@ void USpearmanCharacterAnimInstance::AnimNotify_HitReactEnd()
 		SpearmanCharacter->GetCombat()->CombatState = ECombatState::ECS_Idle;
 	}
 }
+
+void USpearmanCharacterAnimInstance::AnimNotify_DashEnd()
+{
+	if (SpearmanCharacter && SpearmanCharacter->HasAuthority())
+	{
+		SpearmanCharacter->GetCombat()->CombatState = ECombatState::ECS_Idle;
+	}
+}
+
+void USpearmanCharacterAnimInstance::AnimNotify_ParriedEnd()
+{
+	if (SpearmanCharacter && SpearmanCharacter->HasAuthority())
+	{
+		SpearmanCharacter->GetCombat()->CombatState = ECombatState::ECS_Idle;
+	}
+}

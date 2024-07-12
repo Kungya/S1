@@ -28,7 +28,11 @@ protected:
 
 private:
 
+	UPROPERTY(EditAnywhere, Category = Combat)
+	FString HeadBone;
+
 
 public:
+	FORCEINLINE FString GetHeadBone() const { return HeadBone; }
 	FORCEINLINE UHistoryComponent* GetHistory() const { return History; }
 };

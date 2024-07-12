@@ -24,6 +24,9 @@ public:
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastParried();
+
 	// 현재 캐릭터의 전투 상태, 이거 하나로 동작 사용가능 유무를 판단
 	UPROPERTY(Replicated, EditAnywhere)
 	ECombatState CombatState = ECombatState::ECS_Idle;
@@ -32,9 +35,10 @@ protected:
 	virtual void BeginPlay() override;
 	
 	UFUNCTION(Server, Reliable)
-	void DashButtonPressed(const FVector& DashDirection);
+	void ServerDash(const FVector_NetQuantize DashDirection);
 
-	void Dash(const FVector& DashDirection);
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastDash(const FVector& DashDirection);
 
 	void DropEquippedWeapon();
 

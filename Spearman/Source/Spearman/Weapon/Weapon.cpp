@@ -13,7 +13,9 @@
 #include "Spearman/Interfaces/WeaponHitInterface.h"
 #include "Spearman/Monster/BasicMonster.h"
 #include "Spearman/SpearComponents/LagCompensationComponent.h"
+#include "Spearman/SpearComponents/CombatComponent.h"
 #include "DrawDebugHelpers.h"
+
 
 AWeapon::AWeapon()
 {
@@ -23,9 +25,11 @@ AWeapon::AWeapon()
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
+	WeaponMesh->SetCollisionObjectType(ECC_SkeletalMesh);
 	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
-	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
+	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Block);
+	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
@@ -36,10 +40,16 @@ AWeapon::AWeapon()
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
 	PickupWidget->SetupAttachment(RootComponent);
 
+	AttackCollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("AttackCollisionBox"));
+	AttackCollisionBox->SetupAttachment(RootComponent);
+	AttackCollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	AttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	TraceStartBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TraceStartBox"));
 	TraceStartBox->SetupAttachment(RootComponent);
 	TraceStartBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	TraceStartBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
 	TraceEndBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TraceEndBox"));
 	TraceEndBox->SetupAttachment(RootComponent);
 	TraceEndBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
@@ -104,7 +114,7 @@ void AWeapon::Tick(float DeltaTime)
 }
 
 void AWeapon::AttackCollisionCheckByRewind()
-{ /* Client Only, Simulate In Client First */
+{ /* Client Only */
 	FVector Start = TraceStartBox->GetComponentLocation();
 	FVector End = TraceEndBox->GetComponentLocation();
 	FHitResult HitResult;
@@ -119,25 +129,26 @@ void AWeapon::AttackCollisionCheckByRewind()
 	HitSet.Add(HitResult.GetActor());
 	
 	OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter;
+	if (OwnerSpearmanCharacter == nullptr) return;
 	OwnerSpearmanPlayerController = (OwnerSpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(OwnerSpearmanCharacter->GetController()) : OwnerSpearmanPlayerController;
-	if (OwnerSpearmanCharacter == nullptr || OwnerSpearmanPlayerController == nullptr) return;
+	if (OwnerSpearmanPlayerController == nullptr) return;
+	
+	AWeapon* HitWeapon = Cast<AWeapon>(HitResult.GetActor());
+	if (HitWeapon)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Hit Weapon in Client"));
+	}
 
 	ARewindableCharacter* HitRewindableCharacter = Cast<ARewindableCharacter>(HitResult.GetActor());
 	if (HitRewindableCharacter)
-	{ /* HitCharacter Can be SpearmanCharacter or BasicMonster. */
-		UE_LOG(LogTemp, Warning, TEXT("Hit in Client"));
+	{
 		if (OwnerSpearmanPlayerController && OwnerSpearmanCharacter && OwnerSpearmanCharacter->GetLagCompensation())
 		{
+			UE_LOG(LogTemp, Warning, TEXT("Hit Character in Client"));
 			const float CurrentClientTime = OwnerSpearmanPlayerController->GetServerTime() - OwnerSpearmanPlayerController->GetSingleTripTime();
 			OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequest(HitRewindableCharacter, Start, HitResult.ImpactPoint, CurrentClientTime, this);
 		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("LagCompensation Component nullptr"));
-		}
 	}
-
-	/* TODO : double check about Hit Dupplication in client */
 }
 
 void AWeapon::AttackCollisionCheckByServer()
@@ -160,32 +171,27 @@ void AWeapon::AttackCollisionCheckByServer()
 	OwnerSpearmanPlayerController = (OwnerSpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(OwnerSpearmanCharacter->GetController()) : OwnerSpearmanPlayerController;
 	if (OwnerSpearmanPlayerController == nullptr) return;
 	
-	bool bHeadShot = false;
-	ASpearmanCharacter* HitSpearmanCharacter = Cast<ASpearmanCharacter>(HitResult.GetActor());
-	if (HitSpearmanCharacter)
-	{ /* Hit SpearmanCharacter */
-		if (HitResult.BoneName.ToString() == HitSpearmanCharacter->GetHeadBone())
-		{
-			bHeadShot = true;
-			HitPartDamage = HeadShotDamage;
-		}
-		else
-		{
-			bHeadShot = true;
-			HitPartDamage = Damage;
-		}
-		const float Dist = FVector::Distance(OwnerSpearmanCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
-		FVector2D InRange(60.f, 240.f);
-		FVector2D OutRange(HitPartDamage / 3.f, HitPartDamage);
-		const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
-		UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerSpearmanPlayerController, this, UDamageType::StaticClass());
+	AWeapon* HitWeapon = Cast<AWeapon>(HitResult.GetActor());
+	if (HitWeapon)
+	{ /* Hit Weapon, Parried */
+		UE_LOG(LogTemp, Warning, TEXT("Hit Weapon in Server"));
+		OwnerSpearmanCharacter->GetCombat()->MulticastParried();
 		
-		MulticastHit(HitResult.GetActor(), FMath::CeilToInt(InDamage), HitResult.ImpactPoint, bHeadShot);
+		HitWeapon->SetOwnerSpearmanCharacter();
+		if (HitWeapon->OwnerSpearmanCharacter)
+		{
+			HitWeapon->OwnerSpearmanCharacter->GetCombat()->MulticastParried();
+		}
+
+		TurnOffAttackCollision();
+		HitWeapon->TurnOffAttackCollision();
 	}
-	ABasicMonster* HitMonster = Cast<ABasicMonster>(HitResult.GetActor());
-	if (HitMonster)
-	{ /* Hit BasicMonster */
-		if (HitResult.BoneName.ToString() == HitMonster->GetHeadBone())
+
+	bool bHeadShot = false;
+	ARewindableCharacter* HitCharacter = Cast<ARewindableCharacter>(HitResult.GetActor());
+	if (HitCharacter)
+	{ /* Hit Character */
+		if (HitResult.BoneName.ToString() == HitCharacter->GetHeadBone())
 		{
 			bHeadShot = true;
 			HitPartDamage = HeadShotDamage;
@@ -195,17 +201,17 @@ void AWeapon::AttackCollisionCheckByServer()
 			bHeadShot = false;
 			HitPartDamage = Damage;
 		}
+
 		const float Dist = FVector::Distance(OwnerSpearmanCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
-		FVector2D InRange(60.f, 240.f);
-		FVector2D OutRange(HitPartDamage / 3.f, HitPartDamage);
+		FVector2D InRange(60.f, 240.f), OutRange(HitPartDamage / 3.f, HitPartDamage);
 		const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
 		UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerSpearmanPlayerController, this, UDamageType::StaticClass());
 		
-		MulticastHit(HitResult.GetActor(), FMath::FloorToInt(InDamage), HitResult.ImpactPoint, bHeadShot);
+		MulticastHitEffect(HitResult.GetActor(), FMath::CeilToInt(InDamage), HitResult.ImpactPoint, bHeadShot);
 	}
 }
 
-void AWeapon::MulticastHit_Implementation(AActor* HitActor, int32 InDamage, FVector_NetQuantize HitPoint, bool bHeadShot)
+void AWeapon::MulticastHitEffect_Implementation(AActor* HitActor, int32 InDamage, FVector_NetQuantize HitPoint, bool bHeadShot)
 { /* Unreliable */
 	IWeaponHitInterface* WeaponHitInterface = Cast<IWeaponHitInterface>(HitActor);
 	if (WeaponHitInterface)
@@ -221,7 +227,6 @@ void AWeapon::SetWeaponState(EWeaponState State)
 	switch (WeaponState)
 	{
 	case EWeaponState::EWS_Equipped:
-		// 장착후 상호작용 off
 		ShowPickupWidget(false);
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		WeaponMesh->SetSimulatePhysics(false);
@@ -235,7 +240,7 @@ void AWeapon::SetWeaponState(EWeaponState State)
 		}
 		WeaponMesh->SetSimulatePhysics(true);
 		WeaponMesh->SetEnableGravity(true);
-		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 		break;
@@ -254,7 +259,7 @@ void AWeapon::OnRep_WeaponState()
 		case EWeaponState::EWS_Dropped:
 		WeaponMesh->SetSimulatePhysics(true);
 		WeaponMesh->SetEnableGravity(true);
-		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 		break;
 	}
 }
@@ -279,35 +284,16 @@ void AWeapon::Dropped()
 
 void AWeapon::TurnOnAttackCollision()
 { 
-	if (bUseRewind && !HasAuthority())
-	{
-		HitSet.Empty();
-	}
-	else if (!bUseRewind && HasAuthority())
-	{
-		HitSet.Empty();
-	}
-
-	if (HasAuthority())
-	{
-		bAttackCollisionTrace = true;
-	}
+	HitSet.Empty();
+	
+	bAttackCollisionTrace = true;
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
 void AWeapon::TurnOffAttackCollision()
-{ /* Server Only */
+{
+	HitSet.Empty();
 	
-	if (bUseRewind && !HasAuthority())
-	{
-		HitSet.Empty();
-	}
-	else if (!bUseRewind && HasAuthority())
-	{
-		HitSet.Empty();
-	}
-
-	if (HasAuthority())
-	{
-		bAttackCollisionTrace = false;
-	}
+	bAttackCollisionTrace = false;
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
