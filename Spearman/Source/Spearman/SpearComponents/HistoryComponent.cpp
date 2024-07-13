@@ -9,30 +9,23 @@ UHistoryComponent::UHistoryComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
-
 }
 
 void UHistoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	RewindableCharacter = (RewindableCharacter == nullptr) ? Cast<ARewindableCharacter>(GetOwner()) : RewindableCharacter;
-
-	// UE_LOG(LogTemp, Warning, TEXT("Rewindable HitBoxArray Num() : %d"), RewindableCharacter->HitBoxArray.Num());
 }
 
 void UHistoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	SaveCurrentFrame();
+	RecordCurrentFrame();
 }
 
-void UHistoryComponent::SaveCurrentFrame()
+void UHistoryComponent::RecordCurrentFrame()
 { /* Server Only */
-	RewindableCharacter = (RewindableCharacter == nullptr) ? Cast<ARewindableCharacter>(GetOwner()) : RewindableCharacter;
-	if (RewindableCharacter == nullptr) return;
-
 	if (GetOwner() && GetOwner()->HasAuthority())
 	{
 		/** keep Time length of HistroicalBuffer at RewindLimitTime  */
@@ -51,18 +44,23 @@ void UHistoryComponent::SaveCurrentFrame()
 		FSavedFrame CurrentFrame;
 		CurrentFrame.Time = GetWorld()->GetTimeSeconds();
 
-		for (UBoxComponent* Box : RewindableCharacter->HitBoxArray)
+		IRewindableInterface* RewindableInterface = Cast<IRewindableInterface>(GetOwner());
+		if (RewindableInterface)
 		{
-			if (Box)
+			const TArray<UBoxComponent*>& HitBoxArray = RewindableInterface->GetHitBoxArray();
+			for (UBoxComponent* Box : HitBoxArray)
 			{
-				FHitBox HitBox;
-				HitBox.Location = Box->GetComponentLocation();
-				HitBox.Rotation = Box->GetComponentRotation();
-				HitBox.Extent = Box->GetScaledBoxExtent();
-				CurrentFrame.SavedHitBoxArray.Add(HitBox);
+				if (Box)
+				{
+					FHitBox HitBox;
+					HitBox.Location = Box->GetComponentLocation();
+					HitBox.Rotation = Box->GetComponentRotation();
+					HitBox.Extent = Box->GetScaledBoxExtent();
+					CurrentFrame.SavedHitBoxArray.Add(HitBox);
+				}
 			}
+
+			HistoricalBuffer.AddHead(CurrentFrame);
 		}
-		
-		HistoricalBuffer.AddHead(CurrentFrame);
 	}
 }

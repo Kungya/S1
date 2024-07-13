@@ -3,20 +3,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
+#include "GameFramework/Actor.h"
 #include "Spearman/Interfaces/RewindableInterface.h"
-#include "RewindableCharacter.generated.h"
+#include "RewindableActor.generated.h"
 
 class UBoxComponent;
 class UHistoryComponent;
 
 UCLASS()
-class SPEARMAN_API ARewindableCharacter : public ACharacter, public IRewindableInterface
+class SPEARMAN_API ARewindableActor : public AActor, public IRewindableInterface
 {
 	GENERATED_BODY()
-
-public:
-	ARewindableCharacter();
+	
+public:	
+	ARewindableActor();
 
 	virtual TArray<UBoxComponent*>& GetHitBoxArray() override;
 
@@ -31,11 +31,7 @@ protected:
 
 private:
 
-	UPROPERTY(EditAnywhere, Category = Combat)
-	FString HeadBone;
-
-
-public:
-	FORCEINLINE FString GetHeadBone() const { return HeadBone; }
+public:	
 	FORCEINLINE UHistoryComponent* GetHistory() const { return History; }
+
 };

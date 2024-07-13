@@ -43,19 +43,30 @@ public:
 	void ShowSavedFrame(const FSavedFrame& Frame, const FColor& Color);
 
 	UFUNCTION(Server, Reliable)
-	void ServerRewindRequest(ARewindableCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, AWeapon* Weapon);
+	void ServerRewindRequest(ARewindableCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTime, AWeapon* Weapon);
+
+	UFUNCTION(Server, Reliable)
+	void ServerRewindRequestForParrying(ARewindableActor* HitWeapon, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTime, AWeapon* Weapon);
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 	FSavedFrame GetInterpFrame(const FSavedFrame& Next, const FSavedFrame& Prev, float HitTime);
-	FRewindResult Rewind(ARewindableCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTimem, AWeapon* Weapon);
+	FRewindResult Rewind(ARewindableCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTime, AWeapon* Weapon);
 	FRewindResult SimulateHit(ARewindableCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FSavedFrame& Frame, const FVector_NetQuantize& HitLocation, AWeapon* Weapon);
+	
+	void ReserveCurrentFrame(ARewindableCharacter* HitSpearmanCharacter, FSavedFrame& OutReservedFrame);
+	void MoveHitBoxes(ARewindableCharacter* HitSpearmanCharacter, const FSavedFrame& FrameToMove);
+	void ResetHitBoxes(ARewindableCharacter* HitSpearmanCharacter, const FSavedFrame& ReservedFrame);
 
-	void ReserveCurrentFrame(ARewindableCharacter* HitSpearmanCharacter, FSavedFrame& OutFrame);
-	void MoveHitBoxes(ARewindableCharacter* HitSpearmanCharacter, const FSavedFrame& Frame);
-	void ResetHitBoxes(ARewindableCharacter* HitSpearmanCharacter, const FSavedFrame& Frame);
+	/* Rewind for Parrying, TODO : integrate common code */
+	bool Rewind(ARewindableActor* HitWeapon, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTime, AWeapon* Weapon);
+	bool SimulateHit(ARewindableActor* HitWeapon, const FVector_NetQuantize& TraceStart, const FSavedFrame& Frame, const FVector_NetQuantize& HitLocation, AWeapon* Weapon);
+
+	void ReserveCurrentFrame(AActor* HitActor, FSavedFrame& OutReservedFrame);
+	void MoveHitBoxes(AActor* HitActor, const FSavedFrame& Frame);
+	void ResetHitBoxes(AActor* HitActor, const FSavedFrame& ReservedFrame);
 
 private:
 	// Caching Attacker SpearmanCharacter

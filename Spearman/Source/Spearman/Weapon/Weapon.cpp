@@ -44,6 +44,7 @@ AWeapon::AWeapon()
 	AttackCollisionBox->SetupAttachment(RootComponent);
 	AttackCollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	AttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HitBoxArray.Add(AttackCollisionBox);
 
 	TraceStartBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TraceStartBox"));
 	TraceStartBox->SetupAttachment(RootComponent);
@@ -136,7 +137,12 @@ void AWeapon::AttackCollisionCheckByRewind()
 	AWeapon* HitWeapon = Cast<AWeapon>(HitResult.GetActor());
 	if (HitWeapon)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Hit Weapon in Client"));
+		if (OwnerSpearmanPlayerController && OwnerSpearmanCharacter && OwnerSpearmanCharacter->GetLagCompensation())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Hit Weapon in Client"));
+			const float CurrentClientTime = OwnerSpearmanPlayerController->GetServerTime() - OwnerSpearmanPlayerController->GetSingleTripTime();
+			OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequestForParrying(HitWeapon, Start, HitResult.ImpactPoint, CurrentClientTime, this);
+		}
 	}
 
 	ARewindableCharacter* HitRewindableCharacter = Cast<ARewindableCharacter>(HitResult.GetActor());
@@ -177,7 +183,7 @@ void AWeapon::AttackCollisionCheckByServer()
 		UE_LOG(LogTemp, Warning, TEXT("Hit Weapon in Server"));
 		OwnerSpearmanCharacter->GetCombat()->MulticastParried();
 		
-		HitWeapon->SetOwnerSpearmanCharacter();
+		HitWeapon->CheckOwnerSpearmanCharacter();
 		if (HitWeapon->OwnerSpearmanCharacter)
 		{
 			HitWeapon->OwnerSpearmanCharacter->GetCombat()->MulticastParried();
@@ -216,7 +222,7 @@ void AWeapon::MulticastHitEffect_Implementation(AActor* HitActor, int32 InDamage
 	IWeaponHitInterface* WeaponHitInterface = Cast<IWeaponHitInterface>(HitActor);
 	if (WeaponHitInterface)
 	{ // Cast will succeed if BasicMonster, since BasicMonster inherits from WeaponHitInterface
-		WeaponHitInterface->WeaponHit_Implementation(InDamage, HitPoint, bHeadShot);
+		WeaponHitInterface->WeaponHit(InDamage, HitPoint, bHeadShot);
 	}
 }
 

@@ -415,8 +415,8 @@ void ASpearmanCharacter::OnRep_Hp(float LastHp)
 	}
 }
 
-void ASpearmanCharacter::WeaponHit_Implementation(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot)
-{
+void ASpearmanCharacter::WeaponHit(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot)
+{ /* Interface */
 	if (HitParticles)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, HitPoint, FRotator(0.f), true);

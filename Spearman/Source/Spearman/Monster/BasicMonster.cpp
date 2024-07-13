@@ -164,7 +164,7 @@ void ABasicMonster::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-void ABasicMonster::WeaponHit_Implementation(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot)
+void ABasicMonster::WeaponHit(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot)
 {
 	if (HitParticles)
 	{

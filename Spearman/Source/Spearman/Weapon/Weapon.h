@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "RewindableActor.h"
 #include "Weapon.generated.h"
 
 class UBoxComponent;
@@ -23,7 +24,7 @@ enum class EWeaponState : uint8
 };
 
 UCLASS()
-class SPEARMAN_API AWeapon : public AActor
+class SPEARMAN_API AWeapon : public ARewindableActor
 {
 	GENERATED_BODY()
 	
@@ -117,11 +118,12 @@ public:
 	// 드랍되거나, 장착될 때마다 변경해줘야 함
 	void SetWeaponState(EWeaponState State);
 	void SetbAttackCollisionTrace() { bAttackCollisionTrace = false; }
-	void SetOwnerSpearmanCharacter() { OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter; }
+	void CheckOwnerSpearmanCharacter() { OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter; }
 	FORCEINLINE void SetWeaponVisibility(bool bNewVisibility) const { WeaponMesh->SetVisibility(bNewVisibility); }
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE float GetDamage() const { return Damage; }
 	FORCEINLINE float GetHeadShotDamage() const { return HeadShotDamage; }
 	FORCEINLINE UBoxComponent* GetAttackCollisionBox() const { return AttackCollisionBox; }
+	FORCEINLINE ASpearmanCharacter* GetOwnerSpearmanCharacter() const { return OwnerSpearmanCharacter; }
 };

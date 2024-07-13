@@ -4,11 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "WeaponHitInterface.generated.h"
+#include "RewindableInterface.generated.h"
+
+class UBoxComponent;
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
-class UWeaponHitInterface : public UInterface
+class URewindableInterface : public UInterface
 {
 	GENERATED_BODY()
 };
@@ -16,12 +18,12 @@ class UWeaponHitInterface : public UInterface
 /**
  * 
  */
-class SPEARMAN_API IWeaponHitInterface
+class SPEARMAN_API IRewindableInterface
 {
 	GENERATED_BODY()
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-
-	virtual void WeaponHit(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot) = 0;
+	
+	virtual TArray<UBoxComponent*>& GetHitBoxArray() = 0;
 };

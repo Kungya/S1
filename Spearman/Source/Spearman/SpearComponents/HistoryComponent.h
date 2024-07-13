@@ -4,16 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Spearman/Interfaces/RewindableInterface.h"
 #include "HistoryComponent.generated.h"
 
-class ARewindableCharacter;
 class UBoxComponent;
 
 USTRUCT(BlueprintType)
 struct FHitBox
 {
 	GENERATED_BODY()
-
+	
 	UPROPERTY()
 	FVector Location;
 
@@ -45,27 +45,20 @@ public:
 	UHistoryComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	/*
-	* Recorded Frame per Tick
-	*/
-
+	/** Record Frame per Tick */
 	TDoubleLinkedList<FSavedFrame> HistoricalBuffer;
 
 protected:
 	virtual void BeginPlay() override;
 
-	void SaveCurrentFrame();
-	void SaveFrame(FSavedFrame& OutFrame);
+	void RecordCurrentFrame();
 
 private:
-	UPROPERTY()
-	ARewindableCharacter* RewindableCharacter;
 
-	// LimitTime, 1.f == 1000ms
+	/** LimitTime, 1.f == 1'000ms */ 
 	UPROPERTY(EditAnywhere)
 	float RewindLimitTime = 1.f;
 
 public:
 
-			
 };

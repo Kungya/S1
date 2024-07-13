@@ -236,7 +236,7 @@ private:
 	
 
 public:
-	virtual void WeaponHit_Implementation(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot) override;
+	virtual void WeaponHit(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot) override;
 
 	void ShowHitDamage(int32 Damage, FVector_NetQuantize HitLocation, bool bHeadShot);
 
