@@ -18,20 +18,23 @@ class SPEARMAN_API ARewindableActor : public AActor, public IRewindableInterface
 public:	
 	ARewindableActor();
 
-	virtual TArray<UBoxComponent*>& GetHitBoxArray() override;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<UBoxComponent*> HitBoxArray;
 
 protected:
 	virtual void BeginPlay() override;
 
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	USkeletalMeshComponent* WeaponMesh;
+
 	UPROPERTY(VisibleAnywhere, Category = "ActorComponent")
 	UHistoryComponent* History;
 
 private:
 
-public:	
-	FORCEINLINE UHistoryComponent* GetHistory() const { return History; }
+public:
+	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
+	virtual TArray<UBoxComponent*>& GetHitBoxArray() override { return HitBoxArray; }
+	virtual UHistoryComponent* GetHistory() override { return History; }
 
 };

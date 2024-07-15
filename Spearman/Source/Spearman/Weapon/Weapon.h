@@ -81,8 +81,6 @@ protected:
 	bool bUseRewind = false;
 
 private:
-	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
-	USkeletalMeshComponent* WeaponMesh;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USphereComponent* AreaSphere;
@@ -115,13 +113,11 @@ private:
 	ASpearmanPlayerController* OwnerSpearmanPlayerController;
 	
 public:
-	// 드랍되거나, 장착될 때마다 변경해줘야 함
 	void SetWeaponState(EWeaponState State);
 	void SetbAttackCollisionTrace() { bAttackCollisionTrace = false; }
-	void CheckOwnerSpearmanCharacter() { OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter; }
+	FORCEINLINE void CheckOwnerSpearmanCharacter() { OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter; }
 	FORCEINLINE void SetWeaponVisibility(bool bNewVisibility) const { WeaponMesh->SetVisibility(bNewVisibility); }
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
-	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE float GetDamage() const { return Damage; }
 	FORCEINLINE float GetHeadShotDamage() const { return HeadShotDamage; }
 	FORCEINLINE UBoxComponent* GetAttackCollisionBox() const { return AttackCollisionBox; }

@@ -16,8 +16,3 @@ void ARewindableCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 }
-
-TArray<UBoxComponent*>& ARewindableCharacter::GetHitBoxArray()
-{
-	return HitBoxArray;
-}

@@ -10,6 +10,7 @@
 #include "Spearman/Weapon/Weapon.h"
 #include "Spearman/SpearComponents/HistoryComponent.h"
 #include "Spearman/SpearComponents/CombatComponent.h"
+#include "Spearman/Interfaces/RewindableInterface.h"
 
 ULagCompensationComponent::ULagCompensationComponent()
 {
@@ -54,14 +55,15 @@ void ULagCompensationComponent::ServerRewindRequest_Implementation(ARewindableCh
 		FVector2D InRange(60.f, 240.f);
 		FVector2D OutRange(HitPartDamage / 3.f, HitPartDamage);
 		const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
-
 		UGameplayStatics::ApplyDamage(HitRewindableCharacter, InDamage, SpearmanCharacter->Controller, Weapon, UDamageType::StaticClass());
+
 		Weapon->MulticastHitEffect(HitRewindableCharacter, FMath::CeilToInt(InDamage), HitLocation, bHeadShot);
-		UE_LOG(LogTemp, Warning, TEXT("Rewind Success"));
+
+		UE_LOG(LogTemp, Warning, TEXT("Rewind Hit"));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Rewind Success, but Miss in Server"));
+		UE_LOG(LogTemp, Warning, TEXT("Rewind Miss"));
 	}
 }
 
@@ -109,39 +111,17 @@ FRewindResult ULagCompensationComponent::Rewind(ARewindableCharacter* HitRewinda
 	return SimulateHit(HitRewindableCharacter, TraceStart, FrameToSimulate, HitLocation, Weapon);
 }
 
-FSavedFrame ULagCompensationComponent::GetInterpFrame(const FSavedFrame& Next, const FSavedFrame& Prev, float HitTime)
-{ /* Get Similar HitBox by Interpolating between Next and Prev */
-	const float Dist = (Prev.Time - Next.Time);
-	const float InterpRatio = FMath::Clamp(((HitTime - Next.Time) / Dist) , 0.f, 1.f);
-
-	FSavedFrame InterpFrame;
-	InterpFrame.Time = HitTime;
-
-	for (int32 idx = 0; idx < Prev.SavedHitBoxArray.Num(); idx++)
-	{	
-		const FHitBox& NextBox = Next.SavedHitBoxArray[idx];
-		const FHitBox& PrevBox = Prev.SavedHitBoxArray[idx];
-
-		FHitBox InterpHitBox;
-		InterpHitBox.Location = FMath::VInterpTo(NextBox.Location, PrevBox.Location, 1.f, InterpRatio);
-		InterpHitBox.Rotation = FMath::RInterpTo(NextBox.Rotation, PrevBox.Rotation, 1.f, InterpRatio);
-		InterpHitBox.Extent = PrevBox.Extent;
-
-		InterpFrame.SavedHitBoxArray.Add(InterpHitBox);
-	}
-
-	return InterpFrame;
-}
-
 FRewindResult ULagCompensationComponent::SimulateHit(ARewindableCharacter* HitRewindableCharacter, const FVector_NetQuantize& TraceStart, const FSavedFrame& Frame, const FVector_NetQuantize& HitLocation, AWeapon* Weapon)
 {
 	if (HitRewindableCharacter == nullptr) return FRewindResult();
 	
-	/* [Reserve HitBoxes of Current Frame] -> [MoveHitBoxes For Simulate Hit] -> [Return Result] -> [Reset HitBoxes to Reserved Current Frame] */
+	IRewindableInterface* RewindableInterface = Cast<IRewindableInterface>(HitRewindableCharacter);
+	check(RewindableInterface != nullptr);
+
 	FSavedFrame CurrentFrame;
 	/* Reserve Current Frame's HItBoxes before Rewind*/
-	ReserveCurrentFrame(HitRewindableCharacter, CurrentFrame);
-	MoveHitBoxes(HitRewindableCharacter, Frame);
+	ReserveCurrentFrame(RewindableInterface, CurrentFrame);
+	MoveHitBoxes(RewindableInterface, Frame);
 	HitRewindableCharacter->GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	UBoxComponent* HeadBox = HitRewindableCharacter->HitBoxArray[0];
@@ -159,8 +139,8 @@ FRewindResult ULagCompensationComponent::SimulateHit(ARewindableCharacter* HitRe
 		World->LineTraceSingleByChannel(SimulateHitResult, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, Params);
 
 		if (SimulateHitResult.bBlockingHit)
-		{ /* Head Hit, Reset to Reserved Current Frame's Hitbox Position */
-			ResetHitBoxes(HitRewindableCharacter, CurrentFrame);
+		{
+			ResetHitBoxes(RewindableInterface, CurrentFrame);
 			HitRewindableCharacter->GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 			return FRewindResult{ true, true };
 		}
@@ -177,69 +157,17 @@ FRewindResult ULagCompensationComponent::SimulateHit(ARewindableCharacter* HitRe
 			World->LineTraceSingleByChannel(SimulateHitResult, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, Params);
 
 			if (SimulateHitResult.bBlockingHit)
-			{ /* Body Hit, Reset to Reserved Current Frame's Hitbox Position */
-				ResetHitBoxes(HitRewindableCharacter, CurrentFrame);
+			{
+				ResetHitBoxes(RewindableInterface, CurrentFrame);
 				HitRewindableCharacter->GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 				return FRewindResult{ true, false };
 			}
 		}
 	}
 
-	ResetHitBoxes(HitRewindableCharacter, CurrentFrame);
+	ResetHitBoxes(RewindableInterface, CurrentFrame);
 	HitRewindableCharacter->GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	return FRewindResult{ false, false };
-}
-
-void ULagCompensationComponent::ReserveCurrentFrame(ARewindableCharacter* HitRewindableCharacter, FSavedFrame& OutReservedFrame)
-{ /* Reserve HitBoxes of Current Frame to restore original position */
-	if (HitRewindableCharacter == nullptr) return;
-
-	for (UBoxComponent* Box : HitRewindableCharacter->HitBoxArray)
-	{
-		if (Box)
-		{
-			FHitBox HitBox;
-			HitBox.Location = Box->GetComponentLocation();
-			HitBox.Rotation = Box->GetComponentRotation();
-			HitBox.Extent = Box->GetScaledBoxExtent();
-			OutReservedFrame.SavedHitBoxArray.Add(HitBox);
-		}
-	}
-}
-
-void ULagCompensationComponent::MoveHitBoxes(ARewindableCharacter* HitRewindableCharacter, const FSavedFrame& FrameToMove)
-{
-	if (HitRewindableCharacter == nullptr) return;
-
-	const TArray<UBoxComponent*>& HitRewindableCharacterHitBoxArray = HitRewindableCharacter->HitBoxArray;
-	for (int32 idx = 0; idx < HitRewindableCharacterHitBoxArray.Num(); idx++)
-	{
-		UBoxComponent* Box = HitRewindableCharacterHitBoxArray[idx];
-		if (Box)
-		{
-			Box->SetWorldLocation(FrameToMove.SavedHitBoxArray[idx].Location);
-			Box->SetWorldRotation(FrameToMove.SavedHitBoxArray[idx].Rotation);
-			Box->SetBoxExtent(FrameToMove.SavedHitBoxArray[idx].Extent);
-		}
-	}
-}
-
-void ULagCompensationComponent::ResetHitBoxes(ARewindableCharacter* HitRewindableCharacter, const FSavedFrame& ReservedFrame)
-{
-	if (HitRewindableCharacter == nullptr) return;
-
-	const TArray<UBoxComponent*>& HitRewindableCharacterHitBoxArray = HitRewindableCharacter->HitBoxArray;
-	for (int32 idx = 0; idx < HitRewindableCharacterHitBoxArray.Num(); idx++)
-	{
-		UBoxComponent* Box = HitRewindableCharacterHitBoxArray[idx];
-		if (Box)
-		{
-			Box->SetWorldLocation(ReservedFrame.SavedHitBoxArray[idx].Location);
-			Box->SetWorldRotation(ReservedFrame.SavedHitBoxArray[idx].Rotation);
-			Box->SetBoxExtent(ReservedFrame.SavedHitBoxArray[idx].Extent);
-			Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		}
-	}
 }
 
 void ULagCompensationComponent::ShowSavedFrame(const FSavedFrame& Frame, const FColor& Color)
@@ -250,41 +178,36 @@ void ULagCompensationComponent::ShowSavedFrame(const FSavedFrame& Frame, const F
 	}
 }
 
-void ULagCompensationComponent::ServerRewindRequestForParrying_Implementation(ARewindableActor* HitWeapon, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTime, AWeapon* Weapon)
+void ULagCompensationComponent::ServerRewindRequestForParrying_Implementation(ARewindableActor* HitRewindableActor, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTime, AWeapon* Weapon)
 {
-	if (HitWeapon == nullptr || Weapon == nullptr) return;
+	if (HitRewindableActor == nullptr || Weapon == nullptr) return;
 
-	bool bParried = Rewind(HitWeapon, TraceStart, HitLocation, HitTime, Weapon);
+	bool bParried = Rewind(HitRewindableActor, TraceStart, HitLocation, HitTime, Weapon);
 
 	if (bParried)
 	{
-		// TODO : Parried Montage, AttackCollision
 		SpearmanCharacter->GetCombat()->MulticastParried();
-		Weapon->TurnOffAttackCollision();
 
-		AWeapon* HitWeaponCheck = Cast<AWeapon>(HitWeapon);
-		if (HitWeaponCheck)
-		{
-			HitWeaponCheck->CheckOwnerSpearmanCharacter();
-			HitWeaponCheck->GetOwnerSpearmanCharacter()->GetCombat()->MulticastParried();
-			HitWeaponCheck->TurnOffAttackCollision();
+		AWeapon* HitWeaponToParried = Cast<AWeapon>(HitRewindableActor);
+		if (HitWeaponToParried)
+		{ // 해야하는 것 : 
+			HitWeaponToParried->CheckOwnerSpearmanCharacter();
+			HitWeaponToParried->GetOwnerSpearmanCharacter()->GetCombat()->MulticastParried();
 		}
-		
 
-		UE_LOG(LogTemp, Warning, TEXT("Success Rewind !! Parried"));
+		UE_LOG(LogTemp, Warning, TEXT("Rewind Success : Parried"));
 	}
 	else
 	{
-		// TODO : UELOG(Rewind Miss)
-		UE_LOG(LogTemp, Warning, TEXT("return false, miss ? "));
+		UE_LOG(LogTemp, Warning, TEXT("Rewind Miss : Not Parried"));
 	}
 }
 
-bool ULagCompensationComponent::Rewind(ARewindableActor* HitWeapon, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTime, AWeapon* Weapon)
+bool ULagCompensationComponent::Rewind(ARewindableActor* HitRewindableActor, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTime, AWeapon* Weapon)
 {
-	if (HitWeapon == nullptr) return false;
+	if (HitRewindableActor == nullptr) return false;
 
-	UHistoryComponent* HitHistory = HitWeapon->GetHistory();
+	UHistoryComponent* HitHistory = HitRewindableActor->GetHistory();
 	if (HitHistory == nullptr || HitHistory->HistoricalBuffer.GetHead() == nullptr || HitHistory->HistoricalBuffer.GetTail() == nullptr) return false;
 
 	// Historical Buffer of ARewindableActor* HitWeapon
@@ -299,7 +222,7 @@ bool ULagCompensationComponent::Rewind(ARewindableActor* HitWeapon, const FVecto
 	if (HitTime >= NewestTime)
 	{
 		FrameToSimulate = Buffer.GetHead()->GetValue();
-		return SimulateHit(HitWeapon, TraceStart, FrameToSimulate, HitLocation, Weapon);
+		return SimulateHit(HitRewindableActor, TraceStart, FrameToSimulate, HitLocation, Weapon);
 	}
 
 	TDoubleLinkedList<FSavedFrame>::TDoubleLinkedListNode* HitTimeNextNode = Buffer.GetHead();
@@ -319,25 +242,22 @@ bool ULagCompensationComponent::Rewind(ARewindableActor* HitWeapon, const FVecto
 
 	FrameToSimulate = GetInterpFrame(HitTimeNextNode->GetValue(), HitTimePrevNode->GetValue(), HitTime);
 
-	return SimulateHit(HitWeapon, TraceStart, FrameToSimulate, HitLocation, Weapon);
+	return SimulateHit(HitRewindableActor, TraceStart, FrameToSimulate, HitLocation, Weapon);
 }
 
-bool ULagCompensationComponent::SimulateHit(ARewindableActor* HitWeapon, const FVector_NetQuantize& TraceStart, const FSavedFrame& Frame, const FVector_NetQuantize& HitLocation, AWeapon* Weapon)
+bool ULagCompensationComponent::SimulateHit(ARewindableActor* HitRewindableActor, const FVector_NetQuantize& TraceStart, const FSavedFrame& Frame, const FVector_NetQuantize& HitLocation, AWeapon* Weapon)
 {
-	if (HitWeapon == nullptr) return false;
+	if (HitRewindableActor == nullptr) return false;
+
+	IRewindableInterface* RewindableInterface = Cast<IRewindableInterface>(HitRewindableActor);
+	check(RewindableInterface != nullptr);
 
 	FSavedFrame CurrentFrame;
-	ReserveCurrentFrame(HitWeapon, CurrentFrame);
-	MoveHitBoxes(HitWeapon, Frame);
-	// TODO : ARewindableActor* 만으로는 WeaopnMesh에 접근 불가, 임시로 캐스팅해서 사용, ARewindableActor를 다 바꿔야할 수도
-	// HitWeapon->GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	AWeapon* HitWeaponCheck = Cast<AWeapon>(HitWeapon);
-	if (HitWeaponCheck)
-	{
-		HitWeaponCheck->GetWeaponMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
+	ReserveCurrentFrame(HitRewindableActor, CurrentFrame);
+	MoveHitBoxes(RewindableInterface, Frame);
+	HitRewindableActor->GetWeaponMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	UBoxComponent* WeaponBox = HitWeapon->HitBoxArray[0];
+	UBoxComponent* WeaponBox = HitRewindableActor->HitBoxArray[0];
 	WeaponBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	WeaponBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 
@@ -345,38 +265,55 @@ bool ULagCompensationComponent::SimulateHit(ARewindableActor* HitWeapon, const F
 	const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.2f;
 	UWorld* World = GetWorld();
 	if (World)
-	{ /* Check Parrying */
+	{
 		FCollisionQueryParams Params;
 		Params.AddIgnoredActor(GetOwner());
 		Params.AddIgnoredActor(Weapon);
 		World->LineTraceSingleByChannel(SimulateHitResult, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, Params);
 
 		if (SimulateHitResult.bBlockingHit)
-		{ /* Weapon Hit, Success Parrying */
-			ResetHitBoxes(HitWeapon, CurrentFrame);
-			if (HitWeaponCheck)
-			{
-				HitWeaponCheck->GetWeaponMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-			}
+		{
+			ResetHitBoxes(RewindableInterface, CurrentFrame);
+			HitRewindableActor->GetWeaponMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 			return true;
 		}
 	}
 
-	ResetHitBoxes(HitWeapon, CurrentFrame);
-	if (HitWeaponCheck)
-	{
-		HitWeaponCheck->GetWeaponMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	}
+	ResetHitBoxes(RewindableInterface, CurrentFrame);
+	HitRewindableActor->GetWeaponMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	
 	return false;
 }
 
-void ULagCompensationComponent::ReserveCurrentFrame(AActor* HitActor, FSavedFrame& OutReservedFrame)
+FSavedFrame ULagCompensationComponent::GetInterpFrame(const FSavedFrame& Next, const FSavedFrame& Prev, float HitTime)
+{ /* Get Similar HitBox by Interpolating between Next and Prev */
+	const float Dist = (Prev.Time - Next.Time);
+	const float InterpRatio = FMath::Clamp(((HitTime - Next.Time) / Dist), 0.f, 1.f);
+
+	FSavedFrame InterpFrame;
+	InterpFrame.Time = HitTime;
+
+	for (int32 idx = 0; idx < Prev.SavedHitBoxArray.Num(); idx++)
+	{
+		const FHitBox& NextBox = Next.SavedHitBoxArray[idx];
+		const FHitBox& PrevBox = Prev.SavedHitBoxArray[idx];
+
+		FHitBox InterpHitBox;
+		InterpHitBox.Location = FMath::VInterpTo(NextBox.Location, PrevBox.Location, 1.f, InterpRatio);
+		InterpHitBox.Rotation = FMath::RInterpTo(NextBox.Rotation, PrevBox.Rotation, 1.f, InterpRatio);
+		InterpHitBox.Extent = PrevBox.Extent;
+
+		InterpFrame.SavedHitBoxArray.Add(InterpHitBox);
+	}
+
+	return InterpFrame;
+}
+
+void ULagCompensationComponent::ReserveCurrentFrame(IRewindableInterface* HitRewindableInterface, FSavedFrame& OutReservedFrame)
 {
-	if (HitActor == nullptr) return;
-	
-	IRewindableInterface* RewindableInterface = Cast<IRewindableInterface>(HitActor);
-	// if (RewindableInterface == nullptr) return;
-	const TArray<UBoxComponent*>& HitBoxArray = RewindableInterface->GetHitBoxArray();
+	if (HitRewindableInterface == nullptr) return;
+
+	const TArray<UBoxComponent*>& HitBoxArray = HitRewindableInterface->GetHitBoxArray();
 
 	for (UBoxComponent* Box : HitBoxArray)
 	{
@@ -391,13 +328,11 @@ void ULagCompensationComponent::ReserveCurrentFrame(AActor* HitActor, FSavedFram
 	}
 }
 
-void ULagCompensationComponent::MoveHitBoxes(AActor* HitActor, const FSavedFrame& FrameToMove)
+void ULagCompensationComponent::MoveHitBoxes(IRewindableInterface* HitRewindableInterface, const FSavedFrame& FrameToMove)
 {
-	if (HitActor == nullptr) return;
+	if (HitRewindableInterface == nullptr) return;
 
-	IRewindableInterface* RewindableInterface = Cast<IRewindableInterface>(HitActor);
-	// if (RewindableInterface == nullptr) return;
-	const TArray<UBoxComponent*>& HitActorHitBoxArray = RewindableInterface->GetHitBoxArray();
+	const TArray<UBoxComponent*>& HitActorHitBoxArray = HitRewindableInterface->GetHitBoxArray();
 
 	for (int32 idx = 0; idx < HitActorHitBoxArray.Num(); idx++)
 	{
@@ -411,13 +346,11 @@ void ULagCompensationComponent::MoveHitBoxes(AActor* HitActor, const FSavedFrame
 	}
 }
 
-void ULagCompensationComponent::ResetHitBoxes(AActor* HitActor, const FSavedFrame& ReservedFrame)
+void ULagCompensationComponent::ResetHitBoxes(IRewindableInterface* HitRewindableInterface, const FSavedFrame& ReservedFrame)
 {
-	if (HitActor == nullptr) return;
+	if (HitRewindableInterface == nullptr) return;
 
-	IRewindableInterface* RewindableInterface = Cast<IRewindableInterface>(HitActor);
-	// if (RewindableInterface == nullptr) return;
-	const TArray<UBoxComponent*>& HitActorHitBoxArray = RewindableInterface->GetHitBoxArray();
+	const TArray<UBoxComponent*>& HitActorHitBoxArray = HitRewindableInterface->GetHitBoxArray();
 
 	for (int32 idx = 0; idx < HitActorHitBoxArray.Num(); idx++)
 	{

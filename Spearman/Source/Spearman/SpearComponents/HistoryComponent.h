@@ -54,6 +54,7 @@ protected:
 	void RecordCurrentFrame();
 
 private:
+	IRewindableInterface* RewindableInterface = nullptr;
 
 	/** LimitTime, 1.f == 1'000ms */ 
 	UPROPERTY(EditAnywhere)

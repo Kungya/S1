@@ -124,7 +124,7 @@ void AWeapon::AttackCollisionCheckByRewind()
 	Params.AddIgnoredActor(GetOwner());
 
 	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
-	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.f);
+	// DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.f);
 
 	if (HitResult.GetActor() == nullptr || HitSet.Contains(HitResult.GetActor())) return;
 	HitSet.Add(HitResult.GetActor());
@@ -134,25 +134,24 @@ void AWeapon::AttackCollisionCheckByRewind()
 	OwnerSpearmanPlayerController = (OwnerSpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(OwnerSpearmanCharacter->GetController()) : OwnerSpearmanPlayerController;
 	if (OwnerSpearmanPlayerController == nullptr) return;
 	
-	AWeapon* HitWeapon = Cast<AWeapon>(HitResult.GetActor());
+	ARewindableActor* HitWeapon = Cast<ARewindableActor>(HitResult.GetActor());
 	if (HitWeapon)
-	{
-		if (OwnerSpearmanPlayerController && OwnerSpearmanCharacter && OwnerSpearmanCharacter->GetLagCompensation())
+	{ /* Parrying */
+		if (OwnerSpearmanCharacter && OwnerSpearmanCharacter->GetLagCompensation() && OwnerSpearmanPlayerController)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Hit Weapon in Client"));
-			const float CurrentClientTime = OwnerSpearmanPlayerController->GetServerTime() - OwnerSpearmanPlayerController->GetSingleTripTime();
-			OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequestForParrying(HitWeapon, Start, HitResult.ImpactPoint, CurrentClientTime, this);
+			const float CurrentServerTime = OwnerSpearmanPlayerController->GetServerTime() - OwnerSpearmanPlayerController->GetSingleTripTime();
+			OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequestForParrying(HitWeapon, Start, HitResult.ImpactPoint, CurrentServerTime, this);
 		}
 	}
-
 	ARewindableCharacter* HitRewindableCharacter = Cast<ARewindableCharacter>(HitResult.GetActor());
 	if (HitRewindableCharacter)
-	{
-		if (OwnerSpearmanPlayerController && OwnerSpearmanCharacter && OwnerSpearmanCharacter->GetLagCompensation())
+	{ /* Character Hit */
+		if (OwnerSpearmanCharacter && OwnerSpearmanCharacter->GetLagCompensation() && OwnerSpearmanPlayerController)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Hit Character in Client"));
-			const float CurrentClientTime = OwnerSpearmanPlayerController->GetServerTime() - OwnerSpearmanPlayerController->GetSingleTripTime();
-			OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequest(HitRewindableCharacter, Start, HitResult.ImpactPoint, CurrentClientTime, this);
+			const float CurrentServerTime = OwnerSpearmanPlayerController->GetServerTime() - OwnerSpearmanPlayerController->GetSingleTripTime();
+			OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequest(HitRewindableCharacter, Start, HitResult.ImpactPoint, CurrentServerTime, this);
 		}
 	}
 }

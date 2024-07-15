@@ -44,7 +44,7 @@ void UHistoryComponent::RecordCurrentFrame()
 		FSavedFrame CurrentFrame;
 		CurrentFrame.Time = GetWorld()->GetTimeSeconds();
 
-		IRewindableInterface* RewindableInterface = Cast<IRewindableInterface>(GetOwner());
+		RewindableInterface = (RewindableInterface == nullptr) ? Cast<IRewindableInterface>(GetOwner()) : RewindableInterface;
 		if (RewindableInterface)
 		{
 			const TArray<UBoxComponent*>& HitBoxArray = RewindableInterface->GetHitBoxArray();

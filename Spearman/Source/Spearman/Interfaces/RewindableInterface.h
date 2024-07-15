@@ -7,6 +7,7 @@
 #include "RewindableInterface.generated.h"
 
 class UBoxComponent;
+class UHistoryComponent;
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
@@ -26,4 +27,6 @@ class SPEARMAN_API IRewindableInterface
 public:
 	
 	virtual TArray<UBoxComponent*>& GetHitBoxArray() = 0;
+	virtual UHistoryComponent* GetHistory() = 0;
+
 };

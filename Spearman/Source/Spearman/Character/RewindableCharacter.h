@@ -18,8 +18,6 @@ class SPEARMAN_API ARewindableCharacter : public ACharacter, public IRewindableI
 public:
 	ARewindableCharacter();
 
-	virtual TArray<UBoxComponent*>& GetHitBoxArray() override;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<UBoxComponent*> HitBoxArray;
 
@@ -36,6 +34,7 @@ private:
 
 
 public:
-	FORCEINLINE FString GetHeadBone() const { return HeadBone; }
-	FORCEINLINE UHistoryComponent* GetHistory() const { return History; }
+	virtual TArray<UBoxComponent*>& GetHitBoxArray() override { return HitBoxArray; }
+	virtual UHistoryComponent* GetHistory() override { return History; }
+	FORCEINLINE FString GetHeadBone() const { return HeadBone; }	
 };
