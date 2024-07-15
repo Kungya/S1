@@ -10,6 +10,7 @@
 class ASpearmanCharacter;
 class ASpearmanPlayerController;
 class ASpearmanHUD;
+class USoundCue;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SPEARMAN_API UCombatComponent : public UActorComponent
@@ -25,7 +26,7 @@ public:
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastParried();
+	void MulticastParried(FVector_NetQuantize Location);
 
 	// 현재 캐릭터의 전투 상태, 이거 하나로 동작 사용가능 유무를 판단
 	UPROPERTY(Replicated, EditAnywhere)
@@ -78,6 +79,9 @@ private:
 
 	UPROPERTY(Replicated)
 	bool bCanDash = true;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* ParryingSound;
 
 
 public:

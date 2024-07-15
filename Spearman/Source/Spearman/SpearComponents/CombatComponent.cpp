@@ -10,6 +10,8 @@
 #include "Net/UnrealNetwork.h"
 #include "Spearman/PlayerController/SpearmanPlayerController.h"
 #include "Spearman/HUD/SpearmanHUD.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 UCombatComponent::UCombatComponent()
 {
@@ -83,10 +85,11 @@ void UCombatComponent::MulticastDash_Implementation(const FVector& DashDirection
 	Character->GetWorldTimerManager().SetTimer(DashTimer, this, &UCombatComponent::SetDashCooldown, 2.f, false);
 }
 
-void UCombatComponent::MulticastParried_Implementation()
+void UCombatComponent::MulticastParried_Implementation(FVector_NetQuantize Location)
 {
 	CombatState = ECombatState::ECS_Stunned;
 
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), ParryingSound, Location);
 	Character->PlayParriedMontage();
 }
 

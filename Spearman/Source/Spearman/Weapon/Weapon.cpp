@@ -180,12 +180,12 @@ void AWeapon::AttackCollisionCheckByServer()
 	if (HitWeapon)
 	{ /* Hit Weapon, Parried */
 		UE_LOG(LogTemp, Warning, TEXT("Hit Weapon in Server"));
-		OwnerSpearmanCharacter->GetCombat()->MulticastParried();
+		OwnerSpearmanCharacter->GetCombat()->MulticastParried(HitResult.ImpactPoint);
 		
 		HitWeapon->CheckOwnerSpearmanCharacter();
 		if (HitWeapon->OwnerSpearmanCharacter)
 		{
-			HitWeapon->OwnerSpearmanCharacter->GetCombat()->MulticastParried();
+			HitWeapon->OwnerSpearmanCharacter->GetCombat()->MulticastParried(HitResult.ImpactPoint);
 		}
 
 		TurnOffAttackCollision();
