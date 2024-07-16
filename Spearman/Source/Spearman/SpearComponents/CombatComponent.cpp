@@ -85,12 +85,16 @@ void UCombatComponent::MulticastDash_Implementation(const FVector& DashDirection
 	Character->GetWorldTimerManager().SetTimer(DashTimer, this, &UCombatComponent::SetDashCooldown, 2.f, false);
 }
 
-void UCombatComponent::MulticastParried_Implementation(FVector_NetQuantize Location)
-{
-	CombatState = ECombatState::ECS_Stunned;
-
+void UCombatComponent::MulticastParried_Implementation(ASpearmanCharacter* Opponent, FVector_NetQuantize Location)
+{ /* Two Spearmans' MulticastParried at once */
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), ParryingSound, Location);
+
+	Opponent->GetCombat()->CombatState = ECombatState::ECS_Stunned;
+	Opponent->PlayParriedMontage();
+	
+	CombatState = ECombatState::ECS_Stunned;
 	Character->PlayParriedMontage();
+
 }
 
 void UCombatComponent::DropEquippedWeapon()

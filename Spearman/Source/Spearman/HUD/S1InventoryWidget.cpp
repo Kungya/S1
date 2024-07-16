@@ -19,11 +19,13 @@ FReply US1InventoryWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FK
 {
 	if (InKeyEvent.GetKey() == FName("Tab"))
 	{
-		SetVisibility(ESlateVisibility::Hidden);
 		SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(GetOwningPlayer()) : SpearmanPlayerController;
 		if (SpearmanPlayerController)
 		{
-			SpearmanPlayerController->SetInputMode(FInputModeGameOnly());
+			SetVisibility(ESlateVisibility::Hidden);
+			FInputModeGameOnly InputModeData;
+			SpearmanPlayerController->SetInputMode(InputModeData);
+			SpearmanPlayerController->SetShowMouseCursor(false);
 		}
 	}
 	

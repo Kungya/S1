@@ -347,21 +347,11 @@ void ASpearmanPlayerController::ShowInventoryWidget()
 		US1InventoryWidget* InventoryWidget = SpearmanHUD->CharacterOverlay->InventoryWidget;
 		if (InventoryWidget)
 		{
-			bInventoryWidgetOpen = !bInventoryWidgetOpen;
-			if (bInventoryWidgetOpen)
-			{
-				InventoryWidget->SetVisibility(ESlateVisibility::Visible);
-				FInputModeUIOnly InputModeData;
-				SetInputMode(InputModeData);
-				SetShowMouseCursor(true);
-			}
-			else
-			{
-				InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
-				FInputModeGameOnly InputModeData;
-				SetInputMode(InputModeData);
-				SetShowMouseCursor(false);
-			}
+			InventoryWidget->SetVisibility(ESlateVisibility::Visible);
+			FInputModeUIOnly InputModeData;
+			InputModeData.SetWidgetToFocus(InventoryWidget->TakeWidget());
+			SetInputMode(InputModeData);
+			SetShowMouseCursor(true);
 		}
 	}
 }

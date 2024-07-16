@@ -22,16 +22,16 @@ void ABlueZone::BeginPlay()
 	if (HasAuthority())
 	{ // BlueZone Information for phase
 		// { WaitingTime, MovingTime, ScaleToDecreasePerLoop }, Reduction Amount per Pahse : MovingTime * ScaleToDecreasePerLoop
-		FBlueZoneInfo BlueZoneInfoPhase0 = { 5.f, 10.f, 1.25f };
+		FBlueZoneInfo BlueZoneInfoPhase0 = { 5.f, 20.f, 0.3f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase0);
 
-		FBlueZoneInfo BlueZoneInfoPhase1 = { 5.f, 5.f, 0.75f };
+		FBlueZoneInfo BlueZoneInfoPhase1 = { 5.f, 20.f, 0.1f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase1);
 
-		FBlueZoneInfo BlueZoneInfoPhase2 = { 5.f, 5.f, 0.5f };
+		FBlueZoneInfo BlueZoneInfoPhase2 = { 5.f, 20.f, 0.1f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase2);
 
-		FBlueZoneInfo BlueZoneInfoPhase3 = { 5.f, 5.f, 0.5f };
+		FBlueZoneInfo BlueZoneInfoPhase3 = { 5.f, 20.f, 0.1f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase3);
 
 		ZoneMesh->OnComponentBeginOverlap.AddDynamic(this, &ABlueZone::OnBlueZoneBeginOverlap);
@@ -51,6 +51,7 @@ void ABlueZone::OnBlueZoneBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 	if (OverlappedSpearmanCharacter)
 	{
 		OverlappedSpearmanCharacter->SetbIsInBlueZone(true);
+		OverlappedSpearmanCharacter->ShowBlueZoneImage();
 	}
 }
 
@@ -60,6 +61,7 @@ void ABlueZone::OnBlueZoneEndOverlap(UPrimitiveComponent* OverlappedComponent, A
 	if (OverlappedSpearmanCharacter)
 	{
 		OverlappedSpearmanCharacter->SetbIsInBlueZone(false);
+		OverlappedSpearmanCharacter->ShowBlueZoneImage();
 	}
 }
 
@@ -70,7 +72,7 @@ void ABlueZone::StartMovingBlueZone()
 		// Start reducing the BlueZone (Loop) until MovingTime
 		GetWorld()->GetTimerManager().SetTimer(MovingTimerHandle, this, &ABlueZone::ReduceBlueZone, 0.2, true);
 		
-		// Stop Reducing BlueZone if MovingTime is reached
+		// Stop reducing BlueZone if MovingTime is reached
 		FTimerHandle StopHandle;
 		GetWorld()->GetTimerManager().SetTimer(StopHandle, this, &ABlueZone::StopBlueZone, BlueZoneInfoArray[CurrentPhase].MovingTime, false);
 		
@@ -91,7 +93,7 @@ void ABlueZone::ReduceBlueZone()
 
 	if (CurrentPhase >= 1)
 	{ // Move
-		const FVector NewLocation(GetActorLocation() + NormalizedRandomVector * 100.f);
+		const FVector NewLocation(GetActorLocation() + NormalizedRandomVector * 50.f);
 		SetActorLocation(NewLocation);
 	}
 }

@@ -186,13 +186,11 @@ void ULagCompensationComponent::ServerRewindRequestForParrying_Implementation(AR
 
 	if (bParried)
 	{
-		SpearmanCharacter->GetCombat()->MulticastParried(HitLocation);
-
 		AWeapon* HitWeaponToParried = Cast<AWeapon>(HitRewindableActor);
 		if (HitWeaponToParried)
-		{ // TODO : call Multicast only once
-			HitWeaponToParried->CheckOwnerSpearmanCharacter();
-			HitWeaponToParried->GetOwnerSpearmanCharacter()->GetCombat()->MulticastParried(HitLocation);
+		{
+			HitWeaponToParried->CheckOwnerSpearmanCharacterIsValid();
+			HitWeaponToParried->GetOwnerSpearmanCharacter()->GetCombat()->MulticastParried(SpearmanCharacter, HitLocation);
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("Rewind Success : Parried"));

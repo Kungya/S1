@@ -26,7 +26,7 @@ public:
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastParried(FVector_NetQuantize Location);
+	void MulticastParried(ASpearmanCharacter* Opponent, FVector_NetQuantize Location);
 
 	// 현재 캐릭터의 전투 상태, 이거 하나로 동작 사용가능 유무를 판단
 	UPROPERTY(Replicated, EditAnywhere)

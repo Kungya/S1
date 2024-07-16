@@ -51,6 +51,8 @@ public:
 
 	virtual void WeaponHit(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot) override;
 
+	void ShowBlueZoneImage();
+
 	// Disable Key Input if Character Dies or Match is Ended...
 	UPROPERTY(Replicated)
 	bool bDisableKeyInput = false;
@@ -102,7 +104,6 @@ protected:
 	void InitRenderTargetIfOwningClient();
 
 	void TakeDamageIfNotInBlueZone();
-
 
 private:
 

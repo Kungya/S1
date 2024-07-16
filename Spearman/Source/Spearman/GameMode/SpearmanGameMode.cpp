@@ -110,6 +110,8 @@ void ASpearmanGameMode::HandleMatchHasStarted()
 {
 	Super::HandleMatchHasStarted();
 
+	UE_LOG(LogTemp, Warning, TEXT("HandleMatchHasStarted"));
+
 	if (bActivateBlueZone)
 	{
 		FTimerHandle SpawnBlueZoneTimer;
@@ -123,6 +125,7 @@ void ASpearmanGameMode::SpawnBlueZone()
 	
 	if (BlueZone)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Bluezone Spawned !"));
 		BlueZone->StartMovingBlueZone();
 	}
 }

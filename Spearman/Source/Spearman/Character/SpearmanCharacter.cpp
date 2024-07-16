@@ -801,18 +801,9 @@ void ASpearmanCharacter::InventoryButtonPressed()
 
 void ASpearmanCharacter::TakeDamageIfNotInBlueZone()
 { /* Server Only */
-	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
-
 	if (!bIsInBlueZone)
 	{
-		if (SpearmanPlayerController)
-		{
-			UGameplayStatics::ApplyDamage(this, 1.f, SpearmanPlayerController, this, UDamageType::StaticClass());
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("SpearmanPlayerController is nullptr"));
-		}
+		UGameplayStatics::ApplyDamage(this, 1.f, Controller, this, UDamageType::StaticClass());
 	}
 }
 
@@ -820,6 +811,22 @@ void ASpearmanCharacter::OnRep_bIsInBlueZone()
 {
 	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
 	if (SpearmanPlayerController)
+	{
+		if (bIsInBlueZone)
+		{
+			SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->BlueZoneImage->SetVisibility(ESlateVisibility::Hidden);
+		}
+		else
+		{
+			SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->BlueZoneImage->SetVisibility(ESlateVisibility::Visible);
+		}
+	}
+}
+
+void ASpearmanCharacter::ShowBlueZoneImage()
+{
+	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
+	if (SpearmanPlayerController && SpearmanPlayerController->IsLocalController())
 	{
 		if (bIsInBlueZone)
 		{

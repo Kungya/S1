@@ -115,7 +115,7 @@ private:
 public:
 	void SetWeaponState(EWeaponState State);
 	void SetbAttackCollisionTrace() { bAttackCollisionTrace = false; }
-	FORCEINLINE void CheckOwnerSpearmanCharacter() { OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter; }
+	FORCEINLINE void CheckOwnerSpearmanCharacterIsValid() { OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter; }
 	FORCEINLINE void SetWeaponVisibility(bool bNewVisibility) const { WeaponMesh->SetVisibility(bNewVisibility); }
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
 	FORCEINLINE float GetDamage() const { return Damage; }
