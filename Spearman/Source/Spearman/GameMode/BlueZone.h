@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "BlueZone.generated.h"
 
+class AExtractionPoint;
+
 USTRUCT(BlueprintType)
 struct FBlueZoneInfo
 {
@@ -75,6 +77,9 @@ private:
 	FVector NormalizedRandomVector = FVector::ZeroVector;
 
 	FTimerHandle MovingTimerHandle;
+
+	UPROPERTY(EditAnywhere, Category = "ExtractionPoint")
+	TSubclassOf<AExtractionPoint> ExtractionPointClass;
 
 public:
 

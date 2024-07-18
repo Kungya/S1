@@ -19,9 +19,9 @@ class SPEARMAN_API AItem : public AActor, public IInteractableInterface
 public:	
 	AItem();
 
-	virtual void Interact() override;
-	// set num 1~5 for ItemInstance
 	void Init(int32 num);
+	virtual void Interact() override;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -36,7 +36,7 @@ private:
 	UStaticMeshComponent* ItemMesh;
 
 	UPROPERTY(Replicated, VisibleAnywhere, Category = "Item")
-	UItemInstance* ItemInstance = nullptr;
+	UItemInstance* ItemInstance;
 
 public:	
 	FORCEINLINE UItemInstance* GetItemInstance() const { return ItemInstance; }

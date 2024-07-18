@@ -4,6 +4,7 @@
 #include "BlueZone.h"
 #include "Components/CapsuleComponent.h"
 #include "Spearman/Character/SpearmanCharacter.h"
+#include "ExtractionPoint.h"
 
 ABlueZone::ABlueZone()
 {
@@ -22,16 +23,16 @@ void ABlueZone::BeginPlay()
 	if (HasAuthority())
 	{ // BlueZone Information for phase
 		// { WaitingTime, MovingTime, ScaleToDecreasePerLoop }, Reduction Amount per Pahse : MovingTime * ScaleToDecreasePerLoop
-		FBlueZoneInfo BlueZoneInfoPhase0 = { 5.f, 20.f, 0.3f };
+		FBlueZoneInfo BlueZoneInfoPhase0 = { 5.f, 10.f, 0.5f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase0);
 
-		FBlueZoneInfo BlueZoneInfoPhase1 = { 5.f, 20.f, 0.1f };
+		FBlueZoneInfo BlueZoneInfoPhase1 = { 5.f, 10.f, 0.2f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase1);
 
-		FBlueZoneInfo BlueZoneInfoPhase2 = { 5.f, 20.f, 0.1f };
+		FBlueZoneInfo BlueZoneInfoPhase2 = { 5.f, 10.f, 0.2f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase2);
 
-		FBlueZoneInfo BlueZoneInfoPhase3 = { 5.f, 20.f, 0.1f };
+		FBlueZoneInfo BlueZoneInfoPhase3 = { 5.f, 10.f, 0.2f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase3);
 
 		ZoneMesh->OnComponentBeginOverlap.AddDynamic(this, &ABlueZone::OnBlueZoneBeginOverlap);
@@ -83,6 +84,13 @@ void ABlueZone::StartMovingBlueZone()
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Overall Phase is Over"));
+
+		FTransform Transform(FRotator(), FVector(GetActorLocation().X, GetActorLocation().Y, 10.f));
+		AExtractionPoint* ExtractionPoint = GetWorld()->SpawnActor<AExtractionPoint>(ExtractionPointClass, Transform);
+		if (ExtractionPoint)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Extraction Point is Spawned"));
+		}
 	}
 }
 

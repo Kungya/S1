@@ -22,13 +22,12 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual bool ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 public:	
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void AddItem(UItemInstance* InIntemInstance);
 
 	void UpdateHUDInventory();
+
 private:
-	// caching owner
 	ASpearmanCharacter* SpearmanCharacter;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_InventoryArray)
@@ -37,8 +36,7 @@ private:
 	UFUNCTION()
 	void OnRep_InventoryArray();
 	
-	// ***********
-	// TODO : ItemInstance를 인벤토리 안에 넣을 때 Outer를 지정해줘야하고, 나갈 때도 Outer를 지정해줘야한다
+	/* You have to set Outer When you Add or Remove ItemInstance in Inventory,  */
 
 public:
 

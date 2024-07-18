@@ -107,9 +107,7 @@ protected:
 
 private:
 
-	/*
-	* Camera
-	*/
+	/* Camera */
 
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	USpringArmComponent* CameraBoom;
@@ -117,9 +115,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	UCameraComponent* FollowCamera;
 
-	/*
-	* Minimap
-	*/
+	/* Minimap */
 
 	UPROPERTY(VisibleAnywhere, Category = Minimap)
 	USpringArmComponent* MinimapSpringArm;
@@ -133,9 +129,7 @@ private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
 
-	/*
-	* Crosshair
-	*/
+	/* Crosshair */
 
 	UPROPERTY(EditAnywhere, Category = Crosshair)
 	UTexture2D* CrosshairCircle;
@@ -143,9 +137,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = Crosshair)
 	UTexture2D* CrosshairDot;
 
-	/* 
-	* Widget
-	*/
+	/*  Widget*/
 
 	UPROPERTY(VisibleAnywhere, Category = Widget)
 	UWidgetComponent* HitDamage;
@@ -167,9 +159,7 @@ private:
 
 	FTimerHandle HpBarTimer;
 	
-	/*
-	* ActorComponents
-	*/
+	/* ActorComponents */
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = "ActorComponent")
 	UCombatComponent* Combat;
@@ -190,9 +180,7 @@ private:
 	void AttackButtonPressed();
 	void ThrustButtonPressed();
 	
-	/*
-	* Animation
-	*/
+	/* Animation */
 
 	float AO_Yaw;
 	float AO_Pitch;
@@ -225,7 +213,7 @@ private:
 	float YawOffset;
 	float TimeSinceLastMovementReplication;
 
-	// HP Stat
+	/* HP Stat */
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	float MaxHp = 100.f;
@@ -251,9 +239,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	UParticleSystem* HitParticles;
 
-	/*
-	* BlueZone
-	*/
+	/* BlueZone */
 
 	/* false : apply damage */
 	UPROPERTY(ReplicatedUsing = OnRep_bIsInBlueZone, VisibleAnywhere)
@@ -264,9 +250,7 @@ private:
 
 	FTimerHandle BlueZoneTimerHandle;
 
-	/*
-	* Hit Box
-	*/
+	/* Hit Box */
 
 	UPROPERTY(EditAnywhere, Category = "Hit Box")
 	UBoxComponent* head;

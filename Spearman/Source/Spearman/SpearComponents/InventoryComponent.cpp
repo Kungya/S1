@@ -14,7 +14,7 @@
 
 UInventoryComponent::UInventoryComponent()
 {
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
 
@@ -41,22 +41,13 @@ bool UInventoryComponent::ReplicateSubobjects(UActorChannel* Channel, FOutBunch*
 	return bWroteSomething;
 }
 
-void UInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-}
-
 void UInventoryComponent::AddItem(UItemInstance* InItemInstance)
-{ // Server Only
+{ /* Server Only */
 	if (InventoryArray.Num() >= 50) return;
 	
-	// change Outer in (Item -> Inventory) for Object Replication
+	// Change Outer from Item to Inventory for Object Replication
 	InItemInstance->Rename(nullptr, GetOwner());
-	const int32 Idx = InventoryArray.Add(InItemInstance);
-	InItemInstance->InventoryIdx = Idx;
-
-	UE_LOG(LogTemp, Warning, TEXT("Inventory Size : %d"), InventoryArray.Num());
+	InItemInstance->InventoryIdx = InventoryArray.Add(InItemInstance);
 
 	if (SpearmanCharacter && SpearmanCharacter->IsLocallyControlled())
 	{
@@ -73,7 +64,6 @@ void UInventoryComponent::UpdateHUDInventory()
 		if (SlotsWidget)
 		{
 			SlotsWidget->UpdateItemInfoWidget();
-			UE_LOG(LogTemp, Warning, TEXT("UpdateHUDInventory"));
 		}
 	}
 }

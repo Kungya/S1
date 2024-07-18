@@ -773,17 +773,16 @@ void ASpearmanCharacter::ServerInteract_Implementation()
 		Params.AddIgnoredActor(Combat->EquippedWeapon);
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("ServerInteract"));
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Interact, Params))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ServerInteract, LineTrace Catch"));
-		if (AItem* Item = Cast<AItem>(HitResult.GetActor()))
+		AItem* Item = Cast<AItem>(HitResult.GetActor());
+		if (Item)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("AddItem"));
 			Inventory->AddItem(Item->GetItemInstance());
 		}
 
-		if (IInteractableInterface* InteractableInterface = Cast<IInteractableInterface>(HitResult.GetActor()))
+		IInteractableInterface* InteractableInterface = Cast<IInteractableInterface>(HitResult.GetActor());
+		if (InteractableInterface)
 		{
 			InteractableInterface->Interact();
 		}

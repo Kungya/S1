@@ -42,7 +42,7 @@ void UNetworkObject::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 }
 
 void UNetworkObject::Destroy()
-{ // Server Only, deprecated : IsPendingKill -> IsValid, MarkPendingKill -> MarkAsGarbage
+{ /* Server Only */
 	if (IsValid(this))
 	{
 		if (GetOwningActor()->HasAuthority())

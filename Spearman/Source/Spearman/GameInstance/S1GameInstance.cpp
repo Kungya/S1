@@ -12,7 +12,7 @@ void US1GameInstance::Init()
 {
 	Super::Init();
 
-
+	// Item ids for Client-side visual assets
 	ItemIds = { 101, 102, 201, 202, 203 };
 }
 

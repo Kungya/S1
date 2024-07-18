@@ -275,12 +275,12 @@ void ABasicMonster::Death()
 
 void ABasicMonster::DropItems()
 { /* Server Only */
-	const int32 RandomNum = FMath::RandRange(1, 5);
+	const int32 RandNumForItemId = FMath::RandRange(1, 5);
 
 	AItem* ItemToSpawn = GetWorld()->SpawnActorDeferred<AItem>(ItemClass, GetActorTransform());
 	if (ItemToSpawn)
 	{
-		ItemToSpawn->Init(RandomNum);
+		ItemToSpawn->Init(RandNumForItemId);
 		ItemToSpawn->FinishSpawning(GetActorTransform());
 	}
 }

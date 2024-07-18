@@ -24,7 +24,7 @@ void AItem::BeginPlay()
 	Super::BeginPlay();
 
 	if (!ItemInstance && HasAuthority())
-	{ // default ItemInstance for test
+	{ /* Default ItemInstance for test */
 		ItemInstance = NewObject<UItemInstance>(this);
 		ItemInstance->Init(3);
 	}
@@ -57,6 +57,5 @@ void AItem::Init(int32 num)
 
 void AItem::Interact()
 { /* Server Only */
-
 	Destroy();
 }
