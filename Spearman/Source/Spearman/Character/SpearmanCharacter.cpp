@@ -530,11 +530,17 @@ void ASpearmanCharacter::MulticastDeath_Implementation()
 
 void ASpearmanCharacter::DeathTimerFinished()
 {
-	ASpearmanGameMode* SpearmanGameMode = GetWorld()->GetAuthGameMode<ASpearmanGameMode>();
+	if (SpearmanPlayerController)
+	{
+		SpearmanPlayerController->SetPlayerSpectate();
+	}
+
+	// be used when infinite respawn
+	/*ASpearmanGameMode* SpearmanGameMode = GetWorld()->GetAuthGameMode<ASpearmanGameMode>();
 	if (SpearmanGameMode)
 	{
 		SpearmanGameMode->RequestRespawn(this, Controller);
-	}
+	}*/
 }
 
 void ASpearmanCharacter::CalculateAO_Pitch()

@@ -20,6 +20,16 @@ struct FHUDPackage
 	UTexture2D* CrosshairDot;
 };
 
+UENUM(BlueprintType)
+enum class EHUDState : uint8
+{
+	EHS_Playing UMETA(DisplayName = "Playing"),
+	EHS_Spectating UMETA(DisplayName = "Spectating"),
+	EHS_Inactive UMETA(DisplayName = "Inactive"),
+
+	EHS_MAX UMETA(DisplayName = "DefaultMAX")
+};
+
 /**
  * 
  */
@@ -46,6 +56,9 @@ public:
 	void AddCharacterOverlay();
 	void AddCharacterOverlayNotice();
 
+	UFUNCTION(Category = "HUDEvents")
+	void OnHUDStateChanged(EHUDState NewHUDState);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -53,7 +66,11 @@ private:
 	UPROPERTY(EditAnywhere)
 	FHUDPackage HUDPackage;
 
+	UPROPERTY()
+	EHUDState HUDState;
+
 	void DrawCrosshair(UTexture2D* Texture, FVector2D CenterInViewport);
 public:
 	FORCEINLINE void SetHUDPackage(const FHUDPackage& Package) { HUDPackage = Package; }
+	FORCEINLINE EHUDState GetHUDState() const { return HUDState; }
 };

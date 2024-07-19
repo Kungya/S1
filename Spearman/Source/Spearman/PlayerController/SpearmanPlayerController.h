@@ -35,6 +35,12 @@ public:
 
 	void ShowInventoryWidget();
 
+	UFUNCTION()
+	void SetPlayerPlay();
+	
+	UFUNCTION()
+	void SetPlayerSpectate();
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -68,6 +74,9 @@ protected:
 	void ClientReportMatchState(FName ServerMatchState, float ServerBeginPlayTime, float ServerWarmupTime, float ServerMatchTime, float ServerCooldownTime);
 	
 	void ShowReturnToMainMenu();
+
+	UFUNCTION(Client, Reliable)
+	void ClientHUDStateChanged(EHUDState NewState);
 
 private:
 	// Client should get MatchTime from Server, not in Client

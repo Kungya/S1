@@ -76,7 +76,7 @@ protected:
 
 private:
 	FIntPoint PrevDragOverSlotPos = FIntPoint(-1, -1);
-	// Inventory size
+	// Inventory size, Y_SIZE * X_SIZE
 	const int32 Y_SIZE = 5;
 	const int32 X_SIZE = 10;
 

@@ -42,7 +42,7 @@ void UItemInstance::Init(int32 num)
 	const TArray<int32>& ItemIds = S1GameInstance->GetItemIds();
 	const int32 ItemId = ItemIds[num - 1];
 
-	// TODO : consider Replication's unordered
+	// TODO : Consider Packet Loss in Replication
 	Id = S1GameInstance->GetItemData(ItemId)->Id;
 	Cost = S1GameInstance->GetItemData(ItemId)->Cost;
 	Weight = S1GameInstance->GetItemData(ItemId)->Weight;

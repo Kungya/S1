@@ -22,7 +22,6 @@ void ASpearmanGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// GameMode is only used in the actually Play Map (not in menu)
 	BeginPlayTime = GetWorld()->GetTimeSeconds();
 }
 
@@ -98,12 +97,6 @@ void ASpearmanGameMode::OnMatchStateSet()
 void ASpearmanGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-
-	ASpearmanPlayerController* NewSpearmanPlayer = Cast<ASpearmanPlayerController>(NewPlayer);
-	if (NewSpearmanPlayer)
-	{
-		SpearmanPlayerControllerArray.AddUnique(NewSpearmanPlayer);
-	}
 }
 
 void ASpearmanGameMode::HandleMatchHasStarted()
@@ -125,7 +118,6 @@ void ASpearmanGameMode::SpawnBlueZone()
 	
 	if (BlueZone)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Bluezone Spawned !"));
 		BlueZone->StartMovingBlueZone();
 	}
 }

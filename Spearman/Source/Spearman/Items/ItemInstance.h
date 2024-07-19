@@ -40,7 +40,6 @@ public:
 	UPROPERTY(Replicated)
 	int32 Weight;
 
-	// TODO : Data Table 추가시 설정
 	UPROPERTY(Replicated)
 	int32 InventoryIdx = -1;
 

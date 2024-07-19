@@ -33,6 +33,11 @@ void ASpearmanHUD::AddCharacterOverlayNotice()
 	}
 }
 
+void ASpearmanHUD::OnHUDStateChanged(EHUDState NewHUDState)
+{
+	HUDState = NewHUDState;
+}
+
 void ASpearmanHUD::DrawHUD()
 { // -> DrawHUD는 내부에서 call되고 있으므로 override해서 추가만 하면 됨
 	Super::DrawHUD();

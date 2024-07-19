@@ -30,8 +30,6 @@ public:
 	virtual void RequestRespawn(ASpearmanCharacter* DeadCharacter, AController* DeadController);
 
 	void SpawnBlueZone();
-	void MoveBlueZone();
-
 
 	float BeginPlayTime = 0.f;
 
@@ -48,15 +46,10 @@ protected:
 	virtual void OnMatchStateSet() override;
 	virtual void HandleMatchHasStarted() override;
 
-	/* Add PlayerController in TArray for manage player list to damage in blue zone */
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
 private:
 	float CountdownTime = 0.f;
-
-	// SpearmanPlayerController Array for ApplyDamage
-	UPROPERTY()
-	TArray<ASpearmanPlayerController*> SpearmanPlayerControllerArray;
 
 	UPROPERTY(EditAnywhere, Category = "BlueZone")
 	TSubclassOf<ABlueZone> BlueZoneClass;

@@ -20,8 +20,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	void Extraction();
-
 	UFUNCTION()
 	virtual void OnSphereBeginOverlap(
 			UPrimitiveComponent* OverlappedComponent,
@@ -39,6 +37,8 @@ protected:
 			UPrimitiveComponent* OtherComp,
 			int32 OtherBodyIndex
 		);
+
+	void Extraction();
 
 private:
 	

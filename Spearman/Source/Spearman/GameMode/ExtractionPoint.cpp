@@ -33,28 +33,8 @@ void AExtractionPoint::BeginPlay()
 	}
 }
 
-void AExtractionPoint::Extraction()
-{ /* Server Only */
-	UE_LOG(LogTemp, Warning, TEXT("Extraction !!"));
-
-
-	if (CharacterToExtract)
-	{
-		
-		ASpearmanPlayerController* SpearmanPlayerController = Cast<ASpearmanPlayerController>(CharacterToExtract->Controller);
-		if (SpearmanPlayerController)
-		{
-			SpearmanPlayerController->ClientReturnToMainMenuWithTextReason(FText());
-
-			// TODO : Save Inventroy TArray with Unique Id
-		}
-	}
-}
-
 void AExtractionPoint::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 { /* Server Only */
-	UE_LOG(LogTemp, Warning, TEXT("Overlap Triggered ! !"));
-
 	if (ExtractionTimerHandle.IsValid()) return;
 
 	ASpearmanCharacter* OverlappedCharacter = Cast<ASpearmanCharacter>(OtherActor);
@@ -68,11 +48,24 @@ void AExtractionPoint::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedCompo
 
 void AExtractionPoint::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 { /* Server Only */
-
 	ASpearmanCharacter* OverlappedCharacter = Cast<ASpearmanCharacter>(OtherActor);
 	if (OverlappedCharacter)
 	{
-		CharacterToEscape = nullptr;
+		CharacterToExtract = nullptr;
 		ExtractionTimerHandle.Invalidate();
 	}
+}
+
+void AExtractionPoint::Extraction()
+{ /* Server Only */
+	if (CharacterToExtract == nullptr) return;
+
+	ASpearmanPlayerController* SpearmanPlayerController = Cast<ASpearmanPlayerController>(CharacterToExtract->Controller);
+	if (SpearmanPlayerController)
+	{
+		SpearmanPlayerController->ClientReturnToMainMenuWithTextReason(FText());
+
+		// TODO : Save Inventroy TArray with Unique Id
+	}
+
 }

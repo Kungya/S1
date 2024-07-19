@@ -356,6 +356,51 @@ void ASpearmanPlayerController::ShowInventoryWidget()
 	}
 }
 
+void ASpearmanPlayerController::SetPlayerPlay()
+{ /* Server Only */
+	if (!HasAuthority()) return;
+
+	// Update the state on server
+	PlayerState->SetIsSpectator(false);
+	ChangeState(NAME_Playing);
+
+	bPlayerIsWaiting = false;
+
+	// Push the state update to the client
+	ClientGotoState(NAME_Playing);
+
+	// Update the HUD to remove the spectator screen
+	ClientHUDStateChanged(EHUDState::EHS_Playing);
+}
+
+void ASpearmanPlayerController::SetPlayerSpectate()
+{ /* Server Only */
+	if (!HasAuthority()) return;
+
+	// Update the state on server
+	PlayerState->SetIsSpectator(true);
+	ChangeState(NAME_Spectating);
+
+	bPlayerIsWaiting = true;
+
+	// Push the state update to the client
+	ClientGotoState(NAME_Spectating);
+
+	// Update the HUD to add teh spectator screen
+	ClientHUDStateChanged(EHUDState::EHS_Spectating);
+
+	UE_LOG(LogTemp, Warning, TEXT("SetPlayerSpectate"));
+}
+
+void ASpearmanPlayerController::ClientHUDStateChanged_Implementation(EHUDState NewState)
+{ /* ClientRPC, Reliable */
+	SpearmanHUD = (SpearmanHUD == nullptr) ? GetHUD<ASpearmanHUD>() : SpearmanHUD;
+	if (SpearmanHUD)
+	{
+		SpearmanHUD->OnHUDStateChanged(NewState);
+	}
+}
+
 void ASpearmanPlayerController::OnMatchStateSet(FName State)
 {
 	MatchState = State;

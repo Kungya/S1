@@ -232,7 +232,7 @@ private:
 	FTimerHandle DeathTimer;
 
 	UPROPERTY(EditDefaultsOnly)
-	float DeathDelay = 0.5;
+	float DeathDelay = 3.f;
 
 	void DeathTimerFinished();
 
