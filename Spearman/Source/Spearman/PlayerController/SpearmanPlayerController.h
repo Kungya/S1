@@ -77,6 +77,8 @@ protected:
 
 	UFUNCTION(Client, Reliable)
 	void ClientHUDStateChanged(EHUDState NewState);
+	
+	virtual void OnRep_Pawn() override;
 
 private:
 	// Client should get MatchTime from Server, not in Client
@@ -125,7 +127,6 @@ private:
 	UReturnToMainMenu* ReturnToMainMenu;
 
 	bool bReturnToMainMenuOpen = false;
-	
 
 public:
 	FORCEINLINE ASpearmanHUD* GetSpearmanHUD() const { return SpearmanHUD;  }

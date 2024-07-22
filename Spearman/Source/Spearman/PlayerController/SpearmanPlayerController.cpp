@@ -28,6 +28,8 @@ void ASpearmanPlayerController::BeginPlay()
 
 	// Client should get MatchState from Server asap.
 	ServerRequestMatchState();
+
+	PlayerCameraManager->bClientSimulatingViewTarget = false;
 }
 
 void ASpearmanPlayerController::Tick(float DeltaTime)
@@ -388,8 +390,16 @@ void ASpearmanPlayerController::SetPlayerSpectate()
 
 	// Update the HUD to add teh spectator screen
 	ClientHUDStateChanged(EHUDState::EHS_Spectating);
+}
 
-	UE_LOG(LogTemp, Warning, TEXT("SetPlayerSpectate"));
+void ASpearmanPlayerController::OnRep_Pawn()
+{
+	Super::OnRep_Pawn();
+
+	if (IsInState(NAME_Spectating))
+	{
+		ServerViewNextPlayer();
+	}
 }
 
 void ASpearmanPlayerController::ClientHUDStateChanged_Implementation(EHUDState NewState)
@@ -428,7 +438,7 @@ void ASpearmanPlayerController::OnRep_MatchState()
 }
 
 void ASpearmanPlayerController::ServerRequestMatchState_Implementation()
-{ // server only, Client should get MatchState from Server ASAP. 
+{ // Server Only, Client should get MatchState from Server ASAP. 
 	ASpearmanGameMode* GameMode = Cast<ASpearmanGameMode>(UGameplayStatics::GetGameMode(this));
 	if (GameMode)
 	{
@@ -442,7 +452,7 @@ void ASpearmanPlayerController::ServerRequestMatchState_Implementation()
 }
 
 void ASpearmanPlayerController::ClientReportMatchState_Implementation(FName ServerMatchState, float ServerBeginPlayTime, float ServerWarmupTime, float ServerMatchTime, float ServerCooldownTime)
-{ // client only
+{ /* Client only */
 	MatchState = ServerMatchState;
 	BeginPlayTime = ServerBeginPlayTime;
 	WarmupTime = ServerWarmupTime;

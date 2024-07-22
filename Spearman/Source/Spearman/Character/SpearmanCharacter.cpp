@@ -373,7 +373,10 @@ void ASpearmanCharacter::OnAttacked(AActor* DamagedActor, float Damage, const UD
 		{
 			SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
 			ASpearmanPlayerController* AttackerController = Cast<ASpearmanPlayerController>(InstigatorController);
-			SpearmanGameMode->PlayerDeath(this, SpearmanPlayerController, AttackerController);
+			if (SpearmanPlayerController && AttackerController)
+			{
+				SpearmanGameMode->PlayerDeath(this, SpearmanPlayerController, AttackerController);
+			}
 		}
 
 		ABasicMonsterAIController*BasicMonsterAIController = Cast<ABasicMonsterAIController>(InstigatorController);
@@ -383,7 +386,7 @@ void ASpearmanCharacter::OnAttacked(AActor* DamagedActor, float Damage, const UD
 		}
 	}
 	else
-	{
+	{ // TODO ; Consider call by Multicast
 		PlayHitReactMontage();
 	}
 }
@@ -410,7 +413,7 @@ void ASpearmanCharacter::OnRep_Hp(float LastHp)
 		HideHpBar();
 	}
 	else if (Hp < LastHp)
-	{
+	{ /* Triggered except Heal */
 		PlayHitReactMontage();
 	}
 }
@@ -512,6 +515,12 @@ void ASpearmanCharacter::Death()
 		Combat->EquippedWeapon->Dropped();
 		Combat->EquippedWeapon->SetbAttackCollisionTrace();
 	}
+
+	if (SpearmanPlayerController)
+	{ /* Spectate */
+		SpearmanPlayerController->SetPlayerSpectate();
+	}
+
 	MulticastDeath();
 	GetWorldTimerManager().SetTimer(DeathTimer, this, &ASpearmanCharacter::DeathTimerFinished, DeathDelay);
 }
@@ -529,12 +538,9 @@ void ASpearmanCharacter::MulticastDeath_Implementation()
 }
 
 void ASpearmanCharacter::DeathTimerFinished()
-{
-	if (SpearmanPlayerController)
-	{
-		SpearmanPlayerController->SetPlayerSpectate();
-	}
+{ /* Server Only */
 
+	Destroy();
 	// be used when infinite respawn
 	/*ASpearmanGameMode* SpearmanGameMode = GetWorld()->GetAuthGameMode<ASpearmanGameMode>();
 	if (SpearmanGameMode)
