@@ -439,6 +439,7 @@ void ASpearmanCharacter::UpdateHUDHp()
 		SpearmanPlayerController->SetHUDHp(Hp, MaxHp);
 	}
 }
+
 void ASpearmanCharacter::ShowHitDamage(bool bShowHitDamage)
 {
 	if (HitDamageWidget)
@@ -508,6 +509,25 @@ void ASpearmanCharacter::OnRep_ReplicatedMovement()
 	TimeSinceLastMovementReplication = 0.f;
 }
 
+void ASpearmanCharacter::Extract()
+{ /* Server Only */
+	if (Combat && Combat->EquippedWeapon)
+	{
+		Combat->EquippedWeapon->Dropped();
+		Combat->EquippedWeapon->SetbAttackCollisionTrace();
+	}
+
+	if (SpearmanPlayerController)
+	{
+		SpearmanPlayerController->SetPlayerSpectate();
+	}
+
+	bDisableKeyInput = false;
+
+	FTimerHandle ExtractTimer;
+	GetWorldTimerManager().SetTimer(ExtractTimer, this, &ASpearmanCharacter::DestroyCallback, 1.f);
+}
+
 void ASpearmanCharacter::Death()
 { /* Server Only */
 	if (Combat && Combat->EquippedWeapon)
@@ -522,7 +542,7 @@ void ASpearmanCharacter::Death()
 	}
 
 	MulticastDeath();
-	GetWorldTimerManager().SetTimer(DeathTimer, this, &ASpearmanCharacter::DeathTimerFinished, DeathDelay);
+	GetWorldTimerManager().SetTimer(DeathTimer, this, &ASpearmanCharacter::DestroyCallback, DeathDelay);
 }
 
 void ASpearmanCharacter::MulticastDeath_Implementation()
@@ -537,16 +557,9 @@ void ASpearmanCharacter::MulticastDeath_Implementation()
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
-void ASpearmanCharacter::DeathTimerFinished()
+void ASpearmanCharacter::DestroyCallback()
 { /* Server Only */
-
 	Destroy();
-	// be used when infinite respawn
-	/*ASpearmanGameMode* SpearmanGameMode = GetWorld()->GetAuthGameMode<ASpearmanGameMode>();
-	if (SpearmanGameMode)
-	{
-		SpearmanGameMode->RequestRespawn(this, Controller);
-	}*/
 }
 
 void ASpearmanCharacter::CalculateAO_Pitch()
@@ -566,7 +579,7 @@ void ASpearmanCharacter::TurnInPlace()
 	
 	FVector Velocity = GetVelocity();
 	Velocity.Z = 0.f;
-	float Speed = Velocity.Size();
+	const float Speed = Velocity.Size();
 
 	if (Speed > 0.f)
 	{

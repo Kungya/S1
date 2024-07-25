@@ -20,6 +20,8 @@ public:
 	AItem();
 
 	void Init(int32 num);
+	void Init(UItemInstance* InItemInstance);
+	
 	virtual void Interact() override;
 
 protected:

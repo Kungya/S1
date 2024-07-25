@@ -8,6 +8,8 @@
 
 class UItemInstance;
 class ASpearmanCharacter;
+class AItem;
+class US1GameInstance;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SPEARMAN_API UInventoryComponent : public UActorComponent
@@ -25,6 +27,11 @@ public:
 
 	void AddItem(UItemInstance* InIntemInstance);
 
+	void RemoveItem(const int32 IdxToRemove);
+
+	UFUNCTION(Server, Reliable)
+	void ServerDropItem(const int32 IdxToDrop);
+
 	void UpdateHUDInventory();
 
 private:
@@ -33,13 +40,22 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_InventoryArray)
 	TArray<UItemInstance*> InventoryArray;
 
-	UFUNCTION()
-	void OnRep_InventoryArray();
+	UPROPERTY()
+	TArray<int32> CachedInvalidIndex;
 	
+	UFUNCTION()
+	void OnRep_InventoryArray(TArray<UItemInstance*> LastInventoryArray);
+	
+	UPROPERTY(EditAnywhere, Category = "Drop")
+	TSubclassOf<AItem> ItemClass;
+
+	UPROPERTY()
+	US1GameInstance* S1GameInstance;
+
 	/* You have to set Outer When you Add or Remove ItemInstance in Inventory,  */
 
 public:
 
-	FORCEINLINE const TArray<UItemInstance*>& GetInventoryArray() { return InventoryArray; }
+	FORCEINLINE TArray<UItemInstance*>& GetInventoryArray() { return InventoryArray; }
 
 };

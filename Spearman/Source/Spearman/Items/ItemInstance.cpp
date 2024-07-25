@@ -33,7 +33,7 @@ void UItemInstance::PostInitProperties()
 }
 
 void UItemInstance::Init(int32 num)
-{ /* Server Only */
+{ /* Server Only, Random Init */
 	if (num <= 0) return;
 
 	S1GameInstance = (S1GameInstance == nullptr) ? Cast<US1GameInstance>(GetWorld()->GetGameInstance()) : S1GameInstance;

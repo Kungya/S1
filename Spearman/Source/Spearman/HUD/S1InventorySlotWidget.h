@@ -6,9 +6,10 @@
 #include "S1UserWidget.h"
 #include "S1InventorySlotWidget.generated.h"
 
-/**
- * 
- */
+class USizeBox;
+class UImage;
+
+
 UCLASS()
 class SPEARMAN_API US1InventorySlotWidget : public US1UserWidget
 {
@@ -22,9 +23,9 @@ protected:
 
 public:
 	UPROPERTY(meta = (BindWidget))
-	class USizeBox* Root_SizeBox;
+	USizeBox* Root_SizeBox;
 
 	UPROPERTY(meta = (BindWidget))
-	class UImage* Slot_Image;
+	UImage* Slot_Image;
 	
 };

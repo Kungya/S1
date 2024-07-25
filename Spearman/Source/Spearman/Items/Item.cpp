@@ -17,6 +17,8 @@ AItem::AItem()
 	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
 	ItemMesh->SetupAttachment(GetRootComponent());
 	ItemMesh->SetSimulatePhysics(true);
+	ItemMesh->SetIsReplicated(true);
+	
 }
 
 void AItem::BeginPlay()
@@ -52,6 +54,19 @@ void AItem::Init(int32 num)
 	{
 		ItemInstance = NewObject<UItemInstance>(this);
 		ItemInstance->Init(num);
+	}
+}
+
+void AItem::Init(UItemInstance* InItemInstance)
+{ /* Server Only */
+	if (ItemInstance == nullptr && InItemInstance)
+	{
+		ItemInstance = InItemInstance;
+		ItemInstance->Rename(nullptr, this);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Init in AItem FAULT"));
 	}
 }
 

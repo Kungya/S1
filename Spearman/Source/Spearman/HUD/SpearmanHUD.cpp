@@ -2,14 +2,12 @@
 
 
 #include "SpearmanHUD.h"
-#include "GameFramework/PlayerController.h"
 #include "CharacterOverlay.h"
 #include "CharacterOverlayNotice.h"
 
 void ASpearmanHUD::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 void ASpearmanHUD::AddCharacterOverlay()
@@ -17,7 +15,6 @@ void ASpearmanHUD::AddCharacterOverlay()
 	APlayerController* PlayerController = GetOwningPlayerController();
 	if (PlayerController && CharacterOverlayClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Called"));
 		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass);
 		CharacterOverlay->AddToViewport();
 	}

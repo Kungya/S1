@@ -6,9 +6,9 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "ExtractionResultSubsystem.generated.h"
 
-/**
- * 
- */
+/* TODO : Persistent Data (After Extraction) */
+class UItemInstance;
+
 UCLASS()
 class SPEARMAN_API UExtractionResultSubsystem : public UGameInstanceSubsystem
 {
@@ -18,12 +18,13 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
+	TMap<int32, TArray<UItemInstance*>> SavedInventories;
+
 protected:
 
 
 private:
-
-
+	
 
 public:
 

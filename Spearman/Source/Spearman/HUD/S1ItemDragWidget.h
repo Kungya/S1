@@ -6,9 +6,11 @@
 #include "S1UserWidget.h"
 #include "S1ItemDragWidget.generated.h"
 
-/**
- * 
- */
+class USizeBox;
+class UImage;
+class UTextBlock;
+
+
 UCLASS()
 class SPEARMAN_API US1ItemDragWidget : public US1UserWidget
 {
@@ -22,12 +24,12 @@ public:
 
 protected:
 	UPROPERTY(meta = (BindWidget))
-	class USizeBox* Root_SizeBox;
-
+	USizeBox* Root_SizeBox;
+	 
 	UPROPERTY(meta = (BindWidget))
-	class UImage* Icon_Image;
+	UImage* Icon_Image;
 
 	// TODO : ... 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* Count_Text;
+	UTextBlock* Count_Text;
 };

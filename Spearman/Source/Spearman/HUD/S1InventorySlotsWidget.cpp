@@ -37,6 +37,8 @@ void US1InventorySlotsWidget::NativeConstruct()
 		FIntPoint ItemSlotPos = FIntPoint(i % X_SIZE, i / X_SIZE);
 		OnInventoryItemInfoChanged(ItemSlotPos, ItemInstance);
 	}
+
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *GetFName().ToString());
 }
 
 bool US1InventorySlotsWidget::NativeOnDragOver(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
@@ -81,16 +83,19 @@ bool US1InventorySlotsWidget::NativeOnDrop(const FGeometry& InGeometry, const FD
 		if (DragDrop->FromItemSlotPos != ToItemSlotPos)
 		{	
 			const int32 ToItemSlotIdx = ToItemSlotPos.Y * X_SIZE + ToItemSlotPos.X;
-			US1InventoryItemInfoWidget* ToItemInfoWidget = ItemInfoWidgets[ToItemSlotIdx];
-			
-			UItemInstance* ToItemInstance = nullptr;
-			if (ToItemInfoWidget)
-			{ // Swap if ToItemSlot is valid
-				ToItemInstance = ToItemInfoWidget->GetItemInstance();
+			if (ToItemSlotIdx < ItemInfoWidgets.Num())
+			{
+				US1InventoryItemInfoWidget* ToItemInfoWidget = ItemInfoWidgets[ToItemSlotIdx];
+
+				UItemInstance* ToItemInstance = nullptr;
+				if (ToItemInfoWidget)
+				{ // Swap if ToItemSlot is valid
+					ToItemInstance = ToItemInfoWidget->GetItemInstance();
+				}
+				/* Swap */
+				OnInventoryItemInfoChanged(DragDrop->FromItemSlotPos, ToItemInstance);
+				OnInventoryItemInfoChanged(ToItemSlotPos, DragDrop->ItemInstance);
 			}
-			/* Swap */
-			OnInventoryItemInfoChanged(DragDrop->FromItemSlotPos, ToItemInstance);
-			OnInventoryItemInfoChanged(ToItemSlotPos, DragDrop->ItemInstance);
 		}
 	}
 	
@@ -128,12 +133,12 @@ void US1InventorySlotsWidget::OnInventoryItemInfoChanged(const FIntPoint& InItem
 			ItemInfoWidgets[SlotIdx] = nullptr;
 		}
 		else
-		{ // To
+		{ // To ItemInstance
 			ItemInfoWidget->Init(this, Item, 1);
 		}
 	}
 	else
-	{ // Init ItemInfo Widget
+	{ // Init new ItemInfo Widget in NativeConstruct()
 		ItemInfoWidget = CreateWidget<US1InventoryItemInfoWidget>(PlayerController, ItemInfoWidgetClass);
 		ItemInfoWidgets[SlotIdx] = ItemInfoWidget;
 
@@ -141,21 +146,27 @@ void US1InventorySlotsWidget::OnInventoryItemInfoChanged(const FIntPoint& InItem
 		CanvasPanelSlot->SetAutoSize(true);
 		CanvasPanelSlot->SetPosition(FVector2D(InItemSlotPos.X * 50, InItemSlotPos.Y * 50));
 
-		// Caching
 		ItemInfoWidget->Init(this, Item, 1);
 	}
 }
 
-void US1InventorySlotsWidget::UpdateItemInfoWidget()
+void US1InventorySlotsWidget::UpdateItemInfoWidget(const int32 InventoryArrayIndex)
 {
 	const TArray<UItemInstance*>& InventoryArray = Inventory->GetInventoryArray();
-	for (int32 i = 0; i < InventoryArray.Num(); i++)
+	UItemInstance* ItemInstance = InventoryArray[InventoryArrayIndex];
+	
+	int32 ItemInfoWidgetEmptyIndex = -1;
+	for (int32 idx = 0; idx < ItemInfoWidgets.Num(); idx++)
 	{
-		UItemInstance* ItemInstance = InventoryArray[i];
-		// i : 10일 때(11번째, 2째줄 첫번째로 가야함), FIntPoint(0, 1) -> (x, y)
-		FIntPoint ItemSlotPos = FIntPoint(i % X_SIZE, i / X_SIZE);
-		OnInventoryItemInfoChanged(ItemSlotPos, ItemInstance);
+		if (ItemInfoWidgets[idx] == nullptr)
+		{
+			ItemInfoWidgetEmptyIndex = idx;
+			break;
+		}
 	}
+	// i : 10일 때(11번째, 2째줄 첫번째로 가야함), FIntPoint(0, 1) -> (x, y)
+	FIntPoint ItemSlotPos = FIntPoint(ItemInfoWidgetEmptyIndex % X_SIZE, ItemInfoWidgetEmptyIndex / X_SIZE);
+	OnInventoryItemInfoChanged(ItemSlotPos, ItemInstance);
 }
 
 void US1InventorySlotsWidget::FinishDrag()

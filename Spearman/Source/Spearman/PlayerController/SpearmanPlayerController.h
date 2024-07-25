@@ -22,11 +22,10 @@ public:
 	void SetHUDMatchCountdown(float CountdownTime);
 	void SetHUDNoticeCountdown(float CountdownTime);
 	virtual void OnPossess(APawn* InPawn) override;
-	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual float GetServerTime();
-	// function that Sync server time ASAP
+	
 	virtual void ReceivedPlayer() override;
 	void OnMatchStateSet(FName State);
 	
@@ -43,28 +42,30 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 	virtual void SetupInputComponent() override;
 
 	void SetHUDTime();
 	void HUDInit();
 	void SetHUDPing(float DeltaTime);
-	
 	void SetHUDTickRate(float ClientTick, float ServerTick);
+	void SetHUDAliveAndSpectator();
 
 	void InitRenderTargetIfServer(APawn* InPawn);
 
-	/*
-	* Sync time
-	*/
+	/* Sync time */
+
+	FTimerHandle RequestServerTimeHandle;
+
+	void RequestServerTime();
 
 	UFUNCTION(Server, Reliable)
 	void ServerRequestServerTime(float ClientRequestTime);
 
 	UFUNCTION(Client, Reliable)
 	void ClientReportServerTime(float ClientRequestTime, float ServerReportTime, float ServerReportTickRate);
-
+	
 	float ClientServerDelta = 0.f;
-	float DeltaTimeSumforTimeSync = 0.f;
 	float SingleTripTime;
 
 	UFUNCTION(Server, Reliable)
@@ -78,6 +79,8 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void ClientHUDStateChanged(EHUDState NewState);
 	
+	/* Spectator */
+
 	virtual void OnRep_Pawn() override;
 
 private:
@@ -112,13 +115,13 @@ private:
 	float HUDMaxHp;
 
 	float PingCheckTime = 0.f;
-
 	float LocalTickRate = 0.f;
 	float ServerTickRate = 0.f;
 
-	/*
-	* ReturnToMainMenu
-	*/
+	int32 AliveCount = 0;
+	int32 SpectatorCount = 0;
+
+	/* ReturnToMainMenu */
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UUserWidget> ReturnToMainMenuWidget;

@@ -29,6 +29,11 @@ void ASpearmanPlayerController::BeginPlay()
 	// Client should get MatchState from Server asap.
 	ServerRequestMatchState();
 
+	if (IsLocalController())
+	{
+		GetWorldTimerManager().SetTimer(RequestServerTimeHandle, this, &ASpearmanPlayerController::RequestServerTime, 3.f, true, 6.f);
+	}
+
 	PlayerCameraManager->bClientSimulatingViewTarget = false;
 }
 
@@ -36,22 +41,16 @@ void ASpearmanPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	LocalTickRate = 1.f / DeltaTime;
+	LocalTickRate = (1.f / DeltaTime);
 
 	if (IsLocalController())
 	{
 		SetHUDTickRate(LocalTickRate, ServerTickRate);
 		SetHUDTime();
 		SetHUDPing(DeltaTime);
+		SetHUDAliveAndSpectator();
 
 		HUDInit();
-	}
-
-	DeltaTimeSumforTimeSync += DeltaTime;
-	if (IsLocalController() && DeltaTimeSumforTimeSync > 5.f)
-	{
-		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
-		DeltaTimeSumforTimeSync = 0.f;
 	}
 }
 
@@ -259,8 +258,20 @@ void ASpearmanPlayerController::SetHUDTickRate(float ClientTick, float ServerTic
 	}
 }
 
-void ASpearmanPlayerController::InitRenderTargetIfServer(APawn* InPawn)
+void ASpearmanPlayerController::SetHUDAliveAndSpectator()
 {
+	SpearmanHUD = (SpearmanHUD == nullptr) ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
+	if (SpearmanHUD && CharacterOverlay)
+	{
+		FString AliveText = FString::Printf(TEXT("%d"), AliveCount);
+		CharacterOverlay->Alive_Text->SetText(FText::FromString(AliveText));
+		FString SpectatorText = FString::Printf(TEXT("%d"), SpectatorCount);
+		CharacterOverlay->Spectator_Text->SetText(FText::FromString(SpectatorText));
+	}
+}
+
+void ASpearmanPlayerController::InitRenderTargetIfServer(APawn* InPawn)
+{ 
 	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(InPawn) : SpearmanCharacter;
 	if (SpearmanCharacter && IsLocalController())
 	{
@@ -278,6 +289,11 @@ void ASpearmanPlayerController::InitRenderTargetIfServer(APawn* InPawn)
 			SpearmanCharacter->MinimapSceneCapture->TextureTarget = SpearmanCharacter->RenderTargetMinimap;
 		}
 	}
+}
+
+void ASpearmanPlayerController::RequestServerTime()
+{
+	ServerRequestServerTime(GetWorld()->GetTimeSeconds());
 }
 
 void ASpearmanPlayerController::ServerRequestServerTime_Implementation(float ClientRequestTime)
@@ -388,6 +404,9 @@ void ASpearmanPlayerController::SetPlayerSpectate()
 	// Push the state update to the client
 	ClientGotoState(NAME_Spectating);
 
+	// View some other alive player (for server-side only)
+	ViewAPlayer(+1);
+
 	// Update the HUD to add teh spectator screen
 	ClientHUDStateChanged(EHUDState::EHS_Spectating);
 }
@@ -439,14 +458,14 @@ void ASpearmanPlayerController::OnRep_MatchState()
 
 void ASpearmanPlayerController::ServerRequestMatchState_Implementation()
 { // Server Only, Client should get MatchState from Server ASAP. 
-	ASpearmanGameMode* GameMode = Cast<ASpearmanGameMode>(UGameplayStatics::GetGameMode(this));
-	if (GameMode)
+	SpearmanGameMode = (SpearmanGameMode == nullptr) ? Cast<ASpearmanGameMode>(UGameplayStatics::GetGameMode(this)) : SpearmanGameMode;
+	if (SpearmanGameMode)
 	{
-		MatchState = GameMode->GetMatchState();
-		BeginPlayTime = GameMode->BeginPlayTime;
-		WarmupTime = GameMode->WarmupTime;
-		MatchTime = GameMode->MatchTime;
-		CooldownTime = GameMode->CooldownTime;
+		MatchState = SpearmanGameMode->GetMatchState();
+		BeginPlayTime = SpearmanGameMode->BeginPlayTime;
+		WarmupTime = SpearmanGameMode->WarmupTime;
+		MatchTime = SpearmanGameMode->MatchTime;
+		CooldownTime = SpearmanGameMode->CooldownTime;
 		ClientReportMatchState(MatchState, BeginPlayTime, WarmupTime, MatchTime, CooldownTime);
 	}
 }

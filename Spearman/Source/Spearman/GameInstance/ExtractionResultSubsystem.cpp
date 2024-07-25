@@ -2,7 +2,7 @@
 
 
 #include "ExtractionResultSubsystem.h"
-
+#include "Spearman/Items/ItemInstance.h"
 
 void UExtractionResultSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {

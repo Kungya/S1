@@ -13,7 +13,6 @@
 US1InventoryItemInfoWidget::US1InventoryItemInfoWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-
 }
 
 void US1InventoryItemInfoWidget::Init(US1InventorySlotsWidget* InSlotsWidget, UItemInstance* InItemInstance, int32 InItemCount)
@@ -22,9 +21,6 @@ void US1InventoryItemInfoWidget::Init(US1InventorySlotsWidget* InSlotsWidget, UI
 	ItemInstance = InItemInstance;
 	ItemCount = InItemCount;
 	Icon_Image->SetBrushFromTexture(InItemInstance->Icon, true);
-
-	// TODO : ItemInstance, Count가 바뀌면 -> Icon_Image, Hover_Image, Count_Text도 바꿔줘야한다
-	// Icon_Image, Hover_Image는 ItemInstance
 }
 
 void US1InventoryItemInfoWidget::NativeConstruct()
@@ -88,19 +84,17 @@ void US1InventoryItemInfoWidget::NativeOnDragDetected(const FGeometry& InGeometr
 	DragDrop->DefaultDragVisual = DragWidget;
 	DragDrop->Pivot = EDragPivot::MouseDown;
 	DragDrop->FromItemSlotPos = CachedFromSlotPos;
-	DragDrop->ItemInstance = ItemInstance;
 	DragDrop->DeltaWidgetPos = CachedDeltaWidgetPos;
+	DragDrop->ItemInstance = ItemInstance;
+	DragDrop->InventorySlotsWidget = SlotsWidget;
 	
 	OutOperation = DragDrop;
 }
 
 void US1InventoryItemInfoWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
-{
+{ // 아이템을 드래그한 뒤, 마우스 버튼을 놨을 때 항상 실행됨
 	Super::NativeOnDragCancelled(InDragDropEvent, InOperation);
-	//UE_LOG(LogTemp, Warning, TEXT("NativeOnDragCancelled"));
-	// 아이템을 드래그한 뒤, 올바르지 않은 위치에 놨을 때 -> 캔슬
 	
-	//RefreshWidgetOpacity(true);
 }
 
 void US1InventoryItemInfoWidget::RefreshWidgetOpacity(bool bClearlyVisible)

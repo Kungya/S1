@@ -9,10 +9,11 @@
 class US1InventorySlotsWidget;
 class UItemInstance;
 class US1ItemDragWidget;
+class USizeBox;
+class UTextBlock;
+class UImage;
 
-/**
- * 
- */
+
 UCLASS()
 class SPEARMAN_API US1InventoryItemInfoWidget : public US1UserWidget
 {
@@ -36,7 +37,6 @@ protected:
 	void RefreshItemCount(int32 NewItemCount);
 
 private:
-	// Caching Info
 	FIntPoint CachedFromSlotPos = FIntPoint::ZeroValue;
 	FVector2D CachedDeltaWidgetPos = FVector2D::ZeroVector;
 	int32 ItemCount = 0;
@@ -56,13 +56,13 @@ protected:
 protected:
 
 	UPROPERTY(meta = (BindWidget))
-	class USizeBox* Root_SizeBox;
+	USizeBox* Root_SizeBox;
 
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* Count_Text;
+	UTextBlock* Count_Text;
 
 	UPROPERTY(meta = (BindWidget))
-	class UImage* Icon_Image;
+	UImage* Icon_Image;
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* Hover_Image;

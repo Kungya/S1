@@ -45,7 +45,10 @@ public:
 	virtual void OnRep_ReplicatedMovement() override;
 	void UpdateHUDHp();
 
+	void Extract();
+
 	void Death();
+
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastDeath();
 
@@ -78,7 +81,7 @@ protected:
 	
 	UFUNCTION(Server, Reliable)
 	void ServerInteract();
-
+	
 	void InventoryButtonPressed();
 
 	void HideCameraIfCharacterTooClose();
@@ -234,7 +237,7 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	float DeathDelay = 3.f;
 
-	void DeathTimerFinished();
+	void DestroyCallback();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	UParticleSystem* HitParticles;
@@ -300,7 +303,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Hit Box")
 	UBoxComponent* foot_r;
 
-	/* Temporary, Test for Rewind*/
+	/* Temporary, Test for Rewind */
 	FTimerHandle TestTimer;
 	float TimerVector = 1.f;
 	void TestToggleVector() { TimerVector *= -1.f; };
@@ -311,6 +314,7 @@ private:
 	bool bTestAttack = false;
 	void StartAttackTest(){ if (!HasAuthority()) GetWorld()->GetTimerManager().SetTimer(TestTimer2, this, &ASpearmanCharacter::TriggerAttack, 5.f, true, 5.f); }
 	void TriggerAttack() { bTestAttack = true; }
+	//////////////////////////////////////////////////////////
 
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);

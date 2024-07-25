@@ -14,6 +14,7 @@ class US1InventoryItemInfoWidget;
 class UUniformGridPanel;
 class UCanvasPanel;
 
+
 /**
  * 
  */
@@ -27,7 +28,9 @@ public:
 
 	void GetLogfromSlotsWidget();
 
-	void UpdateItemInfoWidget();
+	void UpdateItemInfoWidget(const int32 InventoryArrayIndex);
+
+	void OnInventoryItemInfoChanged(const FIntPoint& InItemSlotPos, UItemInstance* Item);
 
 protected:
 	virtual void NativeConstruct() override;
@@ -37,14 +40,10 @@ protected:
 
 	void InitItemSlotWidget();
 
-	void OnInventoryItemInfoChanged(const FIntPoint& InItemSlotPos, UItemInstance* Item);
-
 private:
 	void FinishDrag();
 
-	/*
-	* Caching
-	*/
+	/* Caching */
 
 	UPROPERTY()
 	ASpearmanCharacter* SpearmanCharacter;

@@ -10,6 +10,8 @@ class UCanvasPanel;
 class US1InventorySlotsWidget;
 class ASpearmanPlayerController;
 
+class UItemDropCanvasWidget;
+
 /**
  * 
  */
