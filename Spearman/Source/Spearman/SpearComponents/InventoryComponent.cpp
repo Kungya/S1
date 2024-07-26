@@ -46,8 +46,8 @@ void UInventoryComponent::AddItem(UItemInstance* InItemInstance)
 { /* Server Only */
 	if (InventoryArray.Num() >= 50) return;
 	
-	// Change Outer from Item to Inventory for Object Replication
-	InItemInstance->Rename(nullptr, GetOwner());
+	// Change Outer from Item to InventoryComponent for Object Replication (Lifecycle)
+	InItemInstance->Rename(nullptr, this);
 
 	if (CachedInvalidIndex.IsEmpty())
 	{
@@ -60,6 +60,15 @@ void UInventoryComponent::AddItem(UItemInstance* InItemInstance)
 
 		InItemInstance->InventoryIdx = InvalidIndex;
 		InventoryArray[InvalidIndex] = InItemInstance;
+	}
+
+	if (SpearmanCharacter && SpearmanCharacter->IsLocallyControlled())
+	{
+		US1InventorySlotsWidget* SlotsWidget = SpearmanCharacter->SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->InventoryWidget->InventorySlotsWidget;
+		if (SlotsWidget)
+		{
+			SlotsWidget->UpdateItemInfoWidget(InItemInstance->InventoryIdx);
+		}
 	}
 
 	if (SpearmanCharacter && SpearmanCharacter->IsLocallyControlled())
@@ -113,16 +122,16 @@ void UInventoryComponent::OnRep_InventoryArray(TArray<UItemInstance*> LastInvent
 	}
 
 	if (LastInventoryArrayCount > InventoryArrayCount)
-	{ // if Dropp, it's Already Updated, 
+	{ // if Drop, it's Already Updated before ServerRPC 
 		return;
 	}
 
-	int32 ReplicatedIndex = InventoryArray.Num() - 1;
+	int32 ReplicatedElementIndex = InventoryArray.Num() - 1;
 	for (int32 idx = 0; idx < LastInventoryArray.Num(); idx++)
 	{
 		if (LastInventoryArray[idx] == nullptr && InventoryArray[idx] != nullptr)
 		{ // find Replicated element !
-			ReplicatedIndex = idx;
+			ReplicatedElementIndex = idx;
 			break;
 		}
 	}
@@ -133,7 +142,7 @@ void UInventoryComponent::OnRep_InventoryArray(TArray<UItemInstance*> LastInvent
 		US1InventorySlotsWidget* SlotsWidget = SpearmanCharacter->SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->InventoryWidget->InventorySlotsWidget;
 		if (SlotsWidget)
 		{
-			SlotsWidget->UpdateItemInfoWidget(ReplicatedIndex);
+			SlotsWidget->UpdateItemInfoWidget(ReplicatedElementIndex);
 		}
 	}
 }

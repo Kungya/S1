@@ -35,6 +35,7 @@
 #include "Components/Image.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "Spearman/DamageType/BlueZoneDamageType.h"
 
 
 ASpearmanCharacter::ASpearmanCharacter()
@@ -241,9 +242,9 @@ void ASpearmanCharacter::BeginPlay()
 		}
 	}
 
-	ShowHitDamage(false);
-
 	UpdateHUDHp();
+
+	HitDamageWidget->SetVisibility(ESlateVisibility::Hidden);
 
 	HpBarWidget->SetHpBar(GetHpRatio());
 	HpBarWidget->SetVisibility(ESlateVisibility::Hidden);
@@ -312,7 +313,7 @@ void ASpearmanCharacter::PlayThrustMontage()
 }
 
 void ASpearmanCharacter::PlayHitReactMontage()
-{ /* be Called in OnAttacked() or OnRep_HP() */
+{
 	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
 
 	Combat->CombatState = ECombatState::ECS_Stunned;
@@ -364,20 +365,12 @@ void ASpearmanCharacter::OnAttacked(AActor* DamagedActor, float Damage, const UD
 	if (bDeath) return;
 
 	Hp = FMath::Clamp(Hp - Damage, 0.f, MaxHp);
+
 	UpdateHUDHp();
 
 	if (FMath::IsNearlyZero(Hp))
 	{
-		ASpearmanGameMode* SpearmanGameMode = GetWorld()->GetAuthGameMode<ASpearmanGameMode>();
-		if (SpearmanGameMode)
-		{
-			SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
-			ASpearmanPlayerController* AttackerController = Cast<ASpearmanPlayerController>(InstigatorController);
-			if (SpearmanPlayerController && AttackerController)
-			{
-				SpearmanGameMode->PlayerDeath(this, SpearmanPlayerController, AttackerController);
-			}
-		}
+		Death();
 
 		ABasicMonsterAIController*BasicMonsterAIController = Cast<ABasicMonsterAIController>(InstigatorController);
 		if (BasicMonsterAIController)
@@ -386,39 +379,30 @@ void ASpearmanCharacter::OnAttacked(AActor* DamagedActor, float Damage, const UD
 		}
 	}
 	else
-	{ // TODO ; Consider call by Multicast
-		PlayHitReactMontage();
+	{
+		if (!DamageType->IsA<UBlueZoneDamageType>())
+		{
+			MulticastHitReact();
+		}
 	}
 }
 
 void ASpearmanCharacter::OnRep_Hp(float LastHp)
 {
-	if (!IsLocallyControlled())
-	{ // TODO : 피격자가 입은 데미지만 공격자 입장에서 표시 -> 우선은 피격자, 서버를 제외하고 전부 표시
-		const float Damage = LastHp - Hp;
-		if (Damage > 0.f)
-		{
-			HitDamageWidget->SetHitDamageText(Damage);
-			ShowHitDamage(true);
-			HpBarWidget->SetHpBar(GetHpRatio());
-			HpBarWidget->SetVisibility(ESlateVisibility::Visible);
-
-			GetWorldTimerManager().SetTimer(HitDamageTimerHandle, this, &ASpearmanCharacter::HideHitDamage, 2.f, false);
-		}
-	}
 	UpdateHUDHp();
 
 	if (FMath::IsNearlyZero(Hp))
-	{ // TODO : Die client widget
+	{
 		HideHpBar();
-	}
-	else if (Hp < LastHp)
-	{ /* Triggered except Heal */
-		PlayHitReactMontage();
 	}
 }
 
-void ASpearmanCharacter::WeaponHit(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot)
+void ASpearmanCharacter::MulticastHitReact_Implementation()
+{
+	PlayHitReactMontage();
+}
+
+void ASpearmanCharacter::WeaponHitEffect(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot)
 { /* Interface */
 	if (HitParticles)
 	{
@@ -427,6 +411,9 @@ void ASpearmanCharacter::WeaponHit(int32 Damage, FVector_NetQuantize HitPoint, b
 
 	if (!IsLocallyControlled())
 	{
+		HitDamageWidget->SetHitDamageText(Damage);
+		ShowHitDamage();
+		HpBarWidget->SetHpBar(GetHpRatio());
 		ShowHpBar();
 	}
 }
@@ -440,19 +427,15 @@ void ASpearmanCharacter::UpdateHUDHp()
 	}
 }
 
-void ASpearmanCharacter::ShowHitDamage(bool bShowHitDamage)
+void ASpearmanCharacter::ShowHitDamage()
 {
 	if (HitDamageWidget)
 	{
-		if (bShowHitDamage)
-		{
-			HitDamageWidget->SetVisibility(ESlateVisibility::Visible);
-		}
-		else
-		{
-			HitDamageWidget->SetVisibility(ESlateVisibility::Hidden);
-		}
+		HitDamageWidget->SetVisibility(ESlateVisibility::Visible);
 	}
+
+	GetWorldTimerManager().ClearTimer(HitDamageTimer);
+	GetWorldTimerManager().SetTimer(HitDamageTimer, this, &ASpearmanCharacter::HideHitDamage, HitDamageDisplayTime);
 }
 
 void ASpearmanCharacter::HideHitDamage()
@@ -460,7 +443,6 @@ void ASpearmanCharacter::HideHitDamage()
 	if (HitDamageWidget && HpBarWidget)
 	{
 		HitDamageWidget->SetVisibility(ESlateVisibility::Hidden);
-		HpBarWidget->SetVisibility(ESlateVisibility::Hidden);
 	}
 }
 
@@ -470,6 +452,7 @@ void ASpearmanCharacter::ShowHpBar()
 	{
 		HpBarWidget->SetVisibility(ESlateVisibility::Visible);
 	}
+
 	GetWorldTimerManager().ClearTimer(HpBarTimer);
 	GetWorldTimerManager().SetTimer(HpBarTimer, this, &ASpearmanCharacter::HideHpBar, HpBarDisplayTime);
 }
@@ -827,7 +810,7 @@ void ASpearmanCharacter::TakeDamageIfNotInBlueZone()
 { /* Server Only */
 	if (!bIsInBlueZone)
 	{
-		UGameplayStatics::ApplyDamage(this, 1.f, Controller, this, UDamageType::StaticClass());
+		UGameplayStatics::ApplyDamage(this, 1.f, Controller, this, UBlueZoneDamageType::StaticClass());
 	}
 }
 

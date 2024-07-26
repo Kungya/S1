@@ -52,7 +52,10 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastDeath();
 
-	virtual void WeaponHit(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot) override;
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastHitReact();
+
+	virtual void WeaponHitEffect(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot) override;
 
 	void ShowBlueZoneImage();
 
@@ -98,7 +101,7 @@ protected:
 	UFUNCTION()
 	void OnAttacked(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
 
-	void ShowHitDamage(bool bShowHitDamageWidget);
+	void ShowHitDamage();
 	void HideHitDamage();
 
 	void ShowHpBar();
@@ -107,6 +110,7 @@ protected:
 	void InitRenderTargetIfOwningClient();
 
 	void TakeDamageIfNotInBlueZone();
+
 
 private:
 
@@ -148,7 +152,10 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Widget)
 	UHitDamageWidget* HitDamageWidget;
 
-	FTimerHandle HitDamageTimerHandle;
+	UPROPERTY(EditAnywhere, Category = Widget)
+	float HitDamageDisplayTime = 2.f;
+	
+	FTimerHandle HitDamageTimer;
 
 	// Overhead HpBar; on Enemy
 	UPROPERTY(VisibleAnywhere, Category = Widget)
@@ -157,7 +164,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Widget)
 	UHpBarWidget* HpBarWidget;
 
-	UPROPERTY(EditAnywhere, Category = Combat)
+	UPROPERTY(EditAnywhere, Category = Widget)
 	float HpBarDisplayTime = 4.f;
 
 	FTimerHandle HpBarTimer;

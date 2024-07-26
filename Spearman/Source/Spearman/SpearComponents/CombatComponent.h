@@ -10,6 +10,7 @@
 class ASpearmanCharacter;
 class ASpearmanPlayerController;
 class ASpearmanHUD;
+class AWeapon;
 class USoundCue;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -23,7 +24,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	void EquipWeapon(class AWeapon* WeaponToEquip);
+	void EquipWeapon(AWeapon* WeaponToEquip);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastParried(ASpearmanCharacter* Opponent, FVector_NetQuantize Location);

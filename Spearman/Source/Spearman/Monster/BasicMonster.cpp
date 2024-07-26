@@ -164,12 +164,13 @@ void ABasicMonster::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-void ABasicMonster::WeaponHit(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot)
+void ABasicMonster::WeaponHitEffect(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot)
 {
 	if (HitParticles)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, HitPoint, FRotator(0.f), true);
 	}
+	HpBar->SetHpBar(GetHpRatio());
 	ShowHpBar();
 	ShowHitDamage(Damage, HitPoint, bHeadShot);
 }
@@ -412,10 +413,6 @@ void ABasicMonster::MulticastDeath_Implementation()
 }
 
 void ABasicMonster::OnRep_Hp(float LastHp)
-{ // Client Only
+{
 	HpBar->SetHpBar(GetHpRatio());
-	if (FMath::IsNearlyZero(Hp))
-	{
-		//Die();
-	}
 }

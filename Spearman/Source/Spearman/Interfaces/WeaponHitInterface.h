@@ -23,5 +23,5 @@ class SPEARMAN_API IWeaponHitInterface
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 
-	virtual void WeaponHit(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot) = 0;
+	virtual void WeaponHitEffect(int32 Damage, FVector_NetQuantize HitPoint, bool bHeadShot) = 0;
 };

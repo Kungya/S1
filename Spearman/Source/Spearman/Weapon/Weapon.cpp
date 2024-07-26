@@ -220,7 +220,7 @@ void AWeapon::MulticastHitEffect_Implementation(AActor* HitActor, int32 InDamage
 	IWeaponHitInterface* WeaponHitInterface = Cast<IWeaponHitInterface>(HitActor);
 	if (WeaponHitInterface)
 	{ // Cast will succeed if BasicMonster, since BasicMonster inherits from WeaponHitInterface
-		WeaponHitInterface->WeaponHit(InDamage, HitPoint, bHeadShot);
+		WeaponHitInterface->WeaponHitEffect(InDamage, HitPoint, bHeadShot);
 	}
 }
 
