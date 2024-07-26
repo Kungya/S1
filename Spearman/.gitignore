@@ -75,3 +75,6 @@ DerivedDataCache/*
 
 # Assets
 Content/*
+
+# Hololens
+Platforms/*
