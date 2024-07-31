@@ -7,11 +7,12 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Spearman/PlayerController/SpearmanPlayerController.h"
 
+
 void US1InventoryWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	bIsFocusable = true;  
+	bIsFocusable = true;
 	SetKeyboardFocus();
 }
 

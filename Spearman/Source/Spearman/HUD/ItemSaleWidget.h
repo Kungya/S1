@@ -4,17 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "S1UserWidget.h"
-#include "ItemDropCanvasWidget.generated.h"
+#include "ItemSaleWidget.generated.h"
 
 class US1DragDropOperation;
+class US1InventorySlotsWidget;
 class ASpearmanPlayerController;
 class UInventoryComponent;
 
 UCLASS()
-class SPEARMAN_API UItemDropCanvasWidget : public US1UserWidget
+class SPEARMAN_API UItemSaleWidget : public US1UserWidget
 {
 	GENERATED_BODY()
-
+	
 protected:
 	virtual void NativeConstruct() override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
@@ -26,7 +27,5 @@ private:
 	UPROPERTY()
 	UInventoryComponent* Inventory;
 
-	/* Inventory size, Y * X */
-	const int32 Y_SIZE = 5;
-	const int32 X_SIZE = 10;
+
 };

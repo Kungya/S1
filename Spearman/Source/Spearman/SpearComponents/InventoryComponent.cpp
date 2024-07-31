@@ -13,6 +13,7 @@
 #include "Spearman/HUD/S1InventorySlotsWidget.h"
 #include "Spearman/Items/Item.h"
 #include "Spearman/GameInstance/S1GameInstance.h"
+#include "Spearman/PlayerState/SpearmanPlayerState.h"
 
 UInventoryComponent::UInventoryComponent()
 {
@@ -23,7 +24,7 @@ void UInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : SpearmanCharacter;
+	OwnerSpearmanPlayerController = Cast<ASpearmanPlayerController>(GetOwner());
 }
 
 void UInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -46,6 +47,8 @@ void UInventoryComponent::AddItem(UItemInstance* InItemInstance)
 { /* Server Only */
 	if (InventoryArray.Num() >= 50) return;
 	
+	UE_LOG(LogTemp, Warning, TEXT("AddItem"));
+
 	// Change Outer from Item to InventoryComponent for Object Replication (Lifecycle)
 	InItemInstance->Rename(nullptr, this);
 
@@ -64,16 +67,11 @@ void UInventoryComponent::AddItem(UItemInstance* InItemInstance)
 
 	if (SpearmanCharacter && SpearmanCharacter->IsLocallyControlled())
 	{
-		US1InventorySlotsWidget* SlotsWidget = SpearmanCharacter->SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->InventoryWidget->InventorySlotsWidget;
+		US1InventorySlotsWidget* SlotsWidget = OwnerSpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->InventoryWidget->InventorySlotsWidget;
 		if (SlotsWidget)
 		{
 			SlotsWidget->UpdateItemInfoWidget(InItemInstance->InventoryIdx);
 		}
-	}
-
-	if (SpearmanCharacter && SpearmanCharacter->IsLocallyControlled())
-	{
-		UpdateHUDInventory();
 	}
 }
 
@@ -83,26 +81,48 @@ void UInventoryComponent::RemoveItem(const int32 IdxToRemove)
 	CachedInvalidIndex.Push(IdxToRemove);
 }
 
+void UInventoryComponent::EmptyInventory()
+{
+	for (int32 idx = 0; InventoryArray.Num(); idx++)
+	{
+		if (InventoryArray[idx])
+		{
+			RemoveItem(idx);
+		}
+	}
+}
+
 void UInventoryComponent::ServerDropItem_Implementation(const int32 IdxToDrop)
 { /* Server Only */
 	UItemInstance* ItemInstance = InventoryArray[IdxToDrop];
 
 	RemoveItem(IdxToDrop);
-
+	
 	S1GameInstance = (S1GameInstance == nullptr) ? Cast<US1GameInstance>(GetWorld()->GetGameInstance()) : S1GameInstance;
 
 	AItem* ItemToSpawn = GetWorld()->SpawnActorDeferred<AItem>(ItemClass, SpearmanCharacter->GetActorTransform());
 	if (ItemToSpawn)
 	{
 		ItemToSpawn->Init(ItemInstance);
+		ItemInstance->Rename(nullptr, ItemToSpawn);
 		const TArray<UStaticMesh*>& StaticMeshAssets = S1GameInstance->GetStaticMeshAssets();
 		ItemToSpawn->GetItemMesh()->SetStaticMesh(StaticMeshAssets[ItemInstance->ItemDataIdx]);
 		ItemToSpawn->FinishSpawning(SpearmanCharacter->GetActorTransform());
 	}
 }
 
-void UInventoryComponent::UpdateHUDInventory()
-{ 
+void UInventoryComponent::ServerSellItem_Implementation(const int32 IdxToSell)
+{ /* Server Only */
+	// TODO : Item 삭제후, 가격만큼 Balance 증가
+	UItemInstance* ItemInstance = InventoryArray[IdxToSell];
+
+	RemoveItem(IdxToSell);
+
+	SpearmanPlayerState = OwnerSpearmanPlayerController->GetPlayerState<ASpearmanPlayerState>();
+	if (SpearmanPlayerState)
+	{
+		SpearmanPlayerState->SetBalance(SpearmanPlayerState->GetBalance() + ItemInstance->Cost);
+	}
 }
 
 void UInventoryComponent::OnRep_InventoryArray(TArray<UItemInstance*> LastInventoryArray)
@@ -136,10 +156,9 @@ void UInventoryComponent::OnRep_InventoryArray(TArray<UItemInstance*> LastInvent
 		}
 	}
 
-	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : SpearmanCharacter;
-	if (SpearmanCharacter)
+	if (OwnerSpearmanPlayerController)
 	{
-		US1InventorySlotsWidget* SlotsWidget = SpearmanCharacter->SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->InventoryWidget->InventorySlotsWidget;
+		US1InventorySlotsWidget* SlotsWidget = OwnerSpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->InventoryWidget->InventorySlotsWidget;
 		if (SlotsWidget)
 		{
 			SlotsWidget->UpdateItemInfoWidget(ReplicatedElementIndex);

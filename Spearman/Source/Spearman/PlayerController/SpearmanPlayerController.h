@@ -12,15 +12,25 @@ class UCharacterOverlay;
 class ASpearmanCharacter;
 class USceneCaptureComponent2D;
 class UReturnToMainMenu;
+class UExtractionResultSubsystem;
+class US1InventoryWidget;
+class UInventoryComponent;
+class US1InventorySlotsWidget;
 
 UCLASS()
 class SPEARMAN_API ASpearmanPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 public:
+	ASpearmanPlayerController(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
 	void SetHUDHp(float Hp, float MaxHp);
 	void SetHUDMatchCountdown(float CountdownTime);
 	void SetHUDNoticeCountdown(float CountdownTime);
+	void SetHUDCooldownCountdown(float CountdownTime);
+	void SetHUDBalance(int32 Balance);
+	void SetHUDBalanceRanking();
+
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -31,6 +41,9 @@ public:
 	
 	void HandleMatchHasStarted();
 	void HandleCooldown();
+
+	void HandleExtraction();
+	void ExtractionCallback();
 
 	void ShowInventoryWidget();
 
@@ -49,9 +62,12 @@ protected:
 	void HUDInit();
 	void SetHUDPing(float DeltaTime);
 	void SetHUDTickRate(float ClientTick, float ServerTick);
-	void SetHUDAliveAndSpectator();
+	void SetHUDAlive();
+
 
 	void InitRenderTargetIfServer(APawn* InPawn);
+
+	void ShowReturnToMainMenu();
 
 	/* Sync time */
 
@@ -72,19 +88,26 @@ protected:
 	void ServerRequestMatchState();
 
 	UFUNCTION(Client, Reliable)
-	void ClientReportMatchState(FName ServerMatchState, float ServerBeginPlayTime, float ServerWarmupTime, float ServerMatchTime, float ServerCooldownTime);
+	void ClientReportMatchState(FName ServerMatchState, float ServerBeginPlayTime, float ServerWarmupTime, float ServerMatchTime, float ServerCooldownTime);	
 	
-	void ShowReturnToMainMenu();
-
+	/* Spectator */
+	
 	UFUNCTION(Client, Reliable)
 	void ClientHUDStateChanged(EHUDState NewState);
 	
-	/* Spectator */
-
 	virtual void OnRep_Pawn() override;
 
+	/* Extraction HUD */
+
+	UFUNCTION(Client, Reliable)
+	void ClientEnableItemSale();
+
+	UFUNCTION(Client, Unreliable)
+	void ClientSetSpectatorHUD();
+
+
 private:
-	// Client should get MatchTime from Server, not in Client
+	// Client should get MatchTime from Server
 	float BeginPlayTime = 0.f;
 	float WarmupTime = 0.f;
 	float MatchTime = 0.f;
@@ -131,7 +154,11 @@ private:
 
 	bool bReturnToMainMenuOpen = false;
 
+	UPROPERTY(VisibleAnywhere, Category = "ActorComponent")
+	UInventoryComponent* Inventory;
+
 public:
 	FORCEINLINE ASpearmanHUD* GetSpearmanHUD() const { return SpearmanHUD;  }
 	FORCEINLINE float GetSingleTripTime() const { return SingleTripTime; }
+	FORCEINLINE UInventoryComponent* GetInventory() const { return Inventory; }
 };

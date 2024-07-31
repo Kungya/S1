@@ -1,15 +1,14 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ItemDropCanvasWidget.h"
+#include "ItemSaleWidget.h"
 #include "Spearman/HUD/S1DragDropOperation.h"
 #include "Spearman/HUD/S1InventorySlotsWidget.h"
-#include "Spearman/HUD/S1InventoryItemInfoWidget.h"
-#include "Spearman/Items/ItemInstance.h"
-#include "Spearman/SpearComponents/InventoryComponent.h"
 #include "Spearman/PlayerController/SpearmanPlayerController.h"
+#include "Spearman/SpearComponents/InventoryComponent.h"
+#include "Spearman/Items/ItemInstance.h"
 
-void UItemDropCanvasWidget::NativeConstruct()
+void UItemSaleWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
@@ -19,25 +18,25 @@ void UItemDropCanvasWidget::NativeConstruct()
 	SetVisibility(ESlateVisibility::Visible);
 }
 
-bool UItemDropCanvasWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
+bool UItemSaleWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
 	Super::NativeOnDrop(InGeometry, InDragDropEvent, InOperation);
 
 	US1DragDropOperation* DragDrop = Cast<US1DragDropOperation>(InOperation);
 	if (DragDrop)
 	{
-		FIntPoint ItemSlotPosToDrop = DragDrop->FromItemSlotPos;
-		UItemInstance* ItemInstanceToDrop = DragDrop->ItemInstance;
+		FIntPoint ItemSlotPosToSell = DragDrop->FromItemSlotPos;
+		UItemInstance* ItemInstanceToSell = DragDrop->ItemInstance;
 		US1InventorySlotsWidget* InventorySlotsWidget = DragDrop->InventorySlotsWidget;
 
-		if (ItemInstanceToDrop == nullptr || InventorySlotsWidget == nullptr)
-			return false;		                               
+		if (ItemInstanceToSell == nullptr || InventorySlotsWidget == nullptr)
+			return false;
 
-		InventorySlotsWidget->OnInventoryItemInfoChanged(ItemSlotPosToDrop, nullptr);
-		
-		int32 InventoryIdxToDrop = ItemInstanceToDrop->InventoryIdx;
+		InventorySlotsWidget->OnInventoryItemInfoChanged(ItemSlotPosToSell, nullptr);
 
-		Inventory->ServerDropItem(InventoryIdxToDrop);
+		int32 InventoryIdxToSell = ItemInstanceToSell->InventoryIdx;
+
+		Inventory->ServerSellItem(InventoryIdxToSell);
 
 		return true;
 	}

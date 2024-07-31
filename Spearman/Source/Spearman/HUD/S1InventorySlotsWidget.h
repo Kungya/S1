@@ -6,7 +6,7 @@
 #include "S1UserWidget.h"
 #include "S1InventorySlotsWidget.generated.h"
 
-class ASpearmanCharacter;
+class ASpearmanPlayerController;
 class UItemInstance;
 class UInventoryComponent;
 class US1InventorySlotWidget;
@@ -15,9 +15,7 @@ class UUniformGridPanel;
 class UCanvasPanel;
 
 
-/**
- * 
- */
+
 UCLASS()
 class SPEARMAN_API US1InventorySlotsWidget : public US1UserWidget
 {
@@ -46,15 +44,12 @@ private:
 	/* Caching */
 
 	UPROPERTY()
-	ASpearmanCharacter* SpearmanCharacter;
-
-	UPROPERTY()
-	APlayerController* PlayerController;
+	ASpearmanPlayerController* SpearmanPlayerController;
 
 	UPROPERTY()
 	UInventoryComponent* Inventory;
 
-protected:
+public:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<US1InventorySlotWidget> SlotWidgetClass;
 

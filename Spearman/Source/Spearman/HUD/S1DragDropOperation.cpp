@@ -6,5 +6,4 @@
 US1DragDropOperation::US1DragDropOperation(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-
 }

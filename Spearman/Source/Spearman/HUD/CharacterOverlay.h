@@ -13,16 +13,16 @@ class UImage;
 class US1InventoryWidget;
 class US1InventorySlotsWidget;
 class UItemDropCanvasWidget;
+class UItemSaleWidget;
 
-/**
- * 
- */
+
 UCLASS()
 class SPEARMAN_API UCharacterOverlay : public US1UserWidget
 {
 	GENERATED_BODY()
 	
-	
+public:
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	
 public:
 	UPROPERTY(meta = (BindWidget))
@@ -53,7 +53,7 @@ public:
 	UTextBlock* Alive_Text;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Spectator_Text;
+	UTextBlock* Richest_Text;
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* BlueZoneImage;
@@ -61,6 +61,9 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	UImage* Minimap;
 
-	/*UPROPERTY(meta = (BindWidget))
-	UItemDropCanvasWidget* ItemDropCanvasWidget;*/
+	UPROPERTY(meta = (BindWidget))
+	UItemSaleWidget* ItemSaleWidget;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* ExtractionNoticeText;
 };

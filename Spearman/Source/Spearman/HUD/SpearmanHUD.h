@@ -9,6 +9,7 @@
 class UUserWidget;
 class UCharacterOverlay;
 class UCharacterOverlayNotice;
+class UCharacterOverlayCooldown;
 class UTexture2D;
 
 USTRUCT(BlueprintType)
@@ -47,14 +48,21 @@ public:
 	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<UUserWidget> CharacterOverlayNoticeClass;
 
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<UUserWidget> CharacterOverlayCooldownClass;
+
 	UPROPERTY()
 	UCharacterOverlay* CharacterOverlay;
 
 	UPROPERTY()
 	UCharacterOverlayNotice* CharacterOverlayNotice;
+
+	UPROPERTY()
+	UCharacterOverlayCooldown* CharacterOverlayCooldown;
 	
 	void AddCharacterOverlay();
 	void AddCharacterOverlayNotice();
+	void AddCharacterOverlayCooldown();
 
 	UFUNCTION(Category = "HUDEvents")
 	void OnHUDStateChanged(EHUDState NewHUDState);

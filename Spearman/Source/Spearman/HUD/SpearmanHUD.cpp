@@ -4,6 +4,8 @@
 #include "SpearmanHUD.h"
 #include "CharacterOverlay.h"
 #include "CharacterOverlayNotice.h"
+#include "CharacterOverlayCooldown.h"
+
 
 void ASpearmanHUD::BeginPlay()
 {
@@ -26,7 +28,25 @@ void ASpearmanHUD::AddCharacterOverlayNotice()
 	if (PlayerController && CharacterOverlayNoticeClass)
 	{
 		CharacterOverlayNotice = CreateWidget<UCharacterOverlayNotice>(PlayerController, CharacterOverlayNoticeClass);
-		CharacterOverlayNotice->AddToViewport();
+		
+		if (CharacterOverlayNotice)
+		{
+			CharacterOverlayNotice->AddToViewport();
+		}
+	}
+}
+
+void ASpearmanHUD::AddCharacterOverlayCooldown()
+{
+	APlayerController* PlayerController = GetOwningPlayerController();
+	if (PlayerController && CharacterOverlayCooldownClass)
+	{
+		CharacterOverlayCooldown = CreateWidget<UCharacterOverlayCooldown>(PlayerController, CharacterOverlayCooldownClass);
+
+		if (CharacterOverlayCooldown)
+		{
+			CharacterOverlayCooldown->AddToViewport();
+		}
 	}
 }
 

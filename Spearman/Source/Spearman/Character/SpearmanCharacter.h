@@ -21,7 +21,6 @@ class UHitDamageWidget;
 class UHpBarWidget;
 class UCombatComponent;
 class UBuffComponent;
-class UInventoryComponent;
 class ULagCompensationComponent;
 class UAnimMontage;
 class ASpearmanPlayerController;
@@ -36,7 +35,6 @@ class SPEARMAN_API ASpearmanCharacter : public ARewindableCharacter, public IWea
 
 public:
 	friend class UCombatComponent;
-	friend class UInventoryComponent;
 	ASpearmanCharacter();
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -111,7 +109,6 @@ protected:
 
 	void TakeDamageIfNotInBlueZone();
 
-
 private:
 
 	/* Camera */
@@ -180,9 +177,6 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "ActorComponent")
 	ULagCompensationComponent* LagCompensation;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = "ActorComponent")
-	UInventoryComponent* Inventory;
-
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed();
 	
@@ -238,8 +232,6 @@ private:
 	ASpearmanPlayerController* SpearmanPlayerController;
 
 	bool bDeath = false;
-
-	FTimerHandle DeathTimer;
 
 	UPROPERTY(EditDefaultsOnly)
 	float DeathDelay = 3.f;
@@ -325,8 +317,9 @@ private:
 
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);
-	FORCEINLINE bool IsWeaponEquipped();
+	bool IsWeaponEquipped();
 	FORCEINLINE UCombatComponent* GetCombat() const { return Combat; }
+	FORCEINLINE ASpearmanPlayerController* GetSpearmanPlayerController() const { return SpearmanPlayerController; }
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
 	FORCEINLINE ETurnInPlace GetTIPState() const { return TIPState; }
@@ -338,7 +331,6 @@ public:
 	FORCEINLINE float GetMaxHp() const { return MaxHp; }
 	FORCEINLINE float GetHpRatio() const { return Hp / MaxHp; }
 	FORCEINLINE UBuffComponent* GetBuff() const { return Buff; }
-	FORCEINLINE UInventoryComponent* GetInventory() const { return Inventory; }
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const { return LagCompensation; }
 	FORCEINLINE void SetbIsInBlueZone(const bool NewbIsInBlueZone) { bIsInBlueZone = NewbIsInBlueZone; };
 	FORCEINLINE UTextureRenderTarget2D* GetRenderTargetMinimap() const { return RenderTargetMinimap; }

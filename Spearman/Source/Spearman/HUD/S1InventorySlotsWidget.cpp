@@ -2,7 +2,7 @@
 
 #include "S1InventorySlotsWidget.h"
 #include "Components/UniformGridPanel.h"
-#include "Spearman/Character/SpearmanCharacter.h"
+#include "Spearman/PlayerController/SpearmanPlayerController.h"
 #include "Spearman/SpearComponents/InventoryComponent.h"
 #include "Spearman/Items/ItemInstance.h"
 #include "Components/CanvasPanel.h"
@@ -21,9 +21,8 @@ void US1InventorySlotsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwningPlayer()->GetCharacter()) : SpearmanCharacter;
-	PlayerController = (PlayerController == nullptr) ? GetOwningPlayer() : PlayerController;
-	Inventory = (Inventory == nullptr) ? SpearmanCharacter->GetInventory() : Inventory;
+	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(GetOwningPlayer()) : SpearmanPlayerController;
+	Inventory = (Inventory == nullptr) ? SpearmanPlayerController->GetInventory() : Inventory;
 
 	InitItemSlotWidget();
 	
@@ -34,11 +33,13 @@ void US1InventorySlotsWidget::NativeConstruct()
 	for (int32 i = 0; i < InventoryArray.Num(); i++)
 	{  // TODO : UItemInstance 내부에서 인벤토리 어느 위치에 아이템을 배치할지 인덱스를 들고 있는게 나을수도 있다
 		UItemInstance* ItemInstance = InventoryArray[i];
-		FIntPoint ItemSlotPos = FIntPoint(i % X_SIZE, i / X_SIZE);
-		OnInventoryItemInfoChanged(ItemSlotPos, ItemInstance);
-	}
 
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *GetFName().ToString());
+		if (ItemInstance)
+		{
+			FIntPoint ItemSlotPos = FIntPoint(i % X_SIZE, i / X_SIZE);
+			OnInventoryItemInfoChanged(ItemSlotPos, ItemInstance);
+		}
+	}
 }
 
 bool US1InventorySlotsWidget::NativeOnDragOver(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
@@ -112,7 +113,7 @@ void US1InventorySlotsWidget::InitItemSlotWidget()
 		{
 			int32 Idx = Y * X_SIZE + X;
 
-			US1InventorySlotWidget* SlotWidget = CreateWidget<US1InventorySlotWidget>(PlayerController, SlotWidgetClass);
+			US1InventorySlotWidget* SlotWidget = CreateWidget<US1InventorySlotWidget>(SpearmanPlayerController, SlotWidgetClass);
 			SlotWidgets[Idx] = SlotWidget;
 			Slots_GridPanel->AddChildToUniformGrid(SlotWidget, Y, X);
 		}
@@ -139,7 +140,7 @@ void US1InventorySlotsWidget::OnInventoryItemInfoChanged(const FIntPoint& InItem
 	}
 	else
 	{ // Init new ItemInfo Widget in NativeConstruct()
-		ItemInfoWidget = CreateWidget<US1InventoryItemInfoWidget>(PlayerController, ItemInfoWidgetClass);
+		ItemInfoWidget = CreateWidget<US1InventoryItemInfoWidget>(SpearmanPlayerController, ItemInfoWidgetClass);
 		ItemInfoWidgets[SlotIdx] = ItemInfoWidget;
 
 		UCanvasPanelSlot* CanvasPanelSlot = ItemInfos_CanvasPanel->AddChildToCanvas(ItemInfoWidget);

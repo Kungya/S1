@@ -51,6 +51,12 @@ void ASpearmanGameMode::Tick(float DeltaTime)
 		CountdownTime = WarmupTime + MatchTime + CooldownTime - GetWorld()->GetTimeSeconds() + BeginPlayTime;
 		if (CountdownTime <= 0.f)
 		{ /* Seamless Travel */
+			bUseSeamlessTravel = true;
+
+# if WITH_EDITOR
+			bUseSeamlessTravel = false;
+# endif
+
 			RestartGame();
 		}
 	}

@@ -19,7 +19,6 @@ class SPEARMAN_API US1ItemDragWidget : public US1UserWidget
 public:
 	US1ItemDragWidget(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	
-public:
 	void Init(const FVector2D InWidgetSize, UTexture2D* InItemIcon, int32 InItemCount);
 
 protected:
@@ -29,7 +28,6 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UImage* Icon_Image;
 
-	// TODO : ... 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* Count_Text;
 };

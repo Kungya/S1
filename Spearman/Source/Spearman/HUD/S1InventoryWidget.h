@@ -9,8 +9,8 @@
 class UCanvasPanel;
 class US1InventorySlotsWidget;
 class ASpearmanPlayerController;
-
 class UItemDropCanvasWidget;
+class UTextBlock;
 
 /**
  * 
@@ -39,4 +39,7 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	US1InventorySlotsWidget* InventorySlotsWidget;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* BalanceText;
 };

@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "BuffComponent.generated.h"
 
+class ASpearmanCharacter;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SPEARMAN_API UBuffComponent : public UActorComponent
@@ -25,7 +26,7 @@ protected:
 
 private:
 	UPROPERTY()
-	class ASpearmanCharacter* Character;
+	ASpearmanCharacter* Character;
 
 	bool bHealing = false;
 	float BuffTimeTickSum = 0.f;

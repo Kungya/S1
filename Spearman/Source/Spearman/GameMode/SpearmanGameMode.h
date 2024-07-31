@@ -13,7 +13,6 @@ class ABlueZone;
 namespace MatchState
 {
 	extern SPEARMAN_API const FName Cooldown;
-
 }
 
 /**

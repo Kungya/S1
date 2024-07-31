@@ -74,9 +74,9 @@ void AExtractionPoint::Extraction()
 			UExtractionResultSubsystem* ExtractionResultSubsystem = GetGameInstance()->GetSubsystem<UExtractionResultSubsystem>();
 			if (ExtractionResultSubsystem)
 			{ /* Warning : if TMap's 'key' is Already existed, 'value' will be replaced */
-				UE_LOG(LogTemp, Warning, TEXT("before Inventory size : %d"), CharacterToExtract->GetInventory()->GetInventoryArray().Num());
-				ExtractionResultSubsystem->SavedInventories.Add(PlayerState->GetPlayerId(), ::MoveTemp(CharacterToExtract->GetInventory()->GetInventoryArray()));
-				UE_LOG(LogTemp, Warning, TEXT("Add ! now TMap, Inventory size : %d, %d"), ExtractionResultSubsystem->SavedInventories[PlayerState->GetPlayerId()].Num(), CharacterToExtract->GetInventory()->GetInventoryArray().Num());
+				/*UE_LOG(LogTemp, Warning, TEXT("before Inventory size : %d"), SpearmanPlayerController->GetInventory()->GetInventoryArray().Num());
+				ExtractionResultSubsystem->SavedInventories.Add(PlayerState->GetPlayerId(), ::MoveTemp(SpearmanPlayerController->GetInventory()->GetInventoryArray()));
+				UE_LOG(LogTemp, Warning, TEXT("Add ! now TMap, Inventory size : %d, %d"), ExtractionResultSubsystem->SavedInventories[PlayerState->GetPlayerId()].Num(), SpearmanPlayerController->GetInventory()->GetInventoryArray().Num());*/
 
 				CharacterToExtract->Extract();
 			}

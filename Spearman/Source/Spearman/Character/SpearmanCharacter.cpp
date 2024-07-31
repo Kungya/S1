@@ -37,7 +37,6 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Spearman/DamageType/BlueZoneDamageType.h"
 
-
 ASpearmanCharacter::ASpearmanCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -77,9 +76,6 @@ ASpearmanCharacter::ASpearmanCharacter()
 	Buff->SetIsReplicated(true);
 
 	LagCompensation = CreateDefaultSubobject<ULagCompensationComponent>(TEXT("LagCompensationComponent"));
-
-	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
-	Inventory->SetIsReplicated(true);
 
 	HitDamage = CreateDefaultSubobject<UWidgetComponent>(TEXT("HitDamageWidget"));
 	HitDamage->SetupAttachment(GetMesh());
@@ -502,7 +498,7 @@ void ASpearmanCharacter::Extract()
 
 	if (SpearmanPlayerController)
 	{
-		SpearmanPlayerController->SetPlayerSpectate();
+		SpearmanPlayerController->HandleExtraction();		
 	}
 
 	bDisableKeyInput = false;
@@ -525,6 +521,8 @@ void ASpearmanCharacter::Death()
 	}
 
 	MulticastDeath();
+
+	FTimerHandle DeathTimer;
 	GetWorldTimerManager().SetTimer(DeathTimer, this, &ASpearmanCharacter::DestroyCallback, DeathDelay);
 }
 
@@ -781,12 +779,14 @@ void ASpearmanCharacter::ServerInteract_Implementation()
 		Params.AddIgnoredActor(Combat->EquippedWeapon);
 	}
 
+	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
+
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Interact, Params))
 	{
 		AItem* Item = Cast<AItem>(HitResult.GetActor());
 		if (Item)
 		{
-			Inventory->AddItem(Item->GetItemInstance());
+			SpearmanPlayerController->GetInventory()->AddItem(Item->GetItemInstance());
 		}
 
 		IInteractableInterface* InteractableInterface = Cast<IInteractableInterface>(HitResult.GetActor());
@@ -803,7 +803,7 @@ void ASpearmanCharacter::InventoryButtonPressed()
 	if (SpearmanPlayerController)
 	{
 		SpearmanPlayerController->ShowInventoryWidget();
-	}	
+	}
 }
 
 void ASpearmanCharacter::TakeDamageIfNotInBlueZone()
