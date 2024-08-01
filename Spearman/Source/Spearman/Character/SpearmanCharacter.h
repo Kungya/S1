@@ -311,7 +311,7 @@ private:
 
 	FTimerHandle TestTimer2;
 	bool bTestAttack = false;
-	void StartAttackTest(){ if (!HasAuthority()) GetWorld()->GetTimerManager().SetTimer(TestTimer2, this, &ASpearmanCharacter::TriggerAttack, 5.f, true, 5.f); }
+	void StartAttackTest(){ GetWorld()->GetTimerManager().SetTimer(TestTimer2, this, &ASpearmanCharacter::TriggerAttack, 5.f, true, 5.f); }
 	void TriggerAttack() { bTestAttack = true; }
 	//////////////////////////////////////////////////////////
 

@@ -20,7 +20,7 @@ class MULTIPLAYERSUBSYSTEM_API UMenu : public UUserWidget
 	
 public:
 	UFUNCTION(BlueprintCallable)
-	void MenuSetup(int32 NumberOfPublicConnections = 4, FString TypeOfMatch = FString(TEXT("FreeForAll")), FString LobbyPath = FString(TEXT("/Game/Maps/Lobby")));
+	void MenuSetup(int32 NumberOfPublicConnections = 2, FString TypeOfMatch = FString(TEXT("FreeForAll")), FString LobbyPath = FString(TEXT("/Game/Maps/Lobby")));
 
 protected:
 	virtual bool Initialize() override;
@@ -57,7 +57,7 @@ private:
 	/** GameInstance Subsystem designed to handle all online session functionality */
 	UMultiplayerGameInstanceSubsystem* MultiplayerGameInstanceSubsystem;
 
-	int32 NumPublicConnections{ 4 };
+	int32 NumPublicConnections{ 2 };
 	FString MatchType{ TEXT("FreeForAll") };
 	FString PathToLobby{ TEXT("") };
 };

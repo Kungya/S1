@@ -39,6 +39,7 @@ public:
 	virtual void ReceivedPlayer() override;
 	void OnMatchStateSet(FName State);
 	
+	void HandleWaitingToStart();
 	void HandleMatchHasStarted();
 	void HandleCooldown();
 
@@ -156,6 +157,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "ActorComponent")
 	UInventoryComponent* Inventory;
+
+	float TestDeltaTimeSum = 0.f;
 
 public:
 	FORCEINLINE ASpearmanHUD* GetSpearmanHUD() const { return SpearmanHUD;  }

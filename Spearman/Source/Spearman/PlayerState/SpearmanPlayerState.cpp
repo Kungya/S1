@@ -18,12 +18,12 @@ void ASpearmanPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 
 void ASpearmanPlayerState::CopyProperties(APlayerState* PlayerState)
 {
-	Super::CopyRemoteRoleFrom(PlayerState);
+	Super::CopyProperties(PlayerState);
 
 	ASpearmanPlayerState* SpearmanPlayerState = Cast<ASpearmanPlayerState>(PlayerState);
 	if (SpearmanPlayerState)
 	{
-		SpearmanPlayerState->Balance = Balance;
+		SpearmanPlayerState->SetBalance(Balance);
 	}
 }
 
@@ -37,7 +37,7 @@ void ASpearmanPlayerState::SetBalance(int32 NewBalance)
 
 void ASpearmanPlayerState::OnRep_Balance()
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnRep_Balance Called !"));
+	UE_LOG(LogTemp, Warning, TEXT("Balance Replicated : %d"), Balance);
 	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(GetPlayerController()) : SpearmanPlayerController;
 	if (SpearmanPlayerController)
 	{

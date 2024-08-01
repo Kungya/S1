@@ -57,6 +57,22 @@ void ASpearmanPlayerController::Tick(float DeltaTime)
 
 	LocalTickRate = (1.f / DeltaTime);
 
+	/*TestDeltaTimeSum += DeltaTime;
+	if (TestDeltaTimeSum >= 1.f && HasAuthority())
+	{
+		TestDeltaTimeSum = 0.f;
+		if (GEngine)
+		{
+			FString str = FString::SanitizeFloat(GetWorld()->GetTimeSeconds());
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				5.f,
+				FColor::Yellow,
+				*str
+			);
+		}
+	}*/
+
 	if (IsLocalController())
 	{
 		SetHUDTickRate(LocalTickRate, ServerTickRate);
@@ -103,7 +119,6 @@ void ASpearmanPlayerController::SetupInputComponent()
 	if (InputComponent == nullptr) return;
 
 	InputComponent->BindAction("Quit", IE_Pressed, this, &ASpearmanPlayerController::ShowReturnToMainMenu);
-	
 }
 
 void ASpearmanPlayerController::SetHUDHp(float Hp, float MaxHp)
@@ -143,7 +158,7 @@ void ASpearmanPlayerController::SetHUDMatchCountdown(float CountdownTime)
 			}
 
 			int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
-			int32 Seconds = CountdownTime  - Minutes * 60;
+			int32 Seconds = CountdownTime - Minutes * 60;
 
 			FString CountdownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
 			SpearmanHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
@@ -243,6 +258,7 @@ void ASpearmanPlayerController::SetHUDTime()
 	if (MatchState == MatchState::WaitingToStart)
 	{
 		TimeLeft = WarmupTime - GetServerTime() + BeginPlayTime;
+		HandleWaitingToStart();
 	}
 	else if (MatchState == MatchState::InProgress)
 	{
@@ -404,11 +420,33 @@ float ASpearmanPlayerController::GetServerTime()
 	}
 }
 
+void ASpearmanPlayerController::HandleWaitingToStart()
+{
+	if (SpearmanHUD && SpearmanHUD->CharacterOverlayCooldown)
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.f,
+				FColor::Yellow,
+				FString(TEXT("Cooldown RemoveFromParent"))
+			);
+		}
+		SpearmanHUD->CharacterOverlayCooldown->RemoveFromParent();
+
+		CharacterOverlay = nullptr;
+		SpearmanHUD = nullptr;
+		SpearmanCharacter = nullptr;
+		SpearmanGameMode = nullptr;
+	}
+}
+
 void ASpearmanPlayerController::HandleMatchHasStarted()
 {
 	SpearmanHUD = (SpearmanHUD == nullptr) ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
 	if (SpearmanHUD)
-	{ 
+	{
 		SpearmanHUD->AddCharacterOverlay();
 
 		FInputModeGameOnly InputModeData;
@@ -455,7 +493,7 @@ void ASpearmanPlayerController::HandleExtraction()
 }
 
 void ASpearmanPlayerController::ExtractionCallback()
-{ // TODO : Owner Only
+{
 	ClientSetSpectatorHUD();
 
 	SetPlayerSpectate();
