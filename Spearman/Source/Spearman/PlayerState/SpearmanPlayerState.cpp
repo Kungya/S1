@@ -37,7 +37,6 @@ void ASpearmanPlayerState::SetBalance(int32 NewBalance)
 
 void ASpearmanPlayerState::OnRep_Balance()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Balance Replicated : %d"), Balance);
 	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(GetPlayerController()) : SpearmanPlayerController;
 	if (SpearmanPlayerController)
 	{

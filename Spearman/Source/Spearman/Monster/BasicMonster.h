@@ -12,11 +12,11 @@ class UParticleSystem;
 class UWidgetComponent;
 class UHitDamageWidget;
 class UHpBarWidget;
-class AItem;
 class UBehaviorTree;
 class ABasicMonsterAIController;
 class USphereComponent;
 class UBoxComponent;
+class UItemSpawnerComponent;
 
 UCLASS()
 class SPEARMAN_API ABasicMonster : public ARewindableCharacter, public IWeaponHitInterface
@@ -199,8 +199,8 @@ private:
 	* Drop
 	*/
 
-	UPROPERTY(EditAnywhere, Category = "Drop")
-	TSubclassOf<AItem> ItemClass;
+	UPROPERTY(VisibleAnywhere, Category = "ActorComponent")
+	UItemSpawnerComponent* ItemSpawner;
 
 	/*
 	* Hit Box
@@ -258,8 +258,6 @@ public:
 	void SetCanAttackTimer();
 
 	void Death();
-
-	void DropItems();
 
 public:
 	FORCEINLINE float GetHpRatio() const { return Hp / MaxHp; }

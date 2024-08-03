@@ -18,7 +18,7 @@
 #include "Spearman/Spearman.h"
 #include "Kismet/GameplayStatics.h"
 #include "Spearman/Weapon/Weapon.h"
-#include "Spearman/Items/Item.h"
+#include "Spearman/SpearComponents/ItemSpawnerComponent.h"
 
 ABasicMonster::ABasicMonster()
 {
@@ -32,6 +32,8 @@ ABasicMonster::ABasicMonster()
 	HpBarWidget->SetupAttachment(GetMesh());
 	HpBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
 	HpBarWidget->SetDrawSize(FVector2D(125.f, 20.f));
+
+	ItemSpawner = CreateDefaultSubobject<UItemSpawnerComponent>(TEXT("ItemSpawnerComponent"));
 
 	AggroSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AggroSphere"));
 	AggroSphere->SetupAttachment(GetRootComponent());
@@ -270,20 +272,8 @@ void ABasicMonster::Death()
 
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	DropItems();
+	ItemSpawner->SpawnItem();
 	MulticastDeath();
-}
-
-void ABasicMonster::DropItems()
-{ /* Server Only */
-	const int32 RandNumForItemId = FMath::RandRange(1, 5);
-
-	AItem* ItemToSpawn = GetWorld()->SpawnActorDeferred<AItem>(ItemClass, GetActorTransform());
-	if (ItemToSpawn)
-	{
-		ItemToSpawn->Init(RandNumForItemId);
-		ItemToSpawn->FinishSpawning(GetActorTransform());
-	}
 }
 
 void ABasicMonster::AggroSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

@@ -17,7 +17,6 @@
 #include "Components/Image.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Engine/TextureRenderTarget2D.h"
-#include "Spearman/Character/SpearmanCharacter.h"
 #include "Spearman/HUD/ReturnToMainMenu.h"
 #include "Spearman/GameInstance/ExtractionResultSubsystem.h"
 #include "Spearman/SpearComponents/InventoryComponent.h"
@@ -25,6 +24,7 @@
 #include "Spearman/HUD/ItemSaleWidget.h"
 #include "Spearman/PlayerState/SpearmanPlayerState.h"
 #include "GameFramework/GameStateBase.h"
+#include "Spearman/HUD/ItemDropCanvasWidget.h"
 
 ASpearmanPlayerController::ASpearmanPlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -57,22 +57,6 @@ void ASpearmanPlayerController::Tick(float DeltaTime)
 
 	LocalTickRate = (1.f / DeltaTime);
 
-	/*TestDeltaTimeSum += DeltaTime;
-	if (TestDeltaTimeSum >= 1.f && HasAuthority())
-	{
-		TestDeltaTimeSum = 0.f;
-		if (GEngine)
-		{
-			FString str = FString::SanitizeFloat(GetWorld()->GetTimeSeconds());
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				5.f,
-				FColor::Yellow,
-				*str
-			);
-		}
-	}*/
-
 	if (IsLocalController())
 	{
 		SetHUDTickRate(LocalTickRate, ServerTickRate);
@@ -80,7 +64,7 @@ void ASpearmanPlayerController::Tick(float DeltaTime)
 		SetHUDPing(DeltaTime);
 		SetHUDAlive();
 
-		HUDInit();
+		// HUDInit();
 	}
 }
 
@@ -235,7 +219,6 @@ void ASpearmanPlayerController::SetHUDBalanceRanking()
 		for (const TObjectPtr<APlayerState>& PS : PlayerArray)
 		{
 			ASpearmanPlayerState* SpearmanPlayerState = Cast<ASpearmanPlayerState>(PS);
-			UE_LOG(LogTemp, Warning, TEXT("PlayerState->Balance : %d"), SpearmanPlayerState->GetBalance());
 			SpearmanPlayerStateArray.Add(SpearmanPlayerState);
 		}
 
@@ -257,16 +240,15 @@ void ASpearmanPlayerController::SetHUDTime()
 	float TimeLeft = 0.f;
 	if (MatchState == MatchState::WaitingToStart)
 	{
-		TimeLeft = WarmupTime - GetServerTime() + BeginPlayTime;
-		HandleWaitingToStart();
+		TimeLeft = WarmupTime + (TimeStampWaitingToStart - GetServerTime()) + BeginPlayTime;
 	}
 	else if (MatchState == MatchState::InProgress)
 	{
-		TimeLeft = WarmupTime + MatchTime - GetServerTime() + BeginPlayTime;
+		TimeLeft = WarmupTime + MatchTime + (TimeStampWaitingToStart - GetServerTime()) + BeginPlayTime;
 	}
 	else if (MatchState == MatchState::Cooldown)
 	{
-		TimeLeft = WarmupTime + MatchTime + CooldownTime - GetServerTime() + BeginPlayTime;
+		TimeLeft = WarmupTime + MatchTime + CooldownTime + (TimeStampWaitingToStart - GetServerTime()) + BeginPlayTime;
 	}
 
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
@@ -302,11 +284,11 @@ void ASpearmanPlayerController::HUDInit()
 				SetHUDHp(HUDHp, HUDMaxHp);
 				SetHUDBalance(GetPlayerState<ASpearmanPlayerState>()->GetBalance());
 				SetHUDBalanceRanking();
-				CharacterOverlay->InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
-				CharacterOverlay->BlueZoneImage->SetVisibility(ESlateVisibility::Hidden);
-				CharacterOverlay->ItemSaleWidget->SetVisibility(ESlateVisibility::Hidden);
+				CharacterOverlay->InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
+				CharacterOverlay->BlueZoneImage->SetVisibility(ESlateVisibility::Collapsed);
+				CharacterOverlay->ItemSaleWidget->SetVisibility(ESlateVisibility::Collapsed);
 
-				SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetPawn()) : SpearmanCharacter;
+				SpearmanCharacter = Cast<ASpearmanCharacter>(GetPawn());
 				if (SpearmanCharacter && IsLocalController())
 				{
 					UMaterialInstance* MinimapMatInst = LoadObject<UMaterialInstance>(nullptr, TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Assets/Textures/Minimap/RenderTarget_Mat_Inst.RenderTarget_Mat_Inst'"));
@@ -334,7 +316,7 @@ void ASpearmanPlayerController::SetHUDPing(float DeltaTime)
 
 		if (SpearmanHUD && CharacterOverlay)
 		{
-			PlayerState = (PlayerState == nullptr) ? GetPlayerState<APlayerState>() : PlayerState;
+			PlayerState = GetPlayerState<APlayerState>();
 			if (PlayerState)
 			{
 				const float CurrentPing = PlayerState->GetCompressedPing() * 4.f;
@@ -408,6 +390,50 @@ void ASpearmanPlayerController::ClientReportServerTime_Implementation(float Clie
 	ServerTickRate = ServerReportTickRate;
 }
 
+void ASpearmanPlayerController::ServerRequestMatchState_Implementation()
+{ // Server Only, Client should get MatchState from Server ASAP. 
+	SpearmanGameMode = Cast<ASpearmanGameMode>(UGameplayStatics::GetGameMode(this));
+	if (SpearmanGameMode)
+	{
+		MatchState = SpearmanGameMode->GetMatchState();
+		BeginPlayTime = SpearmanGameMode->BeginPlayTime;
+		WarmupTime = SpearmanGameMode->WarmupTime;
+		MatchTime = SpearmanGameMode->MatchTime;
+		CooldownTime = SpearmanGameMode->CooldownTime;
+		ClientReportMatchState(MatchState, BeginPlayTime, WarmupTime, MatchTime, CooldownTime);
+	}
+}
+
+void ASpearmanPlayerController::ClientReportMatchState_Implementation(FName ServerMatchState, float ServerBeginPlayTime, float ServerWarmupTime, float ServerMatchTime, float ServerCooldownTime)
+{ /* Client Only */
+	MatchState = ServerMatchState;
+	BeginPlayTime = ServerBeginPlayTime;
+	WarmupTime = ServerWarmupTime;
+	MatchTime = ServerMatchTime;
+	CooldownTime = ServerCooldownTime;
+	OnMatchStateSet(MatchState);
+
+	/*if (SpearmanHUD && MatchState == MatchState::WaitingToStart)
+	{
+		SpearmanHUD->AddCharacterOverlayNotice();
+	}*/
+}
+
+void ASpearmanPlayerController::ClientHandleSeamlessTravelPlayer_Implementation()
+{
+	TimeStampWaitingToStart = GetServerTime();
+	CharacterOverlay = nullptr;
+	SpearmanCharacter = nullptr;
+	SpearmanGameMode = nullptr;
+	ReturnToMainMenu = nullptr;
+	SpearmanHUD = Cast<ASpearmanHUD>(GetHUD());
+
+	if (SpearmanHUD)
+	{
+		SpearmanHUD->AddCharacterOverlayNotice();
+	}
+}
+
 float ASpearmanPlayerController::GetServerTime()
 {
 	if (HasAuthority())
@@ -421,42 +447,37 @@ float ASpearmanPlayerController::GetServerTime()
 }
 
 void ASpearmanPlayerController::HandleWaitingToStart()
-{
-	if (SpearmanHUD && SpearmanHUD->CharacterOverlayCooldown)
-	{
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				15.f,
-				FColor::Yellow,
-				FString(TEXT("Cooldown RemoveFromParent"))
-			);
-		}
-		SpearmanHUD->CharacterOverlayCooldown->RemoveFromParent();
+{ /* After Seamless Travel */
+	TimeStampWaitingToStart = GetServerTime();
+	CharacterOverlay = nullptr;
+	SpearmanCharacter = nullptr;
+	SpearmanGameMode = nullptr;
+	ReturnToMainMenu = nullptr;
+	SpearmanHUD = Cast<ASpearmanHUD>(GetHUD());
 
-		CharacterOverlay = nullptr;
-		SpearmanHUD = nullptr;
-		SpearmanCharacter = nullptr;
-		SpearmanGameMode = nullptr;
+	if (SpearmanHUD)
+	{
+		SpearmanHUD->AddCharacterOverlayNotice();
+		UE_LOG(LogTemp, Warning, TEXT("SpearmanHUD is Valid"));
 	}
 }
 
 void ASpearmanPlayerController::HandleMatchHasStarted()
 {
-	SpearmanHUD = (SpearmanHUD == nullptr) ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
+	SpearmanHUD = Cast<ASpearmanHUD>(GetHUD());
 	if (SpearmanHUD)
 	{
-		SpearmanHUD->AddCharacterOverlay();
-
-		FInputModeGameOnly InputModeData;
-		SetInputMode(InputModeData);
-		SetShowMouseCursor(false);
-
 		if (SpearmanHUD->CharacterOverlayNotice)
 		{
 			SpearmanHUD->CharacterOverlayNotice->RemoveFromParent();
 		}
+
+		SpearmanHUD->AddCharacterOverlay();
+		HUDInit();
+
+		FInputModeGameOnly InputModeData;
+		SetInputMode(InputModeData);
+		SetShowMouseCursor(false);
 	}
 }
 
@@ -469,12 +490,17 @@ void ASpearmanPlayerController::HandleCooldown()
 		SpearmanHUD->AddCharacterOverlayCooldown();
 
 		if (SpearmanHUD->CharacterOverlayCooldown)
-		{		
-			FString BalanceText = FString::Printf(TEXT("%d"), GetPlayerState<ASpearmanPlayerState>()->GetBalance());
-			SpearmanHUD->CharacterOverlay->InventoryWidget->BalanceText->SetText(FText::FromString(BalanceText));
-
-			FString NoticeText("Match end ! New match soon !");
+		{
+			FString NoticeText("Match End ! New Match Soon !");
 			SpearmanHUD->CharacterOverlayCooldown->CooldownNoticeText->SetText(FText::FromString(NoticeText));
+
+			ASpearmanPlayerState* SpearmanPlayerState = GetPlayerState<ASpearmanPlayerState>();
+			if (SpearmanPlayerState)
+			{
+				int32 Balance = SpearmanPlayerState->GetBalance();
+				FString BalanceText = FString::Printf(TEXT("%d"), Balance);
+				SpearmanHUD->CharacterOverlayCooldown->InventoryWidget->BalanceText->SetText(FText::FromString(BalanceText));
+			}
 		}
 	}
 	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetPawn()) : SpearmanCharacter;
@@ -504,6 +530,7 @@ void ASpearmanPlayerController::ClientEnableItemSale_Implementation()
 	ShowInventoryWidget();
 	SpearmanHUD->CharacterOverlay->ItemSaleWidget->SetVisibility(ESlateVisibility::Visible);
 	SpearmanHUD->CharacterOverlay->ExtractionNoticeText->SetVisibility(ESlateVisibility::Visible);
+	SpearmanHUD->CharacterOverlay->ItemDropCanvasWidget->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void ASpearmanPlayerController::ClientSetSpectatorHUD_Implementation()
@@ -515,6 +542,7 @@ void ASpearmanPlayerController::ClientSetSpectatorHUD_Implementation()
 		SpearmanHUD->CharacterOverlay->HpBar->SetVisibility(ESlateVisibility::Collapsed);
 		SpearmanHUD->CharacterOverlay->HpText->SetVisibility(ESlateVisibility::Collapsed);
 		SpearmanHUD->CharacterOverlay->InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
+		SpearmanHUD->CharacterOverlay->Minimap->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
 
@@ -582,6 +610,19 @@ void ASpearmanPlayerController::OnRep_Pawn()
 	}
 }
 
+void ASpearmanPlayerController::NotifyLoadedWorld(FName WorldPackageName, bool bFinalDest)
+{
+	Super::NotifyLoadedWorld(WorldPackageName, bFinalDest);
+
+	if (WorldPackageName == FName("/Game/Maps/NewMap"))
+	{
+		if (SpearmanHUD && SpearmanHUD->CharacterOverlayCooldown)
+		{
+			SpearmanHUD->CharacterOverlayCooldown->RemoveFromParent();
+		}
+	}
+}
+
 void ASpearmanPlayerController::ClientHUDStateChanged_Implementation(EHUDState NewState)
 { /* ClientRPC, Reliable */
 	SpearmanHUD = (SpearmanHUD == nullptr) ? GetHUD<ASpearmanHUD>() : SpearmanHUD;
@@ -592,7 +633,7 @@ void ASpearmanPlayerController::ClientHUDStateChanged_Implementation(EHUDState N
 }
 
 void ASpearmanPlayerController::OnMatchStateSet(FName State)
-{
+{ /* Called from GameMode */
 	MatchState = State;
 
 	if (MatchState == MatchState::InProgress)
@@ -606,7 +647,8 @@ void ASpearmanPlayerController::OnMatchStateSet(FName State)
 }
 
 void ASpearmanPlayerController::OnRep_MatchState()
-{
+{ /* Owning Client Only */
+
 	if (MatchState == MatchState::InProgress)
 	{
 		HandleMatchHasStarted();
@@ -617,42 +659,13 @@ void ASpearmanPlayerController::OnRep_MatchState()
 	}
 }
 
-void ASpearmanPlayerController::ServerRequestMatchState_Implementation()
-{ // Server Only, Client should get MatchState from Server ASAP. 
-	SpearmanGameMode = (SpearmanGameMode == nullptr) ? Cast<ASpearmanGameMode>(UGameplayStatics::GetGameMode(this)) : SpearmanGameMode;
-	if (SpearmanGameMode)
-	{
-		MatchState = SpearmanGameMode->GetMatchState();
-		BeginPlayTime = SpearmanGameMode->BeginPlayTime;
-		WarmupTime = SpearmanGameMode->WarmupTime;
-		MatchTime = SpearmanGameMode->MatchTime;
-		CooldownTime = SpearmanGameMode->CooldownTime;
-		ClientReportMatchState(MatchState, BeginPlayTime, WarmupTime, MatchTime, CooldownTime);
-	}
-}
-
-void ASpearmanPlayerController::ClientReportMatchState_Implementation(FName ServerMatchState, float ServerBeginPlayTime, float ServerWarmupTime, float ServerMatchTime, float ServerCooldownTime)
-{ /* Client Only */
-	MatchState = ServerMatchState;
-	BeginPlayTime = ServerBeginPlayTime;
-	WarmupTime = ServerWarmupTime;
-	MatchTime = ServerMatchTime;
-	CooldownTime = ServerCooldownTime;
-	OnMatchStateSet(MatchState);
-	
-	if (SpearmanHUD && MatchState == MatchState::WaitingToStart)
-	{
-		SpearmanHUD->AddCharacterOverlayNotice();
-	}
-}
-
 void ASpearmanPlayerController::ShowReturnToMainMenu()
 {
-	if (ReturnToMainMenuWidget == nullptr) return;
 	if (ReturnToMainMenu == nullptr)
 	{
 		ReturnToMainMenu = CreateWidget<UReturnToMainMenu>(this, ReturnToMainMenuWidget);
 	}
+	
 	if (ReturnToMainMenu)
 	{
 		bReturnToMainMenuOpen = !bReturnToMainMenuOpen;
@@ -665,5 +678,4 @@ void ASpearmanPlayerController::ShowReturnToMainMenu()
 			ReturnToMainMenu->MenuTearDown();
 		}
 	}
-
 }

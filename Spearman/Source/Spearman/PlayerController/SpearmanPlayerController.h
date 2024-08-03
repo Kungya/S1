@@ -23,6 +23,8 @@ class SPEARMAN_API ASpearmanPlayerController : public APlayerController
 	GENERATED_BODY()
 public:
 	ASpearmanPlayerController(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void SetHUDHp(float Hp, float MaxHp);
 	void SetHUDMatchCountdown(float CountdownTime);
@@ -31,14 +33,14 @@ public:
 	void SetHUDBalance(int32 Balance);
 	void SetHUDBalanceRanking();
 
-	virtual void OnPossess(APawn* InPawn) override;
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
 	virtual float GetServerTime();
-	
+
+	UFUNCTION(Client, Reliable)
+	void ClientHandleSeamlessTravelPlayer();
+
 	virtual void ReceivedPlayer() override;
 	void OnMatchStateSet(FName State);
-	
+
 	void HandleWaitingToStart();
 	void HandleMatchHasStarted();
 	void HandleCooldown();
@@ -65,7 +67,6 @@ protected:
 	void SetHUDTickRate(float ClientTick, float ServerTick);
 	void SetHUDAlive();
 
-
 	void InitRenderTargetIfServer(APawn* InPawn);
 
 	void ShowReturnToMainMenu();
@@ -89,7 +90,7 @@ protected:
 	void ServerRequestMatchState();
 
 	UFUNCTION(Client, Reliable)
-	void ClientReportMatchState(FName ServerMatchState, float ServerBeginPlayTime, float ServerWarmupTime, float ServerMatchTime, float ServerCooldownTime);	
+	void ClientReportMatchState(FName ServerMatchState, float ServerBeginPlayTime, float ServerWarmupTime, float ServerMatchTime, float ServerCooldownTime);
 	
 	/* Spectator */
 	
@@ -106,6 +107,7 @@ protected:
 	UFUNCTION(Client, Unreliable)
 	void ClientSetSpectatorHUD();
 
+	virtual void NotifyLoadedWorld(FName WorldPackageName, bool bFinalDest) override;
 
 private:
 	// Client should get MatchTime from Server
@@ -113,6 +115,7 @@ private:
 	float WarmupTime = 0.f;
 	float MatchTime = 0.f;
 	float CooldownTime = 0.f;
+	float TimeStampWaitingToStart = 0.f;
 
 	uint32 CountdownInt = 0;
 
@@ -164,4 +167,5 @@ public:
 	FORCEINLINE ASpearmanHUD* GetSpearmanHUD() const { return SpearmanHUD;  }
 	FORCEINLINE float GetSingleTripTime() const { return SingleTripTime; }
 	FORCEINLINE UInventoryComponent* GetInventory() const { return Inventory; }
+	FORCEINLINE ASpearmanCharacter* GetSpearmanCharacter() const { return SpearmanCharacter; }
 };

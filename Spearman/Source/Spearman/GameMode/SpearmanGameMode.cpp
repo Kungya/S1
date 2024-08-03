@@ -7,6 +7,7 @@
 #include "Spearman/GameMode/BlueZone.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerStart.h"
+#include "Spearman/SpearComponents/InventoryComponent.h"
 
 namespace MatchState
 {
@@ -51,14 +52,10 @@ void ASpearmanGameMode::Tick(float DeltaTime)
 		CountdownTime = WarmupTime + MatchTime + CooldownTime - GetWorld()->GetTimeSeconds() + BeginPlayTime;
 		if (CountdownTime <= 0.f)
 		{ /* Seamless Travel */
-
-
 			bUseSeamlessTravel = true;
-
 //# if WITH_EDITOR
 //			bUseSeamlessTravel = false;
 //# endif
-
 			RestartGame();
 		}
 	}
@@ -89,7 +86,7 @@ void ASpearmanGameMode::RequestRespawn(ASpearmanCharacter* DeadCharacter, AContr
 }
 
 void ASpearmanGameMode::OnMatchStateSet()
-{
+{ /* PlayerController Num is 1 when MatchState::WaitingToStart (Only Server) */
 	Super::OnMatchStateSet();
 
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
@@ -97,8 +94,22 @@ void ASpearmanGameMode::OnMatchStateSet()
 		ASpearmanPlayerController* SpearmanPlayerController = Cast<ASpearmanPlayerController>(*It);
 		if (SpearmanPlayerController)
 		{
+			if (MatchState == MatchState::Cooldown)
+			{ // EmptyInventory if PlayerController failed to Extract
+				if (!WinnerList.Contains(SpearmanPlayerController))
+				{
+					SpearmanPlayerController->GetSpearmanCharacter()->Death();
+					SpearmanPlayerController->GetInventory()->EmptyInventory();
+				}
+			}
+
 			SpearmanPlayerController->OnMatchStateSet(MatchState);
 		}
+	}
+
+	if (MatchState == MatchState::Cooldown)
+	{
+		WinnerList.Empty();
 	}
 }
 
@@ -115,6 +126,17 @@ void ASpearmanGameMode::HandleMatchHasStarted()
 	{
 		FTimerHandle SpawnBlueZoneTimer;
 		GetWorld()->GetTimerManager().SetTimer(SpawnBlueZoneTimer, this, &ASpearmanGameMode::SpawnBlueZone, BlueZoneSpawnDelay, false);
+	}
+}
+
+void ASpearmanGameMode::HandleSeamlessTravelPlayer(AController*& C)
+{ /* Called After SeamlessTravel, Old HUD was Destroyed and new HUD is valid */
+	Super::HandleSeamlessTravelPlayer(C);
+
+	ASpearmanPlayerController* SpearmanPlayerController = Cast<ASpearmanPlayerController>(C);
+	if (SpearmanPlayerController)
+	{
+		SpearmanPlayerController->ClientHandleSeamlessTravelPlayer();
 	}
 }
 

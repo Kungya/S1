@@ -18,14 +18,4 @@ class SPEARMAN_API ULobbyOverlay : public US1UserWidget
 	
 
 public:
-	
-	UPROPERTY(meta = (BindWidget))
-	UCanvasPanel* Root_CanvasPanel;
-
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* MatchCountdownText;
-
-	/*UPROPERTY(meta = (BindWidget))
-	US1InventoryWidget* InventoryWidget;*/
-	
 };

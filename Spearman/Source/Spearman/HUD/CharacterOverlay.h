@@ -62,6 +62,9 @@ public:
 	UImage* Minimap;
 
 	UPROPERTY(meta = (BindWidget))
+	UItemDropCanvasWidget* ItemDropCanvasWidget;
+
+	UPROPERTY(meta = (BindWidget))
 	UItemSaleWidget* ItemSaleWidget;
 
 	UPROPERTY(meta = (BindWidget))

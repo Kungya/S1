@@ -29,7 +29,7 @@ void ALobbyPlayerController::HUDInit()
 
 		if (LobbyHUD)
 		{
-			LobbyHUD->AddLobbyOverlay();
+			// LobbyHUD->AddLobbyOverlay();
 			
 			if (LobbyHUD->LobbyOverlay)
 			{

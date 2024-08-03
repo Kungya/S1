@@ -46,8 +46,6 @@ bool UInventoryComponent::ReplicateSubobjects(UActorChannel* Channel, FOutBunch*
 void UInventoryComponent::AddItem(UItemInstance* InItemInstance)
 { /* Server Only */
 	if (InventoryArray.Num() >= 50) return;
-	
-	UE_LOG(LogTemp, Warning, TEXT("AddItem"));
 
 	// Change Outer from Item to InventoryComponent for Object Replication (Lifecycle)
 	InItemInstance->Rename(nullptr, this);
@@ -83,7 +81,7 @@ void UInventoryComponent::RemoveItem(const int32 IdxToRemove)
 
 void UInventoryComponent::EmptyInventory()
 {
-	for (int32 idx = 0; InventoryArray.Num(); idx++)
+	for (int32 idx = 0; idx < InventoryArray.Num(); idx++)
 	{
 		if (InventoryArray[idx])
 		{
@@ -113,7 +111,6 @@ void UInventoryComponent::ServerDropItem_Implementation(const int32 IdxToDrop)
 
 void UInventoryComponent::ServerSellItem_Implementation(const int32 IdxToSell)
 { /* Server Only */
-	// TODO : Item 삭제후, 가격만큼 Balance 증가
 	UItemInstance* ItemInstance = InventoryArray[IdxToSell];
 
 	RemoveItem(IdxToSell);

@@ -5,10 +5,10 @@
 #include "Components/SphereComponent.h"
 #include "Spearman/Character/SpearmanCharacter.h"
 #include "Spearman/PlayerController/SpearmanPlayerController.h"
-#include "GameFramework/PlayerState.h"
-#include "Spearman/GameInstance/ExtractionResultSubsystem.h"
 #include "Spearman/SpearComponents/InventoryComponent.h"
 #include "Spearman/Items/ItemInstance.h"
+#include "Kismet/GameplayStatics.h"
+#include "Spearman/GameMode/SpearmanGameMode.h"
 
 
 AExtractionPoint::AExtractionPoint()
@@ -65,23 +65,15 @@ void AExtractionPoint::Extraction()
 { /* Server Only */
 	if (CharacterToExtract == nullptr) return;
 
+	CharacterToExtract->Extract();
+
 	ASpearmanPlayerController* SpearmanPlayerController = Cast<ASpearmanPlayerController>(CharacterToExtract->Controller);
 	if (SpearmanPlayerController)
 	{
-		APlayerState* PlayerState = SpearmanPlayerController->GetPlayerState<APlayerState>();
-		if (PlayerState)
+		ASpearmanGameMode* SpearmanGameMode = Cast<ASpearmanGameMode>(UGameplayStatics::GetGameMode(this));
+		if (SpearmanGameMode)
 		{
-			UExtractionResultSubsystem* ExtractionResultSubsystem = GetGameInstance()->GetSubsystem<UExtractionResultSubsystem>();
-			if (ExtractionResultSubsystem)
-			{ /* Warning : if TMap's 'key' is Already existed, 'value' will be replaced */
-				/*UE_LOG(LogTemp, Warning, TEXT("before Inventory size : %d"), SpearmanPlayerController->GetInventory()->GetInventoryArray().Num());
-				ExtractionResultSubsystem->SavedInventories.Add(PlayerState->GetPlayerId(), ::MoveTemp(SpearmanPlayerController->GetInventory()->GetInventoryArray()));
-				UE_LOG(LogTemp, Warning, TEXT("Add ! now TMap, Inventory size : %d, %d"), ExtractionResultSubsystem->SavedInventories[PlayerState->GetPlayerId()].Num(), SpearmanPlayerController->GetInventory()->GetInventoryArray().Num());*/
-
-				CharacterToExtract->Extract();
-			}
+			SpearmanGameMode->WinnerList.Add(SpearmanPlayerController);
 		}
-		
-		// TODO : Save Inventroy TArray with Unique Id
 	}
 }

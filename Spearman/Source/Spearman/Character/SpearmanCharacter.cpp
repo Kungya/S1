@@ -193,7 +193,7 @@ void ASpearmanCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME_CONDITION(ASpearmanCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(ASpearmanCharacter, Hp);
 	DOREPLIFETIME(ASpearmanCharacter, bDisableKeyInput);
-	DOREPLIFETIME(ASpearmanCharacter, bIsInBlueZone);
+	DOREPLIFETIME_CONDITION(ASpearmanCharacter, bIsInBlueZone, COND_OwnerOnly);
 }
 
 void ASpearmanCharacter::PostInitializeComponents()
@@ -240,10 +240,10 @@ void ASpearmanCharacter::BeginPlay()
 
 	UpdateHUDHp();
 
-	HitDamageWidget->SetVisibility(ESlateVisibility::Hidden);
+	HitDamageWidget->SetVisibility(ESlateVisibility::Collapsed);
 
 	HpBarWidget->SetHpBar(GetHpRatio());
-	HpBarWidget->SetVisibility(ESlateVisibility::Hidden);
+	HpBarWidget->SetVisibility(ESlateVisibility::Collapsed);
 
 	InitRenderTargetIfOwningClient();
 
@@ -438,7 +438,7 @@ void ASpearmanCharacter::HideHitDamage()
 {
 	if (HitDamageWidget && HpBarWidget)
 	{
-		HitDamageWidget->SetVisibility(ESlateVisibility::Hidden);
+		HitDamageWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
 
@@ -457,7 +457,7 @@ void ASpearmanCharacter::HideHpBar()
 {
 	if (HpBarWidget)
 	{
-		HpBarWidget->SetVisibility(ESlateVisibility::Hidden);
+		HpBarWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
 
@@ -816,18 +816,7 @@ void ASpearmanCharacter::TakeDamageIfNotInBlueZone()
 
 void ASpearmanCharacter::OnRep_bIsInBlueZone()
 {
-	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
-	if (SpearmanPlayerController)
-	{
-		if (bIsInBlueZone)
-		{
-			SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->BlueZoneImage->SetVisibility(ESlateVisibility::Hidden);
-		}
-		else
-		{
-			SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->BlueZoneImage->SetVisibility(ESlateVisibility::Visible);
-		}
-	}
+	ShowBlueZoneImage();
 }
 
 void ASpearmanCharacter::ShowBlueZoneImage()
@@ -837,7 +826,10 @@ void ASpearmanCharacter::ShowBlueZoneImage()
 	{
 		if (bIsInBlueZone)
 		{
-			SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->BlueZoneImage->SetVisibility(ESlateVisibility::Hidden);
+			if (SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay)
+			{
+				SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->BlueZoneImage->SetVisibility(ESlateVisibility::Collapsed);
+			}
 		}
 		else
 		{

@@ -40,10 +40,16 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly)
 	float CooldownTime = 10.f;
+
+	UPROPERTY()
+	TSet<ASpearmanPlayerController*> WinnerList;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnMatchStateSet() override;
 	virtual void HandleMatchHasStarted() override;
+
+	virtual void HandleSeamlessTravelPlayer(AController*& C) override;
 
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
