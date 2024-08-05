@@ -128,8 +128,8 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Minimap)
 	USpringArmComponent* MinimapSpringArm;
 
-	UPROPERTY(VisibleAnywhere, Category = Minimap)
-	UPaperSpriteComponent* MinimapCursor;
+	UPROPERTY(EditAnywhere, Category = Minimap)
+	UPaperSpriteComponent* MinimapCursorSprite;
 
 	UPROPERTY (ReplicatedUsing = OnRep_OverlappingWeapon)
 	AWeapon* OverlappingWeapon;

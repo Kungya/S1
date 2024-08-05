@@ -65,7 +65,7 @@ private:
 	UPROPERTY()
 	US1GameInstance* S1GameInstance;
 
-	/* You have to set Outer When you Add or Remove ItemInstance in Inventory,  */
+	/* You have to set Outer When you Add or Remove ItemInstance in Inventory, */
 
 public:
 	FORCEINLINE void SetSpearmanCharacter(ASpearmanCharacter* InSpearmanCharacter) { SpearmanCharacter = InSpearmanCharacter; }

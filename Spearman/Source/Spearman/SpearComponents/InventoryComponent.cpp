@@ -14,6 +14,8 @@
 #include "Spearman/Items/Item.h"
 #include "Spearman/GameInstance/S1GameInstance.h"
 #include "Spearman/PlayerState/SpearmanPlayerState.h"
+#include "Kismet/GameplayStatics.h"
+#include "Spearman/GameMode/SpearmanGameMode.h"
 
 UInventoryComponent::UInventoryComponent()
 {
@@ -111,6 +113,16 @@ void UInventoryComponent::ServerDropItem_Implementation(const int32 IdxToDrop)
 
 void UInventoryComponent::ServerSellItem_Implementation(const int32 IdxToSell)
 { /* Server Only */
+	ASpearmanGameMode* SpearmanGameMode = Cast<ASpearmanGameMode>(UGameplayStatics::GetGameMode(this));
+	if (SpearmanGameMode)
+	{
+		ASpearmanPlayerController* OwnerController = Cast<ASpearmanPlayerController>(GetOwner());
+		if (!SpearmanGameMode->WinnerList.Contains(OwnerController))
+		{
+			return;
+		}
+	}
+
 	UItemInstance* ItemInstance = InventoryArray[IdxToSell];
 
 	RemoveItem(IdxToSell);
@@ -139,7 +151,7 @@ void UInventoryComponent::OnRep_InventoryArray(TArray<UItemInstance*> LastInvent
 	}
 
 	if (LastInventoryArrayCount > InventoryArrayCount)
-	{ // if Drop, it's Already Updated before ServerRPC 
+	{ // if Drop, it's Already Updated before ServerRPC.
 		return;
 	}
 

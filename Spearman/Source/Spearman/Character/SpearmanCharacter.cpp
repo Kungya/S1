@@ -61,10 +61,10 @@ ASpearmanCharacter::ASpearmanCharacter()
 	MinimapSceneCapture->SetupAttachment(MinimapSpringArm, USpringArmComponent::SocketName);
 	MinimapSceneCapture->SetIsReplicated(false);
 
-	MinimapCursor = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("MinimapCursor"));
-	MinimapCursor->SetupAttachment(GetMesh());
-	MinimapCursor->bVisibleInSceneCaptureOnly = true;
-	MinimapCursor->bOwnerNoSee = true;
+	MinimapCursorSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("MinimapCursor"));
+	MinimapCursorSprite->SetupAttachment(GetMesh());
+	MinimapCursorSprite->bVisibleInSceneCaptureOnly = true;
+	MinimapCursorSprite->bOwnerNoSee = true;
 
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
