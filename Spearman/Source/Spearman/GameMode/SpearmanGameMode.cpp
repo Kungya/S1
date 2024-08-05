@@ -42,6 +42,7 @@ void ASpearmanGameMode::Tick(float DeltaTime)
 	else if (MatchState == MatchState::InProgress)
 	{
 		CountdownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + BeginPlayTime;
+
 		if (CountdownTime <= 0.f)
 		{
 			SetMatchState(MatchState::Cooldown);
@@ -50,12 +51,11 @@ void ASpearmanGameMode::Tick(float DeltaTime)
 	else if (MatchState == MatchState::Cooldown)
 	{
 		CountdownTime = WarmupTime + MatchTime + CooldownTime - GetWorld()->GetTimeSeconds() + BeginPlayTime;
+
 		if (CountdownTime <= 0.f)
 		{ /* Seamless Travel */
 			bUseSeamlessTravel = true;
-//# if WITH_EDITOR
-//			bUseSeamlessTravel = false;
-//# endif
+
 			RestartGame();
 		}
 	}
@@ -95,7 +95,7 @@ void ASpearmanGameMode::OnMatchStateSet()
 		if (SpearmanPlayerController)
 		{
 			if (MatchState == MatchState::Cooldown)
-			{ // EmptyInventory if PlayerController failed to Extract
+			{
 				if (!WinnerList.Contains(SpearmanPlayerController))
 				{
 					SpearmanPlayerController->GetSpearmanCharacter()->Death();

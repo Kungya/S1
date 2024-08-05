@@ -56,6 +56,12 @@ public:
 	UFUNCTION()
 	void SetPlayerSpectate();
 
+	UFUNCTION(Client, Unreliable)
+	void ClientSetExtractionNotice();
+
+	UFUNCTION(Client, Unreliable)
+	void ClientClearExtractionNotice();
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -84,7 +90,7 @@ protected:
 	void ClientReportServerTime(float ClientRequestTime, float ServerReportTime, float ServerReportTickRate);
 	
 	float ClientServerDelta = 0.f;
-	float SingleTripTime;
+	float SingleTripTime = 0.f;
 
 	UFUNCTION(Server, Reliable)
 	void ServerRequestMatchState();

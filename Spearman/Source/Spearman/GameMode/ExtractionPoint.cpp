@@ -9,6 +9,8 @@
 #include "Spearman/Items/ItemInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Spearman/GameMode/SpearmanGameMode.h"
+#include "Spearman/HUD/SpearmanHUD.h"
+#include "Spearman/HUD/ExtractionNoticeWidget.h"
 
 
 AExtractionPoint::AExtractionPoint()
@@ -24,7 +26,6 @@ AExtractionPoint::AExtractionPoint()
 
 	OverlapSphere = CreateDefaultSubobject<USphereComponent>(TEXT("OverlapSphere"));
 	OverlapSphere->SetupAttachment(RootComponent);
-
 }
 
 void AExtractionPoint::BeginPlay()
@@ -48,22 +49,38 @@ void AExtractionPoint::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedCompo
 		CharacterToExtract = OverlappedCharacter;
 
 		GetWorld()->GetTimerManager().SetTimer(ExtractionTimerHandle, this, &AExtractionPoint::Extraction, 5.f, false);
+
+		if (OverlappedCharacter->SpearmanPlayerController)
+		{
+			OverlappedCharacter->SpearmanPlayerController->ClientSetExtractionNotice();
+		}
 	}
 }
 
 void AExtractionPoint::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 { /* Server Only */
-	ASpearmanCharacter* OverlappedCharacter = Cast<ASpearmanCharacter>(OtherActor);
-	if (OverlappedCharacter)
+	if (CharacterToExtract.IsValid())
 	{
-		CharacterToExtract = nullptr;
-		ExtractionTimerHandle.Invalidate();
+		if (CharacterToExtract.Get() == OtherActor)
+		{
+			if (CharacterToExtract->SpearmanPlayerController)
+			{
+				CharacterToExtract->SpearmanPlayerController->ClientClearExtractionNotice();
+			}
+
+			CharacterToExtract = nullptr;
+
+			if (GetWorldTimerManager().IsTimerActive(ExtractionTimerHandle))
+			{
+				GetWorldTimerManager().ClearTimer(ExtractionTimerHandle);
+			}
+		}
 	}
 }
 
 void AExtractionPoint::Extraction()
 { /* Server Only */
-	if (CharacterToExtract == nullptr) return;
+	if (!CharacterToExtract.IsValid()) return;
 
 	CharacterToExtract->Extract();
 

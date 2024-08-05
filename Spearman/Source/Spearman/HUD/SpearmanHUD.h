@@ -11,6 +11,7 @@ class UCharacterOverlay;
 class UCharacterOverlayNotice;
 class UCharacterOverlayCooldown;
 class UTexture2D;
+class UExtractionNoticeWidget;
 
 USTRUCT(BlueprintType)
 struct FHUDPackage
@@ -51,6 +52,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<UUserWidget> CharacterOverlayCooldownClass;
 
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf <UUserWidget> ExtractionNoticeWidgetClass;
+
 	UPROPERTY()
 	UCharacterOverlay* CharacterOverlay;
 
@@ -59,10 +63,15 @@ public:
 
 	UPROPERTY()
 	UCharacterOverlayCooldown* CharacterOverlayCooldown;
+
+	UPROPERTY()
+	UExtractionNoticeWidget* ExtractionNoticeWidget;
 	
 	void AddCharacterOverlay();
 	void AddCharacterOverlayNotice();
 	void AddCharacterOverlayCooldown();
+
+	void AddExtractionNoticeWidget(float SingleTripTime);
 
 	UFUNCTION(Category = "HUDEvents")
 	void OnHUDStateChanged(EHUDState NewHUDState);
@@ -71,7 +80,6 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	
 
 private:
 	UPROPERTY(EditAnywhere)

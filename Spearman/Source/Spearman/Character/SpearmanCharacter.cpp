@@ -498,7 +498,7 @@ void ASpearmanCharacter::Extract()
 
 	if (SpearmanPlayerController)
 	{
-		SpearmanPlayerController->HandleExtraction();		
+		SpearmanPlayerController->HandleExtraction();
 	}
 
 	bDisableKeyInput = false;

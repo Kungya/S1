@@ -5,6 +5,7 @@
 #include "CharacterOverlay.h"
 #include "CharacterOverlayNotice.h"
 #include "CharacterOverlayCooldown.h"
+#include "ExtractionNoticeWidget.h"
 
 
 void ASpearmanHUD::BeginPlay()
@@ -50,6 +51,18 @@ void ASpearmanHUD::AddCharacterOverlayCooldown()
 	}
 }
 
+void ASpearmanHUD::AddExtractionNoticeWidget(float SingleTripTime)
+{
+	APlayerController* PlayerController = GetOwningPlayerController();
+	if (PlayerController && ExtractionNoticeWidgetClass && ExtractionNoticeWidget == nullptr)
+	{
+		ExtractionNoticeWidget = CreateWidget<UExtractionNoticeWidget>(PlayerController, ExtractionNoticeWidgetClass);
+	}
+
+	ExtractionNoticeWidget->AddToViewport();
+	ExtractionNoticeWidget->PlayExtractionProgressAnimation(SingleTripTime);
+}
+
 void ASpearmanHUD::OnHUDStateChanged(EHUDState NewHUDState)
 {
 	HUDState = NewHUDState;
@@ -57,8 +70,6 @@ void ASpearmanHUD::OnHUDStateChanged(EHUDState NewHUDState)
 
 void ASpearmanHUD::Destroyed()
 {
-	UE_LOG(LogTemp, Warning, TEXT("HUD Destroyed !!!!!!!!!!!!!!"));
-
 	Super::Destroyed();
 }
 

@@ -25,6 +25,7 @@
 #include "Spearman/PlayerState/SpearmanPlayerState.h"
 #include "GameFramework/GameStateBase.h"
 #include "Spearman/HUD/ItemDropCanvasWidget.h"
+#include "Spearman/HUD/ExtractionNoticeWidget.h"
 
 ASpearmanPlayerController::ASpearmanPlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -63,8 +64,6 @@ void ASpearmanPlayerController::Tick(float DeltaTime)
 		SetHUDTime();
 		SetHUDPing(DeltaTime);
 		SetHUDAlive();
-
-		// HUDInit();
 	}
 }
 
@@ -340,7 +339,7 @@ void ASpearmanPlayerController::SetHUDTickRate(float ClientTick, float ServerTic
 }
 
 void ASpearmanPlayerController::SetHUDAlive()
-{ // TODO : Bebug
+{ // TODO : Debug
 	SpearmanHUD = (SpearmanHUD == nullptr) ? Cast<ASpearmanHUD>(GetHUD()) : SpearmanHUD;
 	if (SpearmanHUD && CharacterOverlay)
 	{
@@ -421,7 +420,8 @@ void ASpearmanPlayerController::ClientReportMatchState_Implementation(FName Serv
 
 void ASpearmanPlayerController::ClientHandleSeamlessTravelPlayer_Implementation()
 {
-	TimeStampWaitingToStart = GetServerTime();
+	// TimeStampWaitingToStart = GetServerTime();
+	TimeStampWaitingToStart = GetWorld()->GetTimeSeconds();
 	CharacterOverlay = nullptr;
 	SpearmanCharacter = nullptr;
 	SpearmanGameMode = nullptr;
@@ -525,8 +525,30 @@ void ASpearmanPlayerController::ExtractionCallback()
 	SetPlayerSpectate();
 }
 
+void ASpearmanPlayerController::ClientSetExtractionNotice_Implementation()
+{
+	if (SpearmanHUD)
+	{
+		SpearmanHUD->AddExtractionNoticeWidget(SingleTripTime);
+	}
+}
+
+void ASpearmanPlayerController::ClientClearExtractionNotice_Implementation()
+{
+	if (SpearmanHUD && SpearmanHUD->ExtractionNoticeWidget)
+	{
+		SpearmanHUD->ExtractionNoticeWidget->RemoveFromParent();
+	}
+}
+
+
 void ASpearmanPlayerController::ClientEnableItemSale_Implementation()
 { // TOOD : UI로만 판매유무를 확인하면 안되고, 서버측에서 탈출했는지 유무를 확인할 방법이 있어야 함.
+	if (SpearmanHUD->ExtractionNoticeWidget)
+	{
+		SpearmanHUD->ExtractionNoticeWidget->RemoveFromParent();
+	}
+
 	ShowInventoryWidget();
 	SpearmanHUD->CharacterOverlay->ItemSaleWidget->SetVisibility(ESlateVisibility::Visible);
 	SpearmanHUD->CharacterOverlay->ExtractionNoticeText->SetVisibility(ESlateVisibility::Visible);

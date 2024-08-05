@@ -23,16 +23,16 @@ void ABlueZone::BeginPlay()
 	if (HasAuthority())
 	{ // BlueZone Information for phase
 		// { WaitingTime, MovingTime, ScaleToDecreasePerLoop }, Reduction Amount per Pahse : MovingTime * ScaleToDecreasePerLoop
-		FBlueZoneInfo BlueZoneInfoPhase0 = { 1.f, 1.f, 3.f };
+		FBlueZoneInfo BlueZoneInfoPhase0 = { 4.f, 10.f, 0.75f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase0);
 
-		FBlueZoneInfo BlueZoneInfoPhase1 = { 1.f, 1.f, 2.f };
+		FBlueZoneInfo BlueZoneInfoPhase1 = { 4.f, 10.f, 0.5f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase1);
 
-		FBlueZoneInfo BlueZoneInfoPhase2 = { 1.f, 1.f, 2.f };
+		FBlueZoneInfo BlueZoneInfoPhase2 = { 4.f, 10.f, 0.4f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase2);
 
-		FBlueZoneInfo BlueZoneInfoPhase3 = { 1.f, 1.f, 2.f };
+		FBlueZoneInfo BlueZoneInfoPhase3 = { 4.f, 10.f, 0.3f };
 		BlueZoneInfoArray.Add(BlueZoneInfoPhase3);
 
 		ZoneMesh->OnComponentBeginOverlap.AddDynamic(this, &ABlueZone::OnBlueZoneBeginOverlap);

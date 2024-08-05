@@ -6,9 +6,9 @@
 #include "Blueprint/UserWidget.h"
 #include "HitDamageWidget.generated.h"
 
-/**
- * 
- */
+class UTextBlock;
+class UWidgetAnimation;
+
 UCLASS()
 class SPEARMAN_API UHitDamageWidget : public UUserWidget
 {
@@ -19,11 +19,11 @@ public:
 	
 private:
 	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* HitDamageText;
+	UTextBlock* HitDamageText;
 
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
-	class UWidgetAnimation* HitDamageAnimation;
+	UWidgetAnimation* HitDamageAnimation;
 
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
-	class UWidgetAnimation* HitDamageHeadShotAnimation;
+	UWidgetAnimation* HitDamageHeadShotAnimation;
 };

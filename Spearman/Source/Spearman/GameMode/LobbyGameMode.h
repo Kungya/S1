@@ -17,4 +17,7 @@ class SPEARMAN_API ALobbyGameMode : public AGameMode
 public:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
+private:
+	UPROPERTY(EditAnywhere)
+	int32 StartNum = 1;
 };

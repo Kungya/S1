@@ -9,6 +9,7 @@
 class USphereComponent;
 class ASpearmanCharacter;
 
+
 UCLASS()
 class SPEARMAN_API AExtractionPoint : public AActor
 {
@@ -51,12 +52,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = "ExtractionPoint Properties")
 	USphereComponent* OverlapSphere;
 
-	UPROPERTY()
-	ASpearmanCharacter* CharacterToExtract;
+	TWeakObjectPtr<ASpearmanCharacter> CharacterToExtract;
 
 	FTimerHandle ExtractionTimerHandle;
-
-public:
-
 
 };

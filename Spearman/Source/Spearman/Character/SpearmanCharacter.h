@@ -61,11 +61,15 @@ public:
 	UPROPERTY(Replicated)
 	bool bDisableKeyInput = false;
 
+	UPROPERTY()
+	ASpearmanPlayerController* SpearmanPlayerController;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Minimap, meta = (AllowPrivateAccess))
 	USceneCaptureComponent2D* MinimapSceneCapture;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Minimap)
 	UTextureRenderTarget2D* RenderTargetMinimap;
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -228,9 +232,6 @@ private:
 	UFUNCTION()
 	void OnRep_Hp(float LastHp);
 
-	UPROPERTY()
-	ASpearmanPlayerController* SpearmanPlayerController;
-
 	bool bDeath = false;
 
 	UPROPERTY(EditDefaultsOnly)
@@ -319,7 +320,6 @@ public:
 	void SetOverlappingWeapon(AWeapon* Weapon);
 	bool IsWeaponEquipped();
 	FORCEINLINE UCombatComponent* GetCombat() const { return Combat; }
-	FORCEINLINE ASpearmanPlayerController* GetSpearmanPlayerController() const { return SpearmanPlayerController; }
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
 	FORCEINLINE ETurnInPlace GetTIPState() const { return TIPState; }

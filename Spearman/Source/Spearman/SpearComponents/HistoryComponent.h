@@ -56,7 +56,7 @@ protected:
 private:
 	IRewindableInterface* RewindableInterface = nullptr;
 
-	/** LimitTime, 1.f == 1'000ms */ 
+	/** LimitTime, 1.f == 1'000ms */
 	UPROPERTY(EditAnywhere)
 	float RewindLimitTime = 1.f;
 
