@@ -21,16 +21,16 @@ void ULagCompensationComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SpearmanCharacter = Cast<ASpearmanCharacter>(GetOwner());
+	AttackerSpearmanCharacter = Cast<ASpearmanCharacter>(GetOwner());
 }
 
 void ULagCompensationComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (SpearmanCharacter == nullptr)
+	if (AttackerSpearmanCharacter == nullptr)
 	{
-		SpearmanCharacter = Cast<ASpearmanCharacter>(GetOwner());
+		AttackerSpearmanCharacter = Cast<ASpearmanCharacter>(GetOwner());
 	}
 }
 
@@ -50,12 +50,12 @@ void ULagCompensationComponent::ServerRewindRequest_Implementation(ARewindableCh
 			HitPartDamage = Weapon->GetHeadShotDamage();
 		}
 
-		const float Dist = FVector::Distance(SpearmanCharacter->GetActorLocation(), HitRewindableCharacter->GetActorLocation());
+		const float Dist = FVector::Distance(AttackerSpearmanCharacter->GetActorLocation(), HitRewindableCharacter->GetActorLocation());
 
 		FVector2D InRange(60.f, 240.f);
 		FVector2D OutRange(HitPartDamage / 3.f, HitPartDamage);
 		const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
-		UGameplayStatics::ApplyDamage(HitRewindableCharacter, InDamage, SpearmanCharacter->Controller, Weapon, UDamageType::StaticClass());
+		UGameplayStatics::ApplyDamage(HitRewindableCharacter, InDamage, AttackerSpearmanCharacter->Controller, Weapon, UDamageType::StaticClass());
 
 		Weapon->MulticastHitEffect(HitRewindableCharacter, FMath::CeilToInt(InDamage), HitLocation, bHeadShot);
 
@@ -186,11 +186,22 @@ void ULagCompensationComponent::ServerRewindRequestForParrying_Implementation(AR
 
 	if (bParried)
 	{
-		AWeapon* HitWeaponToParried = Cast<AWeapon>(HitRewindableActor);
-		if (HitWeaponToParried)
+		AWeapon* HitWeaponParried = Cast<AWeapon>(HitRewindableActor);
+		if (HitWeaponParried)
 		{
-			HitWeaponToParried->CheckOwnerSpearmanCharacterIsValid();
-			HitWeaponToParried->GetOwnerSpearmanCharacter()->GetCombat()->MulticastParried(SpearmanCharacter, HitLocation);
+			HitWeaponParried->CheckOwnerSpearmanCharacterIsValid();
+
+			if (HitWeaponParried->GetOwnerSpearmanCharacter()->GetCombat()->CombatState == ECombatState::ECS_Defending)
+			{ // Only Attacker Parried
+				AttackerSpearmanCharacter->GetCombat()->CombatState = ECombatState::ECS_Stunned;
+				AttackerSpearmanCharacter->GetCombat()->MulticastParried(nullptr, HitLocation);
+			}
+			else if (HitWeaponParried->GetOwnerSpearmanCharacter()->GetCombat()->CombatState == ECombatState::ECS_Attacking)
+			{ // Both Parried
+				AttackerSpearmanCharacter->GetCombat()->CombatState = ECombatState::ECS_Stunned;
+				HitWeaponParried->GetOwnerSpearmanCharacter()->GetCombat()->CombatState = ECombatState::ECS_Stunned;
+				HitWeaponParried->GetOwnerSpearmanCharacter()->GetCombat()->MulticastParried(AttackerSpearmanCharacter, HitLocation);
+			}
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("Rewind Success : Parried"));

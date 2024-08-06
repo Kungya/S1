@@ -99,6 +99,8 @@ protected:
 	void PlayDeathMontage();
 	void PlayDashMontage(const bool bLeft);
 	void PlayParriedMontage();
+	void PlayStartDefenseMontage();
+	void PlayEndDefenseMontage();
 
 	UFUNCTION()
 	void OnAttacked(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
@@ -187,6 +189,8 @@ private:
 	void DashButtonPressed();
 	void AttackButtonPressed();
 	void ThrustButtonPressed();
+	void DefenseButtonPressed();
+	void DefenseButtonReleased();
 	
 	/* Animation */
 
@@ -214,6 +218,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* ParriedMontage;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* DefenseMontage;
 
 	float TurnThreshold = 15.f;
 	FRotator RotationPrevFrame;
@@ -332,6 +339,7 @@ public:
 	FORCEINLINE float GetHpRatio() const { return Hp / MaxHp; }
 	FORCEINLINE UBuffComponent* GetBuff() const { return Buff; }
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const { return LagCompensation; }
-	FORCEINLINE void SetbIsInBlueZone(const bool NewbIsInBlueZone) { bIsInBlueZone = NewbIsInBlueZone; };
+	FORCEINLINE void SetbIsInBlueZone(const bool NewbIsInBlueZone) { bIsInBlueZone = NewbIsInBlueZone; }
 	FORCEINLINE UTextureRenderTarget2D* GetRenderTargetMinimap() const { return RenderTargetMinimap; }
+	FORCEINLINE bool GetIsPlayingDefenseMontage() const { return GetMesh()->GetAnimInstance()->Montage_IsPlaying(DefenseMontage); }
 };

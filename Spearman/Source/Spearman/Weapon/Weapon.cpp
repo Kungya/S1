@@ -176,19 +176,26 @@ void AWeapon::AttackCollisionCheckByServer()
 	OwnerSpearmanPlayerController = (OwnerSpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(OwnerSpearmanCharacter->GetController()) : OwnerSpearmanPlayerController;
 	if (OwnerSpearmanPlayerController == nullptr) return;
 	
-	AWeapon* HitWeapon = Cast<AWeapon>(HitResult.GetActor());
-	if (HitWeapon)
+	AWeapon* HitWeaponParried = Cast<AWeapon>(HitResult.GetActor());
+	if (HitWeaponParried)
 	{ /* Hit Weapon, Parried */
 		UE_LOG(LogTemp, Warning, TEXT("Hit Weapon in Server"));
 		
-		HitWeapon->CheckOwnerSpearmanCharacterIsValid();
-		if (HitWeapon->OwnerSpearmanCharacter)
+		HitWeaponParried->CheckOwnerSpearmanCharacterIsValid();
+
+		if (HitWeaponParried->GetOwnerSpearmanCharacter()->GetCombat()->CombatState == ECombatState::ECS_Defending)
 		{
-			HitWeapon->OwnerSpearmanCharacter->GetCombat()->MulticastParried(OwnerSpearmanCharacter, HitResult.ImpactPoint);
+			OwnerSpearmanCharacter->GetCombat()->CombatState = ECombatState::ECS_Stunned;
+			OwnerSpearmanCharacter->GetCombat()->MulticastParried(nullptr, HitResult.ImpactPoint);
+		}
+		else if (HitWeaponParried->GetOwnerSpearmanCharacter()->GetCombat()->CombatState == ECombatState::ECS_Attacking)
+		{
+			OwnerSpearmanCharacter->GetCombat()->CombatState = ECombatState::ECS_Stunned;
+			HitWeaponParried->GetOwnerSpearmanCharacter()->GetCombat()->CombatState = ECombatState::ECS_Stunned;
+			HitWeaponParried->OwnerSpearmanCharacter->GetCombat()->MulticastParried(OwnerSpearmanCharacter, HitResult.ImpactPoint);
 		}
 
-		TurnOffAttackCollision();
-		HitWeapon->TurnOffAttackCollision();
+		return;
 	}
 
 	bool bHeadShot = false;
@@ -287,7 +294,7 @@ void AWeapon::Dropped()
 }
 
 void AWeapon::TurnOnAttackCollision()
-{ 
+{
 	HitSet.Empty();
 	
 	bAttackCollisionTrace = true;

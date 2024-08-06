@@ -39,6 +39,13 @@ public:
 	UFUNCTION()
 	void AnimNotify_ParriedEnd();
 
+	UFUNCTION()
+	void AnimNotify_StartDefense();
+
+	UFUNCTION()
+	void AnimNotify_EndDefense();
+
+
 private:
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	ASpearmanCharacter* SpearmanCharacter;

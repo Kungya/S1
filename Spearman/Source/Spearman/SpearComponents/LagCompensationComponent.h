@@ -67,7 +67,7 @@ protected:
 private:
 	// Caching Attacker SpearmanCharacter
 	UPROPERTY()
-	ASpearmanCharacter* SpearmanCharacter;
+	ASpearmanCharacter* AttackerSpearmanCharacter;
 
 public:
 

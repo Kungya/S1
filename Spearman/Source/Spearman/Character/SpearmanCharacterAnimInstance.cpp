@@ -114,3 +114,27 @@ void USpearmanCharacterAnimInstance::AnimNotify_ParriedEnd()
 		SpearmanCharacter->GetCombat()->CombatState = ECombatState::ECS_Idle;
 	}
 }
+
+void USpearmanCharacterAnimInstance::AnimNotify_StartDefense()
+{
+	if (SpearmanCharacter == nullptr || EquippedWeapon == nullptr) return;
+	
+	if (SpearmanCharacter->HasAuthority())
+	{
+		SpearmanCharacter->GetCombat()->CombatState = ECombatState::ECS_Defending;
+	}
+	
+	EquippedWeapon->GetWeaponMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+}
+
+void USpearmanCharacterAnimInstance::AnimNotify_EndDefense()
+{
+	if (SpearmanCharacter == nullptr || EquippedWeapon == nullptr) return;
+
+	if (SpearmanCharacter->HasAuthority())
+	{
+		SpearmanCharacter->GetCombat()->CombatState = ECombatState::ECS_Idle;
+	}
+	
+	EquippedWeapon->GetWeaponMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}

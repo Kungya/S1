@@ -32,24 +32,24 @@ void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	SetHUDCrosshairs();
 }
 
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	SetHUDCrosshairs(DeltaTime);
 }
 
-void UCombatComponent::SetHUDCrosshairs(float DeltaTime)
+void UCombatComponent::SetHUDCrosshairs()
 {
 	if (Character == nullptr || Character->Controller == nullptr) return;
 
-	Controller = (Controller == nullptr) ? Cast<ASpearmanPlayerController>(Character->Controller) : Controller;
+	Controller = Cast<ASpearmanPlayerController>(Character->Controller);
 
 	if (Controller)
 	{
-		HUD = (HUD == nullptr) ? Cast<ASpearmanHUD>(Controller->GetHUD()) : HUD;
+		HUD = Cast<ASpearmanHUD>(Controller->GetHUD());
 
 		if (HUD)
 		{
@@ -70,6 +70,8 @@ void UCombatComponent::ServerDash_Implementation(FVector_NetQuantize DashDirecti
 	if (bCanDash == false || EquippedWeapon == nullptr) return;
 	if (CombatState != ECombatState::ECS_Idle) return;
 	
+	CombatState = ECombatState::ECS_SuperArmor;
+
 	// const float DotProduct = FVector::DotProduct(DashDirection, Character->GetActorForwardVector());
 	MulticastDash(DashDirection);
 }
@@ -77,7 +79,6 @@ void UCombatComponent::ServerDash_Implementation(FVector_NetQuantize DashDirecti
 void UCombatComponent::MulticastDash_Implementation(const FVector& DashDirection)
 {
 	bCanDash = false;
-	CombatState = ECombatState::ECS_SuperArmor;
 	
 	bool bDashLeft = (DashDirection.Y < -0.5f) ? true : false;
 	Character->PlayDashMontage(bDashLeft);
@@ -88,13 +89,13 @@ void UCombatComponent::MulticastDash_Implementation(const FVector& DashDirection
 void UCombatComponent::MulticastParried_Implementation(ASpearmanCharacter* Opponent, FVector_NetQuantize Location)
 { /* Two Spearmans' MulticastParried at once */
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), ParryingSound, Location);
-
-	Opponent->GetCombat()->CombatState = ECombatState::ECS_Stunned;
-	Opponent->PlayParriedMontage();
 	
-	CombatState = ECombatState::ECS_Stunned;
+	if (Opponent)
+	{
+		Opponent->PlayParriedMontage();
+	}
+	
 	Character->PlayParriedMontage();
-
 }
 
 void UCombatComponent::DropEquippedWeapon()
@@ -109,15 +110,15 @@ void UCombatComponent::ServerSpearAttack_Implementation()
 {
 	if (CombatState == ECombatState::ECS_Idle)
 	{
+		CombatState = ECombatState::ECS_Attacking;
 		MulticastSpearAttack();
 	}
 }
 
 void UCombatComponent::MulticastSpearAttack_Implementation()
 {
-	if (Character && CombatState == ECombatState::ECS_Idle)
+	if (Character)
 	{
-		CombatState = ECombatState::ECS_Attacking;
 		Character->PlaySpearAttackMontage();
 	}
 }
@@ -126,16 +127,48 @@ void UCombatComponent::ServerThrust_Implementation()
 {
 	if (CombatState == ECombatState::ECS_Idle)
 	{
+		CombatState = ECombatState::ECS_Attacking;
 		MulticastThrust();
 	}
 }
 
 void UCombatComponent::MulticastThrust_Implementation()
 {
+	if (Character)
+	{
+		Character->PlayThrustMontage();
+	}
+}
+
+void UCombatComponent::ServerStartDefense_Implementation()
+{
 	if (CombatState == ECombatState::ECS_Idle)
 	{
-		CombatState = ECombatState::ECS_Attacking;
-		Character->PlayThrustMontage();
+		MulticastStartDefense();
+	}
+}
+
+void UCombatComponent::MulticastStartDefense_Implementation()
+{
+	if (Character)
+	{
+		Character->PlayStartDefenseMontage();
+	}
+}
+
+void UCombatComponent::ServerEndDefense_Implementation()
+{
+	if (CombatState == ECombatState::ECS_Defending && Character->GetIsPlayingDefenseMontage())
+	{
+		MulticastEndDefense();
+	}
+}
+
+void UCombatComponent::MulticastEndDefense_Implementation()
+{
+	if (Character)
+	{
+		Character->PlayEndDefenseMontage();
 	}
 }
 

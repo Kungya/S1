@@ -56,10 +56,22 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastThrust();
 
+	UFUNCTION(Server, Reliable)
+	void ServerStartDefense();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastStartDefense();
+
+	UFUNCTION(Server, Reliable)
+	void ServerEndDefense();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastEndDefense();
+
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
 
-	void SetHUDCrosshairs(float DeltaTime);
+	void SetHUDCrosshairs();
 
 private:
 	UPROPERTY()

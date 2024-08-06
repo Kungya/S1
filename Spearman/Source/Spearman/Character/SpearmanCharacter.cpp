@@ -212,7 +212,7 @@ void ASpearmanCharacter::PostInitializeComponents()
 
 	if (LagCompensation)
 	{
-		LagCompensation->SpearmanCharacter = this;
+		LagCompensation->AttackerSpearmanCharacter = this;
 	}
 
 	GetMesh()->HideBoneByName(TEXT("weapon"), EPhysBodyOp::PBO_None);
@@ -353,6 +353,29 @@ void ASpearmanCharacter::PlayParriedMontage()
 	if (AnimInstance && DashMontage)
 	{
 		AnimInstance->Montage_Play(ParriedMontage);
+	}
+}
+
+void ASpearmanCharacter::PlayStartDefenseMontage()
+{
+	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DefenseMontage)
+	{
+		AnimInstance->Montage_Play(DefenseMontage);
+	}
+}
+
+void ASpearmanCharacter::PlayEndDefenseMontage()
+{
+	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DefenseMontage && AnimInstance->Montage_IsPlaying(DefenseMontage))
+	{
+		FName SectionName = "EndDefense";
+		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
 
@@ -617,6 +640,24 @@ void ASpearmanCharacter::ThrustButtonPressed()
 	}
 }
 
+void ASpearmanCharacter::DefenseButtonPressed()
+{
+	if (bDisableKeyInput) return;
+	if (Combat && Combat->CombatState == ECombatState::ECS_Idle)
+	{
+		Combat->ServerStartDefense();
+	}
+}
+
+void ASpearmanCharacter::DefenseButtonReleased()
+{
+	if (bDisableKeyInput) return;
+	if (Combat && Combat->CombatState == ECombatState::ECS_Defending)
+	{
+		Combat->ServerEndDefense();
+	}
+}
+
 void ASpearmanCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
 	if (OverlappingWeapon)
@@ -676,6 +717,9 @@ void ASpearmanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ASpearmanCharacter::EquipButtonPressed);
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &ASpearmanCharacter::AttackButtonPressed);
 	PlayerInputComponent->BindAction("Thrust", IE_Pressed, this, &ASpearmanCharacter::ThrustButtonPressed);
+	PlayerInputComponent->BindAction("Defense", IE_Pressed, this, &ASpearmanCharacter::DefenseButtonPressed);
+	PlayerInputComponent->BindAction("Defense", IE_Released, this, &ASpearmanCharacter::DefenseButtonReleased);
+
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASpearmanCharacter::InteractButtonPressed);
 	PlayerInputComponent->BindAction("Inventory", IE_Pressed, this, &ASpearmanCharacter::InventoryButtonPressed);
 	PlayerInputComponent->BindAction("TriggerMove", IE_Pressed, this, &ASpearmanCharacter::TriggerMove);
