@@ -12,7 +12,7 @@
 #include "Components/TextBlock.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
-#include "Spearman/HUD/S1InventoryWidget.h"
+#include "Spearman/HUD/InventoryHUD/S1InventoryWidget.h"
 #include "GameFramework/PlayerState.h"
 #include "Components/Image.h"
 #include "Components/SceneCaptureComponent2D.h"
@@ -20,12 +20,13 @@
 #include "Spearman/HUD/ReturnToMainMenu.h"
 #include "Spearman/GameInstance/ExtractionResultSubsystem.h"
 #include "Spearman/SpearComponents/InventoryComponent.h"
-#include "Spearman/HUD/S1InventorySlotsWidget.h"
-#include "Spearman/HUD/ItemSaleWidget.h"
+#include "Spearman/HUD/InventoryHUD/S1InventorySlotsWidget.h"
+#include "Spearman/HUD/InventoryHUD/ItemSaleWidget.h"
 #include "Spearman/PlayerState/SpearmanPlayerState.h"
 #include "GameFramework/GameStateBase.h"
-#include "Spearman/HUD/ItemDropCanvasWidget.h"
+#include "Spearman/HUD/InventoryHUD/ItemDropCanvasWidget.h"
 #include "Spearman/HUD/ExtractionNoticeWidget.h"
+#include "Spearman/SpearComponents/CombatComponent.h"
 
 ASpearmanPlayerController::ASpearmanPlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -288,7 +289,10 @@ void ASpearmanPlayerController::HUDInit()
 				CharacterOverlay->ItemSaleWidget->SetVisibility(ESlateVisibility::Collapsed);
 
 				SpearmanCharacter = Cast<ASpearmanCharacter>(GetPawn());
-				if (SpearmanCharacter && IsLocalController())
+				if (SpearmanCharacter == nullptr) return;
+				SpearmanCharacter->GetCombat()->SetHUDCrosshairs();
+				
+				if (IsLocalController())
 				{
 					UMaterialInstance* MinimapMatInst = LoadObject<UMaterialInstance>(nullptr, TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Assets/Textures/Minimap/RenderTarget_Mat_Inst.RenderTarget_Mat_Inst'"));
 					if (MinimapMatInst)
@@ -411,16 +415,10 @@ void ASpearmanPlayerController::ClientReportMatchState_Implementation(FName Serv
 	MatchTime = ServerMatchTime;
 	CooldownTime = ServerCooldownTime;
 	OnMatchStateSet(MatchState);
-
-	/*if (SpearmanHUD && MatchState == MatchState::WaitingToStart)
-	{
-		SpearmanHUD->AddCharacterOverlayNotice();
-	}*/
 }
 
 void ASpearmanPlayerController::ClientHandleSeamlessTravelPlayer_Implementation()
 {
-	// TimeStampWaitingToStart = GetServerTime();
 	TimeStampWaitingToStart = GetWorld()->GetTimeSeconds();
 	CharacterOverlay = nullptr;
 	SpearmanCharacter = nullptr;
@@ -458,7 +456,6 @@ void ASpearmanPlayerController::HandleWaitingToStart()
 	if (SpearmanHUD)
 	{
 		SpearmanHUD->AddCharacterOverlayNotice();
-		UE_LOG(LogTemp, Warning, TEXT("SpearmanHUD is Valid"));
 	}
 }
 

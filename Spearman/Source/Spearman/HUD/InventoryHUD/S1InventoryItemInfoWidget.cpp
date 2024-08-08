@@ -5,10 +5,10 @@
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
-#include "Spearman/HUD/S1InventorySlotsWidget.h"
+#include "Spearman/HUD/InventoryHUD/S1InventorySlotsWidget.h"
 #include "Spearman/Items/ItemInstance.h"
-#include "Spearman/HUD/S1DragDropOperation.h"
-#include "Spearman/HUD/S1ItemDragWidget.h"
+#include "Spearman/HUD/InventoryHUD/S1DragDropOperation.h"
+#include "Spearman/HUD/InventoryHUD/S1ItemDragWidget.h"
 
 US1InventoryItemInfoWidget::US1InventoryItemInfoWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

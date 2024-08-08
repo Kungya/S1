@@ -2,7 +2,7 @@
 
 
 #include "S1InventoryWidget.h"
-#include "Spearman/HUD/S1InventorySlotsWidget.h"
+#include "Spearman/HUD/InventoryHUD/S1InventorySlotsWidget.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Spearman/PlayerController/SpearmanPlayerController.h"

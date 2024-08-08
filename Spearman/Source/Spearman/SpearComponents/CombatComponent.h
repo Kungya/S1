@@ -21,8 +21,9 @@ class SPEARMAN_API UCombatComponent : public UActorComponent
 public:	
 	friend class ASpearmanCharacter;
 	UCombatComponent();
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	void SetHUDCrosshairs();
 
 	void EquipWeapon(AWeapon* WeaponToEquip);
 
@@ -30,17 +31,17 @@ public:
 	void MulticastParried(ASpearmanCharacter* Opponent, FVector_NetQuantize Location);
 
 	// 현재 캐릭터의 전투 상태, 이거 하나로 동작 사용가능 유무를 판단
-	UPROPERTY(Replicated, EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	ECombatState CombatState = ECombatState::ECS_Idle;
 
 protected:
 	virtual void BeginPlay() override;
 	
 	UFUNCTION(Server, Reliable)
-	void ServerDash(const FVector_NetQuantize DashDirection);
+	void ServerDash(FVector_NetQuantize DashDirection);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastDash(const FVector& DashDirection);
+	void MulticastDash(bool DashDirection);
 
 	void DropEquippedWeapon();
 
@@ -71,17 +72,15 @@ protected:
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
 
-	void SetHUDCrosshairs();
-
 private:
 	UPROPERTY()
 	ASpearmanCharacter* Character;
 	
 	UPROPERTY()
-	ASpearmanPlayerController* Controller;
+	ASpearmanPlayerController* SpearmanPlayerController;
 	
 	UPROPERTY()
-	ASpearmanHUD* HUD;
+	ASpearmanHUD* SpearmanHUD;
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
@@ -90,7 +89,7 @@ private:
 
 	void SetDashCooldown();
 
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	bool bCanDash = true;
 
 	UPROPERTY(EditAnywhere)

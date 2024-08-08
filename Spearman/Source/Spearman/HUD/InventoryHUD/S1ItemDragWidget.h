@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "S1UserWidget.h"
+#include "Spearman/HUD/S1UserWidget.h"
 #include "S1ItemDragWidget.generated.h"
 
 class USizeBox;

@@ -74,7 +74,7 @@ FRewindResult ULagCompensationComponent::Rewind(ARewindableCharacter* HitRewinda
 	UHistoryComponent* HitHistory = HitRewindableCharacter->GetHistory();
 	if (HitHistory == nullptr || HitHistory->HistoricalBuffer.GetHead() == nullptr || HitHistory->HistoricalBuffer.GetTail() == nullptr) return FRewindResult();
 
-	// Historical Buffer of HitRewindableCharacter, Not Attacker
+	// Historical Buffer of RewindableCharacter Hitted, Not Attacker
 	const TDoubleLinkedList<FSavedFrame>& Buffer = HitHistory->HistoricalBuffer;
 	const float OldestTime = Buffer.GetTail()->GetValue().Time;
 	const float NewestTime = Buffer.GetHead()->GetValue().Time;

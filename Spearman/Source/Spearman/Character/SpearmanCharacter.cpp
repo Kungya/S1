@@ -27,7 +27,7 @@
 #include "Spearman/Items/Item.h"
 #include "Spearman/SpearComponents/InventoryComponent.h"
 #include "Spearman/HUD/CharacterOverlay.h"
-#include "Spearman/HUD/S1InventoryWidget.h"
+#include "Spearman/HUD/InventoryHUD/S1InventoryWidget.h"
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Spearman/SpearComponents/LagCompensationComponent.h"
@@ -312,8 +312,6 @@ void ASpearmanCharacter::PlayHitReactMontage()
 {
 	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
 
-	Combat->CombatState = ECombatState::ECS_Stunned;
-
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && HitReactMontage)
 	{
@@ -389,6 +387,7 @@ void ASpearmanCharacter::OnAttacked(AActor* DamagedActor, float Damage, const UD
 
 	if (FMath::IsNearlyZero(Hp))
 	{
+		HideHpBar();
 		Death();
 
 		ABasicMonsterAIController*BasicMonsterAIController = Cast<ABasicMonsterAIController>(InstigatorController);
@@ -401,7 +400,11 @@ void ASpearmanCharacter::OnAttacked(AActor* DamagedActor, float Damage, const UD
 	{
 		if (!DamageType->IsA<UBlueZoneDamageType>())
 		{
-			MulticastHitReact();
+			if (GetCombat() && GetCombat()->CombatState != ECombatState::ECS_SuperArmor)
+			{
+				GetCombat()->CombatState = ECombatState::ECS_Stunned;
+				MulticastHitReact();
+			}
 		}
 	}
 }
@@ -621,7 +624,7 @@ void ASpearmanCharacter::ServerEquipButtonPressed_Implementation()
 void ASpearmanCharacter::AttackButtonPressed()
 {
 	if (bDisableKeyInput) return;
-	if (Combat && Combat->CombatState == ECombatState::ECS_Idle)
+	if (Combat)
 	{
 		Combat->ServerSpearAttack();
 	}
@@ -634,7 +637,7 @@ void ASpearmanCharacter::AttackButtonPressed()
 void ASpearmanCharacter::ThrustButtonPressed()
 {
 	if (bDisableKeyInput) return;
-	if (Combat && Combat->CombatState == ECombatState::ECS_Idle)
+	if (Combat)
 	{
 		Combat->ServerThrust();
 	}
@@ -643,7 +646,7 @@ void ASpearmanCharacter::ThrustButtonPressed()
 void ASpearmanCharacter::DefenseButtonPressed()
 {
 	if (bDisableKeyInput) return;
-	if (Combat && Combat->CombatState == ECombatState::ECS_Idle)
+	if (Combat)
 	{
 		Combat->ServerStartDefense();
 	}
@@ -652,7 +655,7 @@ void ASpearmanCharacter::DefenseButtonPressed()
 void ASpearmanCharacter::DefenseButtonReleased()
 {
 	if (bDisableKeyInput) return;
-	if (Combat && Combat->CombatState == ECombatState::ECS_Defending)
+	if (Combat)
 	{
 		Combat->ServerEndDefense();
 	}
@@ -776,11 +779,8 @@ void ASpearmanCharacter::DashButtonPressed()
 	if (bDisableKeyInput) return;
 	if (Combat == nullptr || !IsWeaponEquipped()) return;
 
-	if (Combat->bCanDash && Combat->CombatState == ECombatState::ECS_Idle)
-	{
-		FVector_NetQuantize InputVector = GetLastMovementInputVector().GetSafeNormal();
-		Combat->ServerDash(InputVector);
-	}
+	const FVector_NetQuantize InputVector = GetLastMovementInputVector().GetSafeNormal();
+	Combat->ServerDash(InputVector);
 }
 
 void ASpearmanCharacter::EquipButtonPressed()

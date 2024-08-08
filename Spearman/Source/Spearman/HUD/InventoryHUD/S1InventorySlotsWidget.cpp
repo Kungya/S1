@@ -7,9 +7,9 @@
 #include "Spearman/Items/ItemInstance.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
-#include "Spearman/HUD/S1InventorySlotWidget.h"
-#include "Spearman/HUD/S1InventoryItemInfoWidget.h"
-#include "Spearman/HUD/S1DragDropOperation.h"
+#include "Spearman/HUD/InventoryHUD/S1InventorySlotWidget.h"
+#include "Spearman/HUD/InventoryHUD/S1InventoryItemInfoWidget.h"
+#include "Spearman/HUD/InventoryHUD/S1DragDropOperation.h"
 #include "Components/UniformGridSlot.h"
 
 US1InventorySlotsWidget::US1InventorySlotsWidget(const FObjectInitializer& ObjectInitializer)

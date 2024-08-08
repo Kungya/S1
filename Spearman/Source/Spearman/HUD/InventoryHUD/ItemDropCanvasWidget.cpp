@@ -2,9 +2,9 @@
 
 
 #include "ItemDropCanvasWidget.h"
-#include "Spearman/HUD/S1DragDropOperation.h"
-#include "Spearman/HUD/S1InventorySlotsWidget.h"
-#include "Spearman/HUD/S1InventoryItemInfoWidget.h"
+#include "Spearman/HUD/InventoryHUD/S1DragDropOperation.h"
+#include "Spearman/HUD/InventoryHUD/S1InventorySlotsWidget.h"
+#include "Spearman/HUD/InventoryHUD/S1InventoryItemInfoWidget.h"
 #include "Spearman/Items/ItemInstance.h"
 #include "Spearman/SpearComponents/InventoryComponent.h"
 #include "Spearman/PlayerController/SpearmanPlayerController.h"

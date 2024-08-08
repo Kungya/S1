@@ -15,8 +15,7 @@
 
 UCombatComponent::UCombatComponent()
 {
-	PrimaryComponentTick.bCanEverTick = true;
-
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -24,41 +23,31 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
-	DOREPLIFETIME(UCombatComponent, bCanDash);
-	DOREPLIFETIME(UCombatComponent, CombatState);
 }
 
 void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	SetHUDCrosshairs();
-}
-
-void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
 }
 
 void UCombatComponent::SetHUDCrosshairs()
 {
 	if (Character == nullptr || Character->Controller == nullptr) return;
 
-	Controller = Cast<ASpearmanPlayerController>(Character->Controller);
+	SpearmanPlayerController = Cast<ASpearmanPlayerController>(Character->Controller);
 
-	if (Controller)
+	if (Character->Controller)
 	{
-		HUD = Cast<ASpearmanHUD>(Controller->GetHUD());
+		SpearmanHUD = Cast<ASpearmanHUD>(SpearmanPlayerController->GetHUD());
 
-		if (HUD)
+		if (SpearmanHUD)
 		{
 			FHUDPackage HUDPackage;
 			
 			HUDPackage.CrosshairCircle = Character->GetCrosshairCircle();
 			HUDPackage.CrosshairDot = Character->GetCrosshairDot();
 			
-			HUD->SetHUDPackage(HUDPackage);
+			SpearmanHUD->SetHUDPackage(HUDPackage);
 		}
 	}
 }
@@ -66,24 +55,21 @@ void UCombatComponent::SetHUDCrosshairs()
 void UCombatComponent::ServerDash_Implementation(FVector_NetQuantize DashDirection)
 { /* Server Only */
 	// TODO : SetCombatState : SuperArmor, Timer Cooldown
-	if (Character->GetMovementComponent()->IsFalling()) return;
+	if (Character == nullptr || Character->GetMovementComponent()->IsFalling()) return;
 	if (bCanDash == false || EquippedWeapon == nullptr) return;
 	if (CombatState != ECombatState::ECS_Idle) return;
 	
+	bCanDash = false;
 	CombatState = ECombatState::ECS_SuperArmor;
+	Character->GetWorldTimerManager().SetTimer(DashTimer, this, &UCombatComponent::SetDashCooldown, 2.f, false);
 
-	// const float DotProduct = FVector::DotProduct(DashDirection, Character->GetActorForwardVector());
-	MulticastDash(DashDirection);
+	bool bDashLeft = (DashDirection.Y < -0.5f) ? true : false;
+	MulticastDash(bDashLeft);
 }
 
-void UCombatComponent::MulticastDash_Implementation(const FVector& DashDirection)
+void UCombatComponent::MulticastDash_Implementation(bool DashDirection)
 {
-	bCanDash = false;
-	
-	bool bDashLeft = (DashDirection.Y < -0.5f) ? true : false;
-	Character->PlayDashMontage(bDashLeft);
-
-	Character->GetWorldTimerManager().SetTimer(DashTimer, this, &UCombatComponent::SetDashCooldown, 2.f, false);
+	Character->PlayDashMontage(DashDirection);
 }
 
 void UCombatComponent::MulticastParried_Implementation(ASpearmanCharacter* Opponent, FVector_NetQuantize Location)

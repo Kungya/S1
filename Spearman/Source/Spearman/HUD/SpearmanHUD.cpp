@@ -95,7 +95,6 @@ void ASpearmanHUD::DrawCrosshair(UTexture2D* Texture, FVector2D CenterInViewport
 	const float Width = Texture->GetSizeX();
 	const float Height = Texture->GetSizeY();
 	
-	// 1/2, 화면 중앙에 표시
 	const FVector2D CorrectedCenter(CenterInViewport.X - Width / 2.f, CenterInViewport.Y - Height / 2.f);
 
 	AHUD::DrawTexture(Texture, CorrectedCenter.X, CorrectedCenter.Y, Width, Height, 0.f, 0.f, 1.f, 1.f, FLinearColor::Black);

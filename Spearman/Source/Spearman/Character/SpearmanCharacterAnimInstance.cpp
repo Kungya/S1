@@ -7,6 +7,8 @@
 #include "Spearman/Weapon/Weapon.h"
 #include "Spearman/SpearComponents/CombatComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Animation/PoseSnapshot.h"
+
 
 void USpearmanCharacterAnimInstance::NativeInitializeAnimation()
 {
@@ -54,8 +56,7 @@ void USpearmanCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	AO_Yaw = 0.f;
 	AO_Pitch = SpearmanCharacter->GetAO_Pitch();
 
-	// Weapon 설정, TODO : AnimInstance에서 처리를 하는게 맞는지 ?, 우선은 Anim_Notify때문에 여기서 처리...
-	EquippedWeapon = SpearmanCharacter->GetCombat()->GetEquippedWeapon();
+	EquippedWeapon = (EquippedWeapon == nullptr) ? SpearmanCharacter->GetCombat()->GetEquippedWeapon() : EquippedWeapon;
 	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && SpearmanCharacter->GetMesh())
 	{
 		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"));
