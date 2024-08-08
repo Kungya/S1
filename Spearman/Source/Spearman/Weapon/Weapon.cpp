@@ -103,11 +103,11 @@ void AWeapon::Tick(float DeltaTime)
 	// if (bUseReiwnd) : Client, else : Server */
 	if (bAttackCollisionTrace)
 	{
-		if (bUseRewind && !HasAuthority())
+		if (!HasAuthority())
 		{
 			AttackCollisionCheckByRewind();
 		}
-		else if (!bUseRewind && HasAuthority())
+		else
 		{
 			AttackCollisionCheckByServer();
 		}

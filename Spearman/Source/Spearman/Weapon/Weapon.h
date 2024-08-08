@@ -78,7 +78,7 @@ protected:
 	float HitPartDamage;
 	
 	UPROPERTY(EditAnywhere)
-	bool bUseRewind = false;
+	bool bUseRewind = true;
 
 private:
 

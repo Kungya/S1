@@ -47,10 +47,10 @@ bool UInventoryComponent::ReplicateSubobjects(UActorChannel* Channel, FOutBunch*
 
 void UInventoryComponent::AddItem(UItemInstance* InItemInstance)
 { /* Server Only */
-	if (InventoryArray.Num() >= 50) return;
+	if (InventoryArray.Num() >= 50 || OwnerSpearmanPlayerController == nullptr) return;
 
-	// Change Outer from Item to InventoryComponent for Object Replication (Lifecycle)
-	InItemInstance->Rename(nullptr, this);
+	// Change Outer from Item to InventoryComponent for Lifecycle
+	InItemInstance->Rename(nullptr, OwnerSpearmanPlayerController);
 
 	if (CachedInvalidIndex.IsEmpty())
 	{
