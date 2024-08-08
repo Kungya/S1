@@ -167,8 +167,6 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "ActorComponent")
 	UInventoryComponent* Inventory;
 
-	float TestDeltaTimeSum = 0.f;
-
 public:
 	FORCEINLINE ASpearmanHUD* GetSpearmanHUD() const { return SpearmanHUD;  }
 	FORCEINLINE float GetSingleTripTime() const { return SingleTripTime; }

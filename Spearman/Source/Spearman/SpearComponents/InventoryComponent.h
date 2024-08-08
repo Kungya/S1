@@ -49,7 +49,6 @@ private:
 	UPROPERTY()
 	ASpearmanPlayerState* SpearmanPlayerState;
 	
-	
 	UPROPERTY(ReplicatedUsing = OnRep_InventoryArray)
 	TArray<UItemInstance*> InventoryArray;
 
