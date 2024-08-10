@@ -276,8 +276,9 @@ void ASpearmanCharacter::Tick(float DeltaTime)
 	}
 
 	TimeSinceLastMovementReplication += DeltaTime;
-	if (TimeSinceLastMovementReplication > 0.25f)
+	if (TimeSinceLastMovementReplication > 0.05f)
 	{
+		TimeSinceLastMovementReplication = 0.f;
 		OnRep_ReplicatedMovement();
 	}
 
@@ -381,10 +382,7 @@ void ASpearmanCharacter::OnAttacked(AActor* DamagedActor, float Damage, const UD
 { /* Server Only */
 	if (bDeath) return;
 
-	UE_LOG(LogTemp, Warning, TEXT("OnAttacked !"));
-
 	Hp = FMath::Clamp(Hp - Damage, 0.f, MaxHp);
-
 	UpdateHUDHp();
 
 	if (FMath::IsNearlyZero(Hp))
@@ -513,7 +511,6 @@ void ASpearmanCharacter::OnRep_ReplicatedMovement()
 	Super::OnRep_ReplicatedMovement();
 
 	TurnInPlace();
-	TimeSinceLastMovementReplication = 0.f;
 }
 
 void ASpearmanCharacter::Extract()
@@ -608,8 +605,6 @@ void ASpearmanCharacter::TurnInPlace()
 			TIPState = ETurnInPlace::ETIP_Left;
 		else
 			TIPState = ETurnInPlace::ETIP_NotTurn;
-
-		return;
 	}
 	else
 		TIPState = ETurnInPlace::ETIP_NotTurn;
@@ -856,7 +851,7 @@ void ASpearmanCharacter::TakeDamageIfNotInBlueZone()
 { /* Server Only */
 	if (!bIsInBlueZone)
 	{
-		UGameplayStatics::ApplyDamage(this, 1.f, Controller, this, UBlueZoneDamageType::StaticClass());
+		UGameplayStatics::ApplyDamage(this, 2.f, Controller, this, UBlueZoneDamageType::StaticClass());
 	}
 }
 
