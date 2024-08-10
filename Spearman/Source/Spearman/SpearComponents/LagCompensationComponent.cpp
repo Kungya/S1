@@ -130,19 +130,20 @@ FRewindResult ULagCompensationComponent::SimulateHit(ARewindableCharacter* HitRe
 	HeadBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 
 	FHitResult SimulateHitResult;
-	const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.2f;
+	const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.5f;
 	UWorld* World = GetWorld();
 	if (World)
 	{ /* Check Head Hit */
 		FCollisionQueryParams Params;
 		Params.AddIgnoredActor(GetOwner());
 		Params.AddIgnoredActor(Weapon);
-		World->LineTraceSingleByChannel(SimulateHitResult, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, Params);
+		World->SweepSingleByChannel(SimulateHitResult, TraceStart, TraceEnd, FQuat::Identity, ECollisionChannel::ECC_Visibility, FCollisionShape::MakeSphere(6.f), Params);
 
-		if (SimulateHitResult.bBlockingHit)
+		if (SimulateHitResult.bBlockingHit && SimulateHitResult.GetComponent()->IsA<UBoxComponent>())
 		{
 			ResetHitBoxes(RewindableInterface, CurrentFrame);
 			HitRewindableCharacter->GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			UE_LOG(LogTemp, Warning, TEXT("Head Shot"));
 			return FRewindResult{ true, true };
 		}
 		else
@@ -155,12 +156,13 @@ FRewindResult ULagCompensationComponent::SimulateHit(ARewindableCharacter* HitRe
 					HitBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 				}
 			}
-			World->LineTraceSingleByChannel(SimulateHitResult, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, Params);
+			World->SweepSingleByChannel(SimulateHitResult, TraceStart, TraceEnd, FQuat::Identity, ECollisionChannel::ECC_Visibility, FCollisionShape::MakeSphere(6.f), Params);
 
-			if (SimulateHitResult.bBlockingHit)
+			if (SimulateHitResult.bBlockingHit && SimulateHitResult.GetComponent()->IsA<UBoxComponent>())
 			{
 				ResetHitBoxes(RewindableInterface, CurrentFrame);
 				HitRewindableCharacter->GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+				UE_LOG(LogTemp, Warning, TEXT("Body Shot"));
 				return FRewindResult{ true, false };
 			}
 		}
@@ -271,9 +273,9 @@ bool ULagCompensationComponent::SimulateHit(ARewindableActor* HitRewindableActor
 		FCollisionQueryParams Params;
 		Params.AddIgnoredActor(GetOwner());
 		Params.AddIgnoredActor(Weapon);
-		World->LineTraceSingleByChannel(SimulateHitResult, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, Params);
+		World->SweepSingleByChannel(SimulateHitResult, TraceStart, TraceEnd, FQuat::Identity, ECollisionChannel::ECC_Visibility, FCollisionShape::MakeSphere(6.f), Params);
 
-		if (SimulateHitResult.bBlockingHit)
+		if (SimulateHitResult.bBlockingHit && SimulateHitResult.GetActor()->IsA<AWeapon>())
 		{
 			ResetHitBoxes(RewindableInterface, CurrentFrame);
 			HitRewindableActor->GetWeaponMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -336,6 +338,18 @@ void ULagCompensationComponent::MoveHitBoxes(IRewindableInterface* HitRewindable
 
 	const TArray<UBoxComponent*>& HitActorHitBoxArray = HitRewindableInterface->GetHitBoxArray();
 
+# if WITH_EDITOR
+	for (int32 idx = 0; idx < HitActorHitBoxArray.Num(); idx++)
+	{
+		UBoxComponent* Box = HitActorHitBoxArray[idx];
+		UWorld* World = GetWorld();
+		if (Box)
+		{
+			DrawDebugBox(World, Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), FColor::Red, false, 4.f, 0, 2.f);
+		}
+	}
+# endif
+	
 	for (int32 idx = 0; idx < HitActorHitBoxArray.Num(); idx++)
 	{
 		UBoxComponent* Box = HitActorHitBoxArray[idx];
@@ -346,6 +360,18 @@ void ULagCompensationComponent::MoveHitBoxes(IRewindableInterface* HitRewindable
 			Box->SetBoxExtent(FrameToMove.SavedHitBoxArray[idx].Extent);
 		}
 	}
+
+# if WITH_EDITOR
+	for (int32 idx = 0; idx < HitActorHitBoxArray.Num(); idx++)
+	{
+		UBoxComponent* Box = HitActorHitBoxArray[idx];
+		UWorld* World = GetWorld();
+		if (Box)
+		{
+			DrawDebugBox(World, Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), FColor::Blue, false, 10.f, 0, 2.f);
+		}
+	}
+# endif
 }
 
 void ULagCompensationComponent::ResetHitBoxes(IRewindableInterface* HitRewindableInterface, const FSavedFrame& ReservedFrame)

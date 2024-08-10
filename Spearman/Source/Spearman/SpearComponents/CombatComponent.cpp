@@ -28,6 +28,8 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+
 }
 
 void UCombatComponent::SetHUDCrosshairs()
@@ -98,6 +100,10 @@ void UCombatComponent::ServerSpearAttack_Implementation()
 	{
 		CombatState = ECombatState::ECS_Attacking;
 		MulticastSpearAttack();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Can't Attack"));
 	}
 }
 
@@ -170,6 +176,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	DropEquippedWeapon();
 	EquippedWeapon = WeaponToEquip;
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+	CombatState = ECombatState::ECS_Idle;
 	
 	const USkeletalMeshSocket* RightHandWeaponSocket = Character->GetMesh()->GetSocketByName(FName("WeaponSocket"));
 	if (RightHandWeaponSocket)

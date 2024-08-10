@@ -231,10 +231,10 @@ private:
 	/* HP Stat */
 
 	UPROPERTY(EditAnywhere, Category = Combat)
-	float MaxHp = 100.f;
+	float MaxHp = 200.f;
 
-	UPROPERTY(ReplicatedUsing = OnRep_Hp, VisibleAnywhere, Category = Combat)
-	float Hp = 100.f;
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Hp, Category = Combat)
+	float Hp = 200.f;
 
 	UFUNCTION()
 	void OnRep_Hp(float LastHp);

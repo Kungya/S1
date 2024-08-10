@@ -89,9 +89,6 @@ ASpearmanCharacter::ASpearmanCharacter()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
 	GetMesh()->SetCollisionObjectType(ECC_SkeletalMesh);
-	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
 	TIPState = ETurnInPlace::ETIP_NotTurn;
 	NetUpdateFrequency = 66.f;
@@ -624,10 +621,6 @@ void ASpearmanCharacter::AttackButtonPressed()
 	if (Combat)
 	{
 		Combat->ServerSpearAttack();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Can't Attack"));
 	}
 }
 
