@@ -73,6 +73,7 @@ protected:
 	void SetHUDTickRate(float ClientTick, float ServerTick);
 	void SetHUDAlive();
 
+	void SetMaterialFromRenderTarget();
 	void InitRenderTargetIfServer(APawn* InPawn);
 
 	void ShowReturnToMainMenu();

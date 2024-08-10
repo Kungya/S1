@@ -62,7 +62,7 @@ void ASpearmanGameMode::Tick(float DeltaTime)
 }
 
 void ASpearmanGameMode::PlayerDeath(ASpearmanCharacter* DeadCharacter, ASpearmanPlayerController* DeadController, ASpearmanPlayerController* AttackerController)
-{
+{ /* deprecated */
 	if (DeadCharacter)
 	{
 		DeadCharacter->Death();
@@ -70,7 +70,7 @@ void ASpearmanGameMode::PlayerDeath(ASpearmanCharacter* DeadCharacter, ASpearman
 }
 
 void ASpearmanGameMode::RequestRespawn(ASpearmanCharacter* DeadCharacter, AController* DeadController)
-{
+{ /* deprecated */
 	if (DeadCharacter)
 	{
 		DeadCharacter->Reset();

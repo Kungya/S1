@@ -34,6 +34,7 @@ void ULagCompensationComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	}
 }
 
+/* ServerRewindRequest() -> Rewind() -> GetInterpFrame() -> SimulateHit() */
 void ULagCompensationComponent::ServerRewindRequest_Implementation(ARewindableCharacter* HitRewindableCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTime, AWeapon* Weapon)
 { /* Server Only */
 	if (HitRewindableCharacter == nullptr || Weapon == nullptr) return;
@@ -170,14 +171,6 @@ FRewindResult ULagCompensationComponent::SimulateHit(ARewindableCharacter* HitRe
 	return FRewindResult{ false, false };
 }
 
-void ULagCompensationComponent::ShowSavedFrame(const FSavedFrame& Frame, const FColor& Color)
-{
-	for (const FHitBox& Box : Frame.SavedHitBoxArray)
-	{
-		DrawDebugBox(GetWorld(), Box.Location, Box.Extent, FQuat(Box.Rotation), Color, false, 4.f);
-	}
-}
-
 void ULagCompensationComponent::ServerRewindRequestForParrying_Implementation(ARewindableActor* HitRewindableActor, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, const float HitTime, AWeapon* Weapon)
 {
 	if (HitRewindableActor == nullptr || Weapon == nullptr) return;
@@ -262,7 +255,7 @@ bool ULagCompensationComponent::SimulateHit(ARewindableActor* HitRewindableActor
 	check(RewindableInterface != nullptr);
 
 	FSavedFrame CurrentFrame;
-	ReserveCurrentFrame(HitRewindableActor, CurrentFrame);
+	ReserveCurrentFrame(RewindableInterface, CurrentFrame);
 	MoveHitBoxes(RewindableInterface, Frame);
 	HitRewindableActor->GetWeaponMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -371,5 +364,13 @@ void ULagCompensationComponent::ResetHitBoxes(IRewindableInterface* HitRewindabl
 			Box->SetBoxExtent(ReservedFrame.SavedHitBoxArray[idx].Extent);
 			Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
+	}
+}
+
+void ULagCompensationComponent::ShowSavedFrame(const FSavedFrame& Frame, const FColor& Color)
+{
+	for (const FHitBox& Box : Frame.SavedHitBoxArray)
+	{
+		DrawDebugBox(GetWorld(), Box.Location, Box.Extent, FQuat(Box.Rotation), Color, false, 4.f);
 	}
 }

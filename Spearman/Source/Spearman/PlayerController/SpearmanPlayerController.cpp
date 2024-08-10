@@ -292,20 +292,24 @@ void ASpearmanPlayerController::HUDInit()
 				if (SpearmanCharacter == nullptr) return;
 				SpearmanCharacter->GetCombat()->SetHUDCrosshairs();
 				
-				if (IsLocalController())
-				{
-					UMaterialInstance* MinimapMatInst = LoadObject<UMaterialInstance>(nullptr, TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Assets/Textures/Minimap/RenderTarget_Mat_Inst.RenderTarget_Mat_Inst'"));
-					if (MinimapMatInst)
-					{
-						UMaterialInstanceDynamic* MiniMapMatInstDynamic = UMaterialInstanceDynamic::Create(MinimapMatInst, this);
-						if (MiniMapMatInstDynamic && SpearmanCharacter->RenderTargetMinimap)
-						{
-							MiniMapMatInstDynamic->SetTextureParameterValue(FName("MinimapParam"), SpearmanCharacter->RenderTargetMinimap);
-							CharacterOverlay->Minimap->SetBrushFromMaterial(MiniMapMatInstDynamic);
-						}
-					}
-				}
+				SetMaterialFromRenderTarget();
 			}
+		}
+	}
+}
+
+void ASpearmanPlayerController::SetMaterialFromRenderTarget()
+{
+	if (!IsLocalController()) return;
+
+	UMaterialInstance* MinimapMatInst = LoadObject<UMaterialInstance>(nullptr, TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Assets/Textures/Minimap/RenderTarget_Mat_Inst.RenderTarget_Mat_Inst'"));
+	if (MinimapMatInst)
+	{
+		UMaterialInstanceDynamic* MiniMapMatInstDynamic = UMaterialInstanceDynamic::Create(MinimapMatInst, SpearmanHUD->CharacterOverlay);
+		if (MiniMapMatInstDynamic && SpearmanCharacter->RenderTargetMinimap)
+		{
+			MiniMapMatInstDynamic->SetTextureParameterValue(FName("MinimapParam"), SpearmanCharacter->RenderTargetMinimap);
+			CharacterOverlay->Minimap->SetBrushFromMaterial(MiniMapMatInstDynamic);
 		}
 	}
 }

@@ -103,6 +103,8 @@ void AWeapon::Tick(float DeltaTime)
 	// if (bUseReiwnd) : Client, else : Server */
 	if (bAttackCollisionTrace)
 	{
+		OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter;
+		if (!OwnerSpearmanCharacter->IsLocallyControlled()) return;
 		if (!HasAuthority())
 		{
 			AttackCollisionCheckByRewind();
@@ -116,15 +118,14 @@ void AWeapon::Tick(float DeltaTime)
 
 void AWeapon::AttackCollisionCheckByRewind()
 { /* Client Only */
-	FVector Start = TraceStartBox->GetComponentLocation();
-	FVector End = TraceEndBox->GetComponentLocation();
+	FVector_NetQuantize Start = TraceStartBox->GetComponentLocation();
+	FVector_NetQuantize End = TraceEndBox->GetComponentLocation();
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 	Params.AddIgnoredActor(GetOwner());
 
-	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
-	// DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.f);
+	if (!GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params)) return;
 
 	if (HitResult.GetActor() == nullptr || HitSet.Contains(HitResult.GetActor())) return;
 	HitSet.Add(HitResult.GetActor());
@@ -143,6 +144,7 @@ void AWeapon::AttackCollisionCheckByRewind()
 			const float CurrentServerTime = OwnerSpearmanPlayerController->GetServerTime() - OwnerSpearmanPlayerController->GetSingleTripTime();
 			OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequestForParrying(HitWeapon, Start, HitResult.ImpactPoint, CurrentServerTime, this);
 		}
+		return;
 	}
 	ARewindableCharacter* HitRewindableCharacter = Cast<ARewindableCharacter>(HitResult.GetActor());
 	if (HitRewindableCharacter)
@@ -166,7 +168,7 @@ void AWeapon::AttackCollisionCheckByServer()
 	Params.AddIgnoredActor(GetOwner());
 	
 	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
-	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.f);
+	// DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.f);
 
 	if (HitResult.GetActor() == nullptr || HitSet.Contains(HitResult.GetActor())) return;
 	HitSet.Add(HitResult.GetActor());
@@ -194,7 +196,6 @@ void AWeapon::AttackCollisionCheckByServer()
 			HitWeaponParried->GetOwnerSpearmanCharacter()->GetCombat()->CombatState = ECombatState::ECS_Stunned;
 			HitWeaponParried->OwnerSpearmanCharacter->GetCombat()->MulticastParried(OwnerSpearmanCharacter, HitResult.ImpactPoint);
 		}
-
 		return;
 	}
 
@@ -212,6 +213,8 @@ void AWeapon::AttackCollisionCheckByServer()
 			bHeadShot = false;
 			HitPartDamage = Damage;
 		}
+
+		UE_LOG(LogTemp, Warning, TEXT("Hit Character By Server"));
 
 		const float Dist = FVector::Distance(OwnerSpearmanCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
 		FVector2D InRange(60.f, 240.f), OutRange(HitPartDamage / 3.f, HitPartDamage);

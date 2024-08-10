@@ -222,7 +222,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* DefenseMontage;
 
-	float TurnThreshold = 15.f;
+	float TurnThreshold = 30.f;
 	FRotator RotationPrevFrame;
 	FRotator RotationNowFrame;
 	float YawOffset;

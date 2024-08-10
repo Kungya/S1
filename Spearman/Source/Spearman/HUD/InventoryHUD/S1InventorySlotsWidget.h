@@ -24,8 +24,6 @@ class SPEARMAN_API US1InventorySlotsWidget : public US1UserWidget
 public:
 	US1InventorySlotsWidget(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-	void GetLogfromSlotsWidget();
-
 	void UpdateItemInfoWidget(const int32 InventoryArrayIndex);
 
 	void OnInventoryItemInfoChanged(const FIntPoint& InItemSlotPos, UItemInstance* Item);

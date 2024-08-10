@@ -381,6 +381,8 @@ void ASpearmanCharacter::OnAttacked(AActor* DamagedActor, float Damage, const UD
 { /* Server Only */
 	if (bDeath) return;
 
+	UE_LOG(LogTemp, Warning, TEXT("OnAttacked !"));
+
 	Hp = FMath::Clamp(Hp - Damage, 0.f, MaxHp);
 
 	UpdateHUDHp();

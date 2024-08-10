@@ -174,8 +174,3 @@ void US1InventorySlotsWidget::FinishDrag()
 {
 	PrevDragOverSlotPos = FIntPoint(-1, -1);
 }
-
-void US1InventorySlotsWidget::GetLogfromSlotsWidget()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Can Access !!"));
-}
