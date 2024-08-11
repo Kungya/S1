@@ -136,6 +136,8 @@ void UInventoryComponent::ServerSellItem_Implementation(const int32 IdxToSell)
 
 void UInventoryComponent::OnRep_InventoryArray(TArray<UItemInstance*> LastInventoryArray)
 {
+	if (OwnerSpearmanPlayerController == nullptr) return;
+
 	int32 LastInventoryArrayCount = 0;
 	for (int32 idx = 0; idx < LastInventoryArray.Num(); idx++)
 	{
@@ -154,7 +156,7 @@ void UInventoryComponent::OnRep_InventoryArray(TArray<UItemInstance*> LastInvent
 	{ // if Drop, it's Already Updated before ServerRPC.
 		return;
 	}
-
+	// if couldn't find, Num() - 1 is ReplicatedElmentIndx
 	int32 ReplicatedElementIndex = InventoryArray.Num() - 1;
 	for (int32 idx = 0; idx < LastInventoryArray.Num(); idx++)
 	{
@@ -165,12 +167,9 @@ void UInventoryComponent::OnRep_InventoryArray(TArray<UItemInstance*> LastInvent
 		}
 	}
 
-	if (OwnerSpearmanPlayerController)
+	US1InventorySlotsWidget* SlotsWidget = OwnerSpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->InventoryWidget->InventorySlotsWidget;
+	if (SlotsWidget)
 	{
-		US1InventorySlotsWidget* SlotsWidget = OwnerSpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->InventoryWidget->InventorySlotsWidget;
-		if (SlotsWidget)
-		{
-			SlotsWidget->UpdateItemInfoWidget(ReplicatedElementIndex);
-		}
+		SlotsWidget->UpdateItemInfoWidget(ReplicatedElementIndex);
 	}
 }
