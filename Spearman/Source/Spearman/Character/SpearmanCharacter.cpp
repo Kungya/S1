@@ -571,6 +571,11 @@ void ASpearmanCharacter::CalculateAO_Pitch()
 	if (AO_Pitch > 90.f && !IsLocallyControlled())
 	{ // [270, 360) ->[-90, 0)
 		AO_Pitch -= 360.f;
+
+		if (HasAuthority())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("AO_Pitch : %f"), AO_Pitch);
+		}
 	}
 	
 	AO_Pitch = FMath::ClampAngle(AO_Pitch, -45.f, 45.f);
