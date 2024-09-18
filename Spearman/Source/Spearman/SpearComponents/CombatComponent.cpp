@@ -29,7 +29,6 @@ void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-
 }
 
 void UCombatComponent::SetHUDCrosshairs()
@@ -172,6 +171,15 @@ void UCombatComponent::SetDashCooldown()
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 { /* Server Only */
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
+
+	if (EquippedWeapon)
+	{ // Swap (Equip and UnEquip)
+		ASpearmanCharacter::NotifySwapWeapon.Broadcast(Character, WeaponToEquip, EquippedWeapon);
+	}
+	else if (!EquippedWeapon)
+	{ // Equip Only
+		ASpearmanCharacter::NotifySwapWeapon.Broadcast(Character, WeaponToEquip, nullptr);
+	}
 
 	DropEquippedWeapon();
 	EquippedWeapon = WeaponToEquip;

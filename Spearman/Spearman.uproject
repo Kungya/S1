@@ -12,7 +12,10 @@
 				"Engine",
 				"UMG",
 				"AIModule",
-				"CoreUObject"
+				"CoreUObject",
+				"ReplicationGraph",
+				"UnrealEd",
+				"DeveloperSettings"
 			]
 		}
 	],

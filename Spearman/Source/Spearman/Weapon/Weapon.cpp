@@ -10,6 +10,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Spearman/Spearman.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/DamageType.h"
 #include "Spearman/Interfaces/WeaponHitInterface.h"
 #include "Spearman/Monster/BasicMonster.h"
 #include "Spearman/SpearComponents/LagCompensationComponent.h"
@@ -104,7 +105,7 @@ void AWeapon::Tick(float DeltaTime)
 	if (bAttackCollisionTrace)
 	{
 		OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter;
-		if (!OwnerSpearmanCharacter->IsLocallyControlled()) return;
+		if (OwnerSpearmanCharacter == nullptr || !OwnerSpearmanCharacter->IsLocallyControlled()) return;
 		if (!HasAuthority())
 		{
 			AttackCollisionCheckByRewind();

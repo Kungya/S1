@@ -27,6 +27,7 @@
 #include "Spearman/HUD/InventoryHUD/ItemDropCanvasWidget.h"
 #include "Spearman/HUD/ExtractionNoticeWidget.h"
 #include "Spearman/SpearComponents/CombatComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 ASpearmanPlayerController::ASpearmanPlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

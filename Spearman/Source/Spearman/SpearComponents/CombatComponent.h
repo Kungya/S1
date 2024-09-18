@@ -13,6 +13,7 @@ class ASpearmanHUD;
 class AWeapon;
 class USoundCue;
 
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SPEARMAN_API UCombatComponent : public UActorComponent
 {
@@ -94,9 +95,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	USoundCue* ParryingSound;
-
-
+	
 public:
+
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 
 };

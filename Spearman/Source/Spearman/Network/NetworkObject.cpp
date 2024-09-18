@@ -2,6 +2,8 @@
 
 
 #include "NetworkObject.h"
+#include "Engine/NetDriver.h"
+
 
 UWorld* UNetworkObject::GetWorld() const
 {

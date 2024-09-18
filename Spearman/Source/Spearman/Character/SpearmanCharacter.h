@@ -27,6 +27,10 @@ class ASpearmanPlayerController;
 class UParticleSystem;
 class UBoxComponent;
 class UCapsuleComponent;
+class UAnimInstance;
+class USkeletalMeshComponent;
+
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnSpearmanCharacterSwapWeapon, ASpearmanCharacter*, AWeapon*, AWeapon* /* (Character, New, Old) */);
 
 UCLASS()
 class SPEARMAN_API ASpearmanCharacter : public ARewindableCharacter, public IWeaponHitInterface
@@ -57,6 +61,8 @@ public:
 
 	void ShowBlueZoneImage();
 
+	bool GetIsPlayingDefenseMontage() const;
+
 	// Disable Key Input if Character Dies or Match is Ended...
 	UPROPERTY(Replicated)
 	bool bDisableKeyInput = false;
@@ -70,6 +76,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Minimap)
 	UTextureRenderTarget2D* RenderTargetMinimap;
 
+	static FOnSpearmanCharacterSwapWeapon NotifySwapWeapon;
 
 protected:
 	virtual void BeginPlay() override;
@@ -341,5 +348,4 @@ public:
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const { return LagCompensation; }
 	FORCEINLINE void SetbIsInBlueZone(const bool NewbIsInBlueZone) { bIsInBlueZone = NewbIsInBlueZone; }
 	FORCEINLINE UTextureRenderTarget2D* GetRenderTargetMinimap() const { return RenderTargetMinimap; }
-	FORCEINLINE bool GetIsPlayingDefenseMontage() const { return GetMesh()->GetAnimInstance()->Montage_IsPlaying(DefenseMontage); }
 };

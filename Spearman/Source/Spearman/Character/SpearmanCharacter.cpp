@@ -37,6 +37,8 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Spearman/DamageType/BlueZoneDamageType.h"
 
+FOnSpearmanCharacterSwapWeapon ASpearmanCharacter::NotifySwapWeapon;
+
 ASpearmanCharacter::ASpearmanCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -870,4 +872,9 @@ void ASpearmanCharacter::ShowBlueZoneImage()
 			SpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->BlueZoneImage->SetVisibility(ESlateVisibility::Visible);
 		}
 	}
+}
+
+bool ASpearmanCharacter::GetIsPlayingDefenseMontage() const
+{
+	return GetMesh()->GetAnimInstance()->Montage_IsPlaying(DefenseMontage);
 }

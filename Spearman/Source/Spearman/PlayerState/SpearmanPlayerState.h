@@ -15,10 +15,15 @@ class SPEARMAN_API ASpearmanPlayerState : public APlayerState
 	
 public:
 
+
+
 protected:
+	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
-	
 	virtual void CopyProperties(APlayerState* PlayerState) override;
+
+	/*UFUNCTION()
+	void OnRep_Team();*/
 
 	UFUNCTION()
 	void OnRep_Balance();
@@ -27,12 +32,17 @@ private:
 	UPROPERTY()
 	ASpearmanPlayerController* SpearmanPlayerController;
 	
+	/*UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Team)
+	int32 Team = -1;*/
+
 	UPROPERTY(ReplicatedUsing = OnRep_Balance)
 	int32 Balance = 0;
 
 
 
 public:
+	/*void SetTeam(int32 NewTeam);
+	FORCEINLINE int32 GetTeam() const { return Team; }*/
 	void SetBalance(int32 NewBalance);
 	FORCEINLINE int32 GetBalance() const { return Balance; }
 
