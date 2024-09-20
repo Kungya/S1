@@ -20,6 +20,7 @@
 #include "Spearman/Character/SpearmanCharacter.h"
 #include "Spearman/PlayerController/SpearmanPlayerController.h"
 #include "Spearman/Weapon/Weapon.h"
+#include "Spearman/Spearman.h"
 
 DEFINE_LOG_CATEGORY(LogS1RepGraph);
 
@@ -139,6 +140,12 @@ EClassRepNodeMapping US1ReplicationGraph::GetClassNodeMapping(UClass* Class) con
 		return *Ptr;
 	}
 
+	if (Class->IsChildOf(ASpearmanCharacter::StaticClass()))
+	{
+		UE_LOG(LogS1RepGraph, Error, TEXT("SpearmanCharacter's Policy is VisibilityCheck_ForConnection"));
+		return EClassRepNodeMapping::VisibilityCheck_ForConnection;
+	}
+
 	AActor* ActorCDO = Cast<AActor>(Class->GetDefaultObject());
 	if (!ActorCDO || !ActorCDO->GetIsReplicated())
 	{
@@ -146,7 +153,7 @@ EClassRepNodeMapping US1ReplicationGraph::GetClassNodeMapping(UClass* Class) con
 	}
 
 	auto ShouldSpatialize = [](const AActor* CDO)
-	{
+	{ // Spatialize되지 않을려면 후행하는 3개의 조건 중에서 하나라도 충족해야 함.
 		return CDO->GetIsReplicated() && (!(CDO->bAlwaysRelevant || CDO->bOnlyRelevantToOwner || CDO->bNetUseOwnerRelevancy));
 	};
 
@@ -372,12 +379,21 @@ void US1ReplicationGraph::InitConnectionGraphNodes(UNetReplicationGraphConnectio
 {
 	Super::InitConnectionGraphNodes(RepGraphConnection);
 
+	/* [ AlwaysRelevant_ForConnection ] Node */
 	US1ReplicationGraphNode_AlwaysRelevant_ForConnection* AlwaysRelevantConnectionNode = CreateNewNode<US1ReplicationGraphNode_AlwaysRelevant_ForConnection>();
 
 	RepGraphConnection->OnClientVisibleLevelNameAdd.AddUObject(AlwaysRelevantConnectionNode, &US1ReplicationGraphNode_AlwaysRelevant_ForConnection::OnClientLevelVisibilityAdd);
 	RepGraphConnection->OnClientVisibleLevelNameRemove.AddUObject(AlwaysRelevantConnectionNode, &US1ReplicationGraphNode_AlwaysRelevant_ForConnection::OnClientLevelVisibilityRemove);
 
 	AddConnectionGraphNode(AlwaysRelevantConnectionNode, RepGraphConnection);
+
+	/* [ VisibilityCheck_ForConnection ] Node */
+	US1ReplicationGraphNode_VisibilityCheck_ForConnection* VisibilityCheckConnectionNode = CreateNewNode<US1ReplicationGraphNode_VisibilityCheck_ForConnection>();
+	
+	AddConnectionGraphNode(VisibilityCheckConnectionNode, RepGraphConnection);
+
+	VisibilityCheckForConnectionNodes.Add(RepGraphConnection->NetConnection, VisibilityCheckConnectionNode);
+	VisibilityCheckConnectionNode->ConnectionManager = RepGraphConnection;
 
 	UE_LOG(LogS1RepGraph, Warning, TEXT("Called [InitConnectionGraphNodes] !"));
 }
@@ -389,6 +405,16 @@ EClassRepNodeMapping US1ReplicationGraph::GetMappingPolicy(UClass* Class)
 	return Policy;
 }
 
+void US1ReplicationGraph::AddVisibleActor(const FNewReplicatedActorInfo& ActorInfo)
+{
+	PotentiallyVisibleActorList.Add(ActorInfo.Actor);
+}
+
+void US1ReplicationGraph::RemoveVisibleActor(const FNewReplicatedActorInfo& ActorInfo)
+{
+	PotentiallyVisibleActorList.RemoveFast(ActorInfo.Actor);
+}
+
 void US1ReplicationGraph::RouteAddNetworkActorToNodes(const FNewReplicatedActorInfo& ActorInfo, FGlobalActorReplicationInfo& GlobalInfo)
 {
 	EClassRepNodeMapping Policy = GetMappingPolicy(ActorInfo.Class);
@@ -396,7 +422,13 @@ void US1ReplicationGraph::RouteAddNetworkActorToNodes(const FNewReplicatedActorI
 	switch (Policy)
 	{
 		case EClassRepNodeMapping::NotRouted:
-		{
+		{ /* i.e : AWeapon, APlayerController */
+			break;
+		}
+
+		case EClassRepNodeMapping::VisibilityCheck_ForConnection:
+		{ /* i.e. : SpearmanCharacter */
+			AddVisibleActor(ActorInfo);
 			break;
 		}
 
@@ -447,6 +479,12 @@ void US1ReplicationGraph::RouteRemoveNetworkActorToNodes(const FNewReplicatedAct
 		{
 			break;
 		}
+
+		case EClassRepNodeMapping::VisibilityCheck_ForConnection:
+		{
+			RemoveVisibleActor(ActorInfo);
+			break;
+		}
 		
 		case EClassRepNodeMapping::RelevantAllConnections:
 		{
@@ -487,6 +525,17 @@ void US1ReplicationGraph::RouteRemoveNetworkActorToNodes(const FNewReplicatedAct
 			break;
 		}
 	}
+}
+
+int32 US1ReplicationGraph::ServerReplicateActors(float DeltaSeconds)
+{ /* Cache VisibleActors' WorldLocation. */
+	for (const FActorRepListType& VisibleActor : PotentiallyVisibleActorList)
+	{
+		FGlobalActorReplicationInfo& ActorRepInfo = GlobalActorReplicationInfoMap.Get(VisibleActor);
+		ActorRepInfo.WorldLocation = VisibleActor->GetActorLocation();
+	}
+
+	return Super::ServerReplicateActors(DeltaSeconds);
 }
 
 /* ---------------------------------------- S1ReplicationGraph Code Segment End ---------------------------------------- */
@@ -546,21 +595,21 @@ void US1ReplicationGraphNode_AlwaysRelevant_ForConnection::GatherActorListsForCo
 					ReplicationActorList.ConditionalAdd(PS);
 				}
 			}
-			
+			// TODO : 5.2 Lyra 코드보고 연결고리가 맞는지 다시 분석해보기
 			FCachedAlwaysRelevantActorInfo& LastData = PastRelevantActorMap.FindOrAdd(CurViewer.Connection);
 
 			if (ASpearmanCharacter* Pawn = Cast<ASpearmanCharacter>(PC->GetPawn()))
-			{
+			{ /* UpdateCachedRelevantActor : AlwaysRelevant For Connection에 해당하는 Pawn이 변경되었다면 CullDistance를 0->기존값으로 다시 바꿔치기하는 것.*/
 				UpdateCachedRelevantActor(Params, Pawn, LastData.LastViewer);
 
 				if (Pawn != CurViewer.ViewTarget)
-				{ /* 이건 조건에 관한 의미를 아직 모르겠음. PC->GetPawn()과 ViewTarget이 다를 수가 있으니 그때를 대비 한 것 같음. */
+				{ /* 이건 조건에 관한 의미를 아직 모르겠음. 현재 Pawn과 ViewTarget이 달라졌나요? */
 					ReplicationActorList.ConditionalAdd(Pawn);
 				}
 			}
 
 			if (ASpearmanCharacter* ViewTargetPawn = Cast<ASpearmanCharacter>(CurViewer.ViewTarget))
-			{ /* 위랑 살짝 비슷한데, CurView->ViewTarget이 LyraCharacter가 맞다면 캐싱하는 것. */
+			{ /* 위랑 살짝 비슷한데, CurView->ViewTarget이 SpearmanCharacter가 맞다면 캐싱하는 것. */
 				UpdateCachedRelevantActor(Params, ViewTargetPawn, LastData.LastViewTarget);
 			}
 		}
@@ -616,7 +665,7 @@ void US1ReplicationGraphNode_AlwaysRelevant_ForConnection::GatherActorListsForCo
 		}
 	}
 
-	UE_LOG(LogS1RepGraph, Warning, TEXT("Called [GatherActorListsForConnection] !"));
+	// UE_LOG(LogS1RepGraph, Warning, TEXT("Called [GatherActorListsForConnection] !"));
 }
 
 void US1ReplicationGraphNode_AlwaysRelevant_ForConnection::OnClientLevelVisibilityAdd(FName LevelName, UWorld* StreamingWorld)
@@ -630,6 +679,69 @@ void US1ReplicationGraphNode_AlwaysRelevant_ForConnection::OnClientLevelVisibili
 	UE_CLOG(S1::RepGraph::DisplayClientLevelStreaming > 0, LogS1RepGraph, Display, TEXT("CLIENTSTREAMING ::OnClientLevelVisibilityRemove - %s"), *LevelName.ToString());
 	AlwaysRelevantStreamingLevelsNeedingReplication.Remove(LevelName);
 }
+
+US1ReplicationGraphNode_VisibilityCheck_ForConnection::US1ReplicationGraphNode_VisibilityCheck_ForConnection()
+{
+	bRequiresPrepareForReplicationCall = true;
+}
+
+void US1ReplicationGraphNode_VisibilityCheck_ForConnection::PrepareForReplication()
+{
+	/* Cache Controlled Pawn (Starting Point of Visibility Check) */
+	CachedPawn = Cast<APawn>(ConnectionManager.Get()->NetConnection->ViewTarget);
+}
+
+void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params)
+{ // Check Visibility by Raycasting
+	US1ReplicationGraph* S1Graph = CastChecked<US1ReplicationGraph>(GetOuter());
+	FGlobalActorReplicationInfoMap* GlobalRepMap = GraphGlobals.IsValid() ? GraphGlobals->GlobalActorReplicationInfoMap : nullptr;
+	const FActorRepListRefView& VisibleActorList = S1Graph->PotentiallyVisibleActorList;
+	/*
+	* Trouble Shooting : Weapon is early Visible, and following SpearmanCharacter.
+	* TODO : Find why
+	*/
+	if (UNLIKELY(CachedPawn.Get() == nullptr || VisibleActorList.IsEmpty()))
+	{ /* If this, MatchState::WaitingStart, not spawning yet. */
+		return;
+	}
+
+	ReplicationActorList.Reset();
+
+	FCollisionQueryParams TraceParams;
+	TraceParams.AddIgnoredActor(CachedPawn.Get());
+	const UWorld* World = GetWorld();
+	const FVector TraceOffsetZ = FVector(0.f, 0.f, 180.f);
+	const FVector TraceStart = CachedPawn->GetActorLocation() + TraceOffsetZ;
+
+	for (const auto& ActorToCheck : VisibleActorList)
+	{	
+		if (CachedPawn.Get() == ActorToCheck)
+		{
+			continue;
+		}
+		
+		const FGlobalActorReplicationInfo& GlobalDataForActor = GlobalRepMap->Get(ActorToCheck);
+		const float DistSq = (GlobalDataForActor.WorldLocation - TraceStart).SizeSquared();
+		
+		// 20m, @FIXME : replace "4'000'000" with "GlobalRepMap->GetClassInfo().GetCullDistanceSquared()"
+		if (DistSq > 4'000'000)
+		{
+			continue;
+		}
+
+		const FVector TraceEnd = GlobalDataForActor.WorldLocation + TraceOffsetZ;
+
+		FHitResult HitResult;
+		World->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_FogOfWar, TraceParams);
+		if (HitResult.bBlockingHit == false)
+		{ // Visible
+			ReplicationActorList.Add(ActorToCheck);
+		}
+	}
+
+	Params.OutGatheredReplicationLists.AddReplicationActorList(ReplicationActorList);
+}
+
 
 // Since we listen to global (static) events, we need to watch out for cross world broadcasts (PIE)
 #if WITH_EDITOR

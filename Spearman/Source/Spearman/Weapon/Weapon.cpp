@@ -56,6 +56,8 @@ AWeapon::AWeapon()
 	TraceEndBox->SetupAttachment(RootComponent);
 	TraceEndBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	TraceEndBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// bNetUseOwnerRelevancy = true;
 }
 
 void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

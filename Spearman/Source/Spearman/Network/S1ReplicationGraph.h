@@ -28,6 +28,11 @@ public:
 	virtual void RouteAddNetworkActorToNodes(const FNewReplicatedActorInfo& ActorInfo, FGlobalActorReplicationInfo& GlobalInfo) override;
 	virtual void RouteRemoveNetworkActorToNodes(const FNewReplicatedActorInfo& ActorInfo) override;
 
+	virtual int32 ServerReplicateActors(float DeltaSeconds) override;
+
+	void AddVisibleActor(const FNewReplicatedActorInfo& ActorInfo);
+	void RemoveVisibleActor(const FNewReplicatedActorInfo& ActorInfo);
+
 	UPROPERTY()
 	TObjectPtr<UReplicationGraphNode_GridSpatialization2D> GridNode;
 
@@ -35,6 +40,13 @@ public:
 	TObjectPtr<UReplicationGraphNode_ActorList> AlwaysRelevantNode;
 	
 	TMap<FName, FActorRepListRefView> AlwaysRelevantStreamingLevelActors;
+
+	/** Actors that are replicated, for specific connections, based on Visibility Check. */
+	UPROPERTY()
+	TMap<UNetConnection*, US1ReplicationGraphNode_VisibilityCheck_ForConnection*> VisibilityCheckForConnectionNodes;
+
+	/** Actors that could "potentially" become visible or hidden */
+	FActorRepListRefView PotentiallyVisibleActorList;
 
 	void OnCharacterSwapWeapon(ASpearmanCharacter* Character, AWeapon* NewWeapon, AWeapon* OldWeapon);
 
@@ -75,12 +87,12 @@ public:
 
 	virtual void GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params) override;
 
-
 	void OnClientLevelVisibilityAdd(FName LevelName, UWorld* StreamingWorld);
 	void OnClientLevelVisibilityRemove(FName LevelName);
 
 	void ResetGameWorldState();
 
+	/* @ Added in 5.2 */
 	template<typename KeyType, typename ValueType>
 	static void CleanupCachedRelevantActors(TMap<TObjectKey<KeyType>, ValueType>& ActorMap)
 	{
@@ -92,14 +104,35 @@ public:
 			}
 		}
 	}
-
 protected:
+	/* @ Added in 5.2 */
 	void UpdateCachedRelevantActor(const FConnectionGatherActorListParameters& Params, AActor* NewActor, TWeakObjectPtr<AActor>& LastActor);
-
+	/* @ Added in 5.2, TArray PastRelevant is Deprecated. */
 	TMap<TObjectKey<UNetConnection>, FCachedAlwaysRelevantActorInfo> PastRelevantActorMap;
 
 private:
 	TArray<FName, TInlineAllocator<64> > AlwaysRelevantStreamingLevelsNeedingReplication;
 
 	bool bInitializePlayerState = false;
+};
+
+UCLASS()
+class US1ReplicationGraphNode_VisibilityCheck_ForConnection : public UReplicationGraphNode_ActorList
+{
+	GENERATED_BODY()
+
+public:
+	US1ReplicationGraphNode_VisibilityCheck_ForConnection();
+	
+	virtual void PrepareForReplication() override;
+	virtual void GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params) override;
+
+	void AddVisibleActor(const FNewReplicatedActorInfo& ActorInfo);
+	void RemoveVisibleActor(const FNewReplicatedActorInfo& ActorInfo);
+
+	TWeakObjectPtr<UNetReplicationGraphConnection> ConnectionManager;
+	TWeakObjectPtr<APawn> CachedPawn;
+
+private:
+	// Super::ReplicationList
 };
