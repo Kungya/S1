@@ -279,6 +279,15 @@ void ASpearmanCharacter::Tick(float DeltaTime)
 		AttackButtonPressed();
 	}
 
+	if (HasAuthority())
+	{
+		FVector Velocity = GetVelocity();
+		if (Velocity.Size() > 10.f)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Velocity : %f : X:%f, Y:%f, Z:%f"), Velocity.Size(), Velocity.X, Velocity.Y, Velocity.Z);
+		}
+	}
+
 	TimeSinceLastMovementReplication += DeltaTime;
 	if (TimeSinceLastMovementReplication > 0.05f)
 	{

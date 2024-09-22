@@ -193,12 +193,6 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
-
-	// Just Temp code for NetCullDistance test. 
-	if (ASpearmanGameMode* SpearmanGameMode = Cast<ASpearmanGameMode>(UGameplayStatics::GetGameMode(this)))
-	{
-		SpearmanGameMode->SetCharacterAB(Character);
-	}
 }
 
 void UCombatComponent::OnRep_EquippedWeapon()
