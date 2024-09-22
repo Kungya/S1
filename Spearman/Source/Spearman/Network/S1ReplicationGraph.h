@@ -28,6 +28,7 @@ public:
 	virtual void RouteAddNetworkActorToNodes(const FNewReplicatedActorInfo& ActorInfo, FGlobalActorReplicationInfo& GlobalInfo) override;
 	virtual void RouteRemoveNetworkActorToNodes(const FNewReplicatedActorInfo& ActorInfo) override;
 
+	virtual bool ProcessRemoteFunction(class AActor* Actor, UFunction* Function, void* Parameters, FOutParmRec* OutParms, FFrame* Stack, class UObject* SubObject) override;
 	virtual int32 ServerReplicateActors(float DeltaSeconds) override;
 
 	void AddVisibleActor(const FNewReplicatedActorInfo& ActorInfo);
@@ -47,6 +48,9 @@ public:
 
 	/** Actors that could "potentially" become visible or hidden */
 	FActorRepListRefView PotentiallyVisibleActorList;
+
+	/** BookKeep mutual visibility in VisibilityCheck_ForConnection, {Server -> Client} may not be kept. **/
+	TMap<TPair<AActor*, AActor*>, bool> VisibilityBookkeeping;
 
 	void OnCharacterSwapWeapon(ASpearmanCharacter* Character, AWeapon* NewWeapon, AWeapon* OldWeapon);
 

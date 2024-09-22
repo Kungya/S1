@@ -99,6 +99,9 @@ ASpearmanCharacter::ASpearmanCharacter()
 	GetCharacterMovement()->JumpZVelocity = 480.f;
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
+	NetCullDistanceSquared = 4'000'000.f;
+	bNetLoadOnClient = false;
+
 	/*
 	* Hit Box, WARNING : Never RELOCATE HitBox's Order, "HitBoxArray[0] => head" (0 index is head)
 	*/
@@ -255,6 +258,8 @@ void ASpearmanCharacter::BeginPlay()
 
 	/* Temporary, test for rewind */
 	GetWorldTimerManager().SetTimer(TestTimer, this, &ASpearmanCharacter::TestToggleVector, 2.f, true);
+
+	UE_LOG(LogTemp, Warning, TEXT("NetCullDist : %f"), NetCullDistanceSquared);
 }
 
 void ASpearmanCharacter::Tick(float DeltaTime)

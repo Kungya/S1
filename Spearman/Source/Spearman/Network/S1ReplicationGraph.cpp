@@ -8,6 +8,11 @@
 #include "EngineUtils.h"
 #include "CoreGlobals.h"
 
+#include "Net/RepLayout.h"
+#include "Net/Core/Trace/NetTrace.h"
+#include "Engine/ChildConnection.h"
+#include "HAL/IConsoleManager.h"
+
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameState.h"
 #include "GameFramework/PlayerState.h"
@@ -21,6 +26,10 @@
 #include "Spearman/PlayerController/SpearmanPlayerController.h"
 #include "Spearman/Weapon/Weapon.h"
 #include "Spearman/Spearman.h"
+#include "Spearman/SpearComponents/CombatComponent.h"
+
+#include "DrawDebugHelpers.h"
+
 
 DEFINE_LOG_CATEGORY(LogS1RepGraph);
 
@@ -82,6 +91,33 @@ namespace S1::RepGraph
 		return nullptr;
 	}
 }
+
+/* ---------------------------------------- From ReplicationGraph.cpp ---------------------------------------- */
+REPGRAPH_DEVCVAR_SHIPCONST(int32, "Net.RepGraph.EnableRPCSendPolicy", CVar_RepGraph_EnableRPCSendPolicy, 1, "Enables RPC send policy (e.g, force certain functions to send immediately rather than be queued)");
+
+static TAutoConsoleVariable<FString> CVarRepGraphConditionalBreakpointActorName(TEXT("Net.RepGraph.ConditionalBreakpointActorName"), TEXT(""),
+	TEXT("Helper CVar for debugging. Set this string to conditionally log/breakpoint various points in the repgraph pipeline. Useful for bugs like 'why is this actor channel closing'"), ECVF_Default);
+
+FActorConnectionPair DebugActorConnectionPair;
+
+FORCEINLINE bool RepGraphConditionalActorBreakpoint(AActor* Actor, UNetConnection* NetConnection)
+{
+#if !(UE_BUILD_SHIPPING)
+	if (CVarRepGraphConditionalBreakpointActorName.GetValueOnGameThread().Len() > 0 && GetNameSafe(Actor).Contains(CVarRepGraphConditionalBreakpointActorName.GetValueOnGameThread()))
+	{
+		return true;
+	}
+
+	// Alternatively, DebugActorConnectionPair can be set by code to catch a specific actor/connection pair 
+	if (DebugActorConnectionPair.Actor.Get() == Actor && (DebugActorConnectionPair.Connection == nullptr || DebugActorConnectionPair.Connection == NetConnection))
+	{
+		return true;
+	}
+#endif
+	return false;
+}
+
+/* ---------------------------------------- From ReplicationGraph.cpp ---------------------------------------- */
 
 /* ---------------------------------------- S1ReplicationGraph Code Segment Start ---------------------------------------- */
 
@@ -313,6 +349,7 @@ void US1ReplicationGraph::InitGlobalActorClassSettings()
 	CharacterClassRepInfo.StarvationPriorityScale = 1.f;
 	CharacterClassRepInfo.ActorChannelFrameTimeout = 4;
 	CharacterClassRepInfo.SetCullDistanceSquared(ASpearmanCharacter::StaticClass()->GetDefaultObject<ASpearmanCharacter>()->NetCullDistanceSquared);
+	UE_LOG(LogS1RepGraph, Error, TEXT("CDO CullDistance : %f"), ASpearmanCharacter::StaticClass()->GetDefaultObject<ASpearmanCharacter>()->NetCullDistanceSquared);
 	/* ACharacter와 그걸 상속받는 클래스들은 전부 위의 ReplicationInfo를 가지겠습니다 라고 명시적으로 설정.. */
 	/* TODO : BasicMonster */
 	SetClassInfo(ASpearmanCharacter::StaticClass(), CharacterClassRepInfo);
@@ -395,7 +432,7 @@ void US1ReplicationGraph::InitConnectionGraphNodes(UNetReplicationGraphConnectio
 	VisibilityCheckForConnectionNodes.Add(RepGraphConnection->NetConnection, VisibilityCheckConnectionNode);
 	VisibilityCheckConnectionNode->ConnectionManager = RepGraphConnection;
 
-	UE_LOG(LogS1RepGraph, Warning, TEXT("Called [InitConnectionGraphNodes] !"));
+	UE_LOG(LogS1RepGraph, Warning, TEXT("Called [InitConnectionGraphNodes] !, VisibilityCheckForConnectionNodes.Num() : %d"), VisibilityCheckForConnectionNodes.Num());
 }
 
 EClassRepNodeMapping US1ReplicationGraph::GetMappingPolicy(UClass* Class)
@@ -466,7 +503,7 @@ void US1ReplicationGraph::RouteAddNetworkActorToNodes(const FNewReplicatedActorI
 		}
 	};
 
-	UE_LOG(LogS1RepGraph, Warning, TEXT("Called [RouteAddNetworkActorToNodes] !"));
+	UE_LOG(LogS1RepGraph, Warning, TEXT("Called [RouteAddNetworkActorToNodes] ! // Temp : ;Connections : %d, %d"), Connections.Num(), PendingConnections.Num());
 }
 
 void US1ReplicationGraph::RouteRemoveNetworkActorToNodes(const FNewReplicatedActorInfo& ActorInfo)
@@ -525,6 +562,328 @@ void US1ReplicationGraph::RouteRemoveNetworkActorToNodes(const FNewReplicatedAct
 			break;
 		}
 	}
+}
+
+/* @See UNetDriver::ProcessRemoteFunction(). ReplicationGraph::ProcessRemoteFunction essentially hijacks routing of MulticastRPC.  */
+/* @See below comment "Customize Condition of Routing MulticastRPC..." and This function is completely override Super. */
+bool US1ReplicationGraph::ProcessRemoteFunction(AActor* Actor, UFunction* Function, void* Parameters, FOutParmRec* OutParms, FFrame* Stack, UObject* SubObject)
+{
+#if WITH_SERVER_CODE
+	// ----------------------------------
+	// Setup
+	// ----------------------------------
+
+	if (RepGraphConditionalActorBreakpoint(Actor, nullptr))
+	{
+		UE_LOG(LogReplicationGraph, Display, TEXT("UReplicationGraph::ProcessRemoteFunction: %s. Function: %s."), *GetNameSafe(Actor), *GetNameSafe(Function));
+	}
+
+	if (IsActorValidForReplication(Actor) == false || Actor->IsActorBeingDestroyed())
+	{
+		UE_LOG(LogReplicationGraph, Display, TEXT("UReplicationGraph::ProcessRemoteFunction: Actor %s destroyed or not ready! Function: %s."), *GetNameSafe(Actor), *GetNameSafe(Function));
+		return true;
+	}
+
+	// get the top most function
+	while (Function->GetSuperFunction())
+	{
+		Function = Function->GetSuperFunction();
+	}
+
+	// If we have a subobject, thats who we are actually calling this on. If no subobject, we are calling on the actor.
+	UObject* TargetObj = SubObject ? SubObject : Actor;
+
+	// Make sure this function exists for both parties.
+	const FClassNetCache* ClassCache = NetDriver->NetCache->GetClassNetCache(TargetObj->GetClass());
+	if (!ClassCache)
+	{
+		UE_LOG(LogReplicationGraph, Warning, TEXT("ClassNetCache empty, not calling %s::%s"), *Actor->GetName(), *Function->GetName());
+		return true;
+	}
+
+	const FFieldNetCache* FieldCache = ClassCache->GetFromField(Function);
+	if (!FieldCache)
+	{
+		UE_LOG(LogReplicationGraph, Warning, TEXT("FieldCache empty, not calling %s::%s"), *Actor->GetName(), *Function->GetName());
+		return true;
+	}
+
+
+	// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	// FastShared Replication. This is ugly but the idea here is to just fill out the bunch parameters and return so that this bunch can be reused by other connections
+	// --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	if (FastSharedReplicationBunch && (FastSharedReplicationFuncName == Function->GetFName()))
+	{
+		// We also cache off a channel so we can call some of the serialization functions on it. This isn't really necessary though and we could break those parts off
+		// into a static function.
+		if (ensureMsgf(FastSharedReplicationChannel, TEXT("FastSharedReplicationPath set but FastSharedReplicationChannel is not! %s"), *Actor->GetPathName()))
+		{
+			// Reset the bunch here. It will be reused and we should only reset it right before we actually write to it.
+			FastSharedReplicationBunch->Reset();
+
+			// It sucks we have to a temp writer like this, but we don't know how big the payload will be until we serialize it
+			FNetBitWriter TempWriter(nullptr, 0);
+
+#if UE_NET_TRACE_ENABLED
+			// Create trace collector if tracing is enabled for the target bunch
+			FNetTraceCollector* Collector = GetTraceCollector(*FastSharedReplicationBunch);
+			if (Collector)
+			{
+				Collector->Reset();
+			}
+			else
+			{
+				Collector = UE_NET_TRACE_CREATE_COLLECTOR(ENetTraceVerbosity::Trace);
+				SetTraceCollector(*FastSharedReplicationBunch, Collector);
+			}
+
+			// We use the collector from the shared bunch
+			SetTraceCollector(TempWriter, Collector);
+#endif // UE_NET_TRACE_ENABLED
+
+			TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
+			RepLayout->SendPropertiesForRPC(Function, FastSharedReplicationChannel, TempWriter, Parameters);
+
+			FNetBitWriter TempBlockWriter(nullptr, 0);
+
+#if UE_NET_TRACE_ENABLED
+			// Ugliness to get data reported correctly, we basically fold the data from TempWriter into TempBlockWriter and then to Bunch
+			// Create trace collector if tracing is enabled for the target bunch			
+			SetTraceCollector(TempBlockWriter, Collector ? UE_NET_TRACE_CREATE_COLLECTOR(ENetTraceVerbosity::Trace) : nullptr);
+#endif // UE_NET_TRACE_ENABLED
+
+			FastSharedReplicationChannel->WriteFieldHeaderAndPayload(TempBlockWriter, ClassCache, FieldCache, nullptr, TempWriter, true);
+
+#if UE_NET_TRACE_ENABLED
+			// As we have used the collector we need to reset it before injecting the final data
+			if (Collector)
+			{
+				Collector->Reset();
+			}
+			UE_NET_TRACE_OBJECT_SCOPE(FastSharedReplicationChannel->ActorNetGUID, *FastSharedReplicationBunch, Collector, ENetTraceVerbosity::Trace);
+#endif
+			FastSharedReplicationChannel->WriteContentBlockPayload(TargetObj, *FastSharedReplicationBunch, false, TempBlockWriter);
+
+			// Release temporary collector
+			UE_NET_TRACE_DESTROY_COLLECTOR(GetTraceCollector(TempBlockWriter));
+
+			FastSharedReplicationBunch = nullptr;
+			FastSharedReplicationChannel = nullptr;
+			FastSharedReplicationFuncName = NAME_None;
+		}
+		return true;
+	}
+
+
+	// ----------------------------------
+	// Multicast
+	// ----------------------------------
+
+	if ((Function->FunctionFlags & FUNC_NetMulticast))
+	{
+		TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
+
+		TOptional<FVector> ActorLocation;
+
+		UNetDriver::ERemoteFunctionSendPolicy SendPolicy = UNetDriver::Default;
+		if (CVar_RepGraph_EnableRPCSendPolicy > 0)
+		{
+			if (FRPCSendPolicyInfo* FuncSendPolicy = RPCSendPolicyMap.Find(FObjectKey(Function)))
+			{
+				if (FuncSendPolicy->bSendImmediately)
+				{
+					SendPolicy = UNetDriver::ForceSend;
+				}
+			}
+		}
+
+		RepLayout->BuildSharedSerializationForRPC(Parameters);
+		FGlobalActorReplicationInfo& GlobalInfo = GlobalActorReplicationInfoMap.Get(Actor);
+
+		bool ForceFlushNetDormancy = false;
+
+		// Cache streaming level name off
+		FNewReplicatedActorInfo NewActorInfo(Actor);
+		const FName ActorStreamingLevelName = NewActorInfo.StreamingLevelName;
+		EProcessRemoteFunctionFlags RemoteFunctionFlags = EProcessRemoteFunctionFlags::None;
+
+		for (UNetReplicationGraphConnection* Manager : Connections)
+		{
+			FConnectionReplicationActorInfo& ConnectionActorInfo = Manager->ActorInfoMap.FindOrAdd(Actor);
+			UNetConnection* NetConnection = Manager->NetConnection;
+
+			// This connection isn't ready yet
+			if (NetConnection->ViewTarget == nullptr)
+			{
+				continue;
+			}
+
+			// Streaming level actor that the client doesn't have loaded. Do not send.
+			if (ActorStreamingLevelName != NAME_None && NetConnection->ClientVisibleLevelNames.Contains(ActorStreamingLevelName) == false)
+			{
+				continue;
+			}
+
+			//UE_CLOG(ConnectionActorInfo.Channel == nullptr, LogReplicationGraph, Display, TEXT("Null channel on %s for %s"), *GetPathNameSafe(Actor), *GetNameSafe(Function));
+			if (ConnectionActorInfo.Channel == nullptr && (RPC_Multicast_OpenChannelForClass.GetChecked(Actor->GetClass()) == true))
+			{
+				// There is no actor channel here. Ideally we would just ignore this but in the case of net dormancy, this may be an actor that will replicate on the next frame.
+				// If the actor is dormant and is a distance culled actor, we can probably safely assume this connection will open a channel for the actor on the next rep frame.
+				// This isn't perfect and we may want a per-function or per-actor policy that allows to dictate what happens in this situation.
+
+				// Actors being destroyed (Building hit with rocket) will wake up before this gets hit. So dormancy really cant be relied on here.
+				// if (Actor->NetDormancy > DORM_Awake)
+				{
+					bool bShouldOpenChannel = true;
+					if (ConnectionActorInfo.GetCullDistanceSquared() > 0.f)
+					{
+						bShouldOpenChannel = false;
+						if (ActorLocation.IsSet() == false)
+						{
+							ActorLocation = Actor->GetActorLocation();
+						}
+
+						FNetViewerArray ViewsToConsider;
+						ViewsToConsider.Emplace(NetConnection, 0.f);
+
+						for (int32 ChildIdx = 0; ChildIdx < NetConnection->Children.Num(); ++ChildIdx)
+						{
+							if (NetConnection->Children[ChildIdx]->ViewTarget != nullptr)
+							{
+								ViewsToConsider.Emplace(NetConnection->Children[ChildIdx], 0.f);
+							}
+						}
+
+						// Loop through and see if we should keep this channel open, as when we do distance, we will
+						// default to the channel being closed.
+						for (const FNetViewer& Viewer : ViewsToConsider)
+						{
+							const float DistSq = (ActorLocation.GetValue() - Viewer.ViewLocation).SizeSquared();
+							if (DistSq <= ConnectionActorInfo.GetCullDistanceSquared())
+							{
+								bShouldOpenChannel = true;
+								break;
+							}
+						}
+					}
+
+					/* Customize Condition of Routing MulticastRPC. using VisibilityBookkeeping. */
+					/* {{Actor, Manager->NetConnection->ViewTarget}, bool}* */
+					if (*(VisibilityBookkeeping.Find({ Manager->NetConnection->ViewTarget, Actor })) == false)
+					{ // should not OpenChannel, ViewTarget doesn't know about Actor in Client. Actor is Hiding.
+						bShouldOpenChannel = false;
+						UE_LOG(LogS1RepGraph, Error, TEXT("Opened channel Should be Closed ! because of Visibility"));
+					}
+					else
+					{
+						UE_LOG(LogS1RepGraph, Error, TEXT("Opened channel can be Opened ! because of Visibility"));
+					}
+
+					if (bShouldOpenChannel)
+					{
+#if !UE_BUILD_SHIPPING
+						if (Actor->bOnlyRelevantToOwner && (!Actor->GetNetOwner() || (Actor->GetNetOwner() != NetConnection->PlayerController)))
+						{
+							UE_LOG(LogReplicationGraph, Warning, TEXT("Multicast RPC opening channel for bOnlyRelevantToOwner actor, check RPC_Multicast_OpenChannelForClass: Actor: %s Target: %s Function: %s"), *GetNameSafe(Actor), *GetNameSafe(TargetObj), *GetNameSafe(Function));
+							ensureMsgf(Cast<APlayerController>(Actor) == nullptr, TEXT("MulticastRPC %s will open a channel for %s to a non-owner. This will break the PlayerController replication."), *Function->GetName(), *GetNameSafe(Actor));
+						}
+#endif
+
+						// We are within range, we will open a channel now for this actor and call the RPC on it
+						ConnectionActorInfo.Channel = (UActorChannel*)NetConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally);
+
+						if (ConnectionActorInfo.Channel)
+						{
+							ConnectionActorInfo.Channel->SetChannelActor(Actor, ESetChannelActorFlags::None);
+
+							// Update timeout frame name. We would run into problems if we open the channel, queue a bunch, and then it timeouts before RepGraph replicates properties.
+							UpdateActorChannelCloseFrameNum(Actor, ConnectionActorInfo, GlobalInfo, GetReplicationGraphFrame() + 1 /** Plus one to error on safe side. RepFrame num will be incremented in the next tick */, NetConnection);
+
+							// If this actor is dormant on the connection, we will force a flushnetdormancy call.
+							ForceFlushNetDormancy |= ConnectionActorInfo.bDormantOnConnection;
+						}
+					}
+				}
+			}
+
+			if (ConnectionActorInfo.Channel)
+			{
+				NetDriver->ProcessRemoteFunctionForChannel(ConnectionActorInfo.Channel, ClassCache, FieldCache, TargetObj, NetConnection, Function, Parameters, OutParms, Stack, true, SendPolicy, RemoteFunctionFlags);
+
+				if (SendPolicy == UNetDriver::ForceSend)
+				{
+					// Queue the send in an array that we consume in PostTickDispatch to avoid force flushing multiple times a frame on the same connection
+					ConnectionsNeedingsPostTickDispatchFlush.AddUnique(NetConnection);
+				}
+
+			}
+		}
+
+		RepLayout->ClearSharedSerializationForRPC();
+
+		if (ForceFlushNetDormancy)
+		{
+			Actor->FlushNetDormancy();
+		}
+		return true;
+	}
+
+	// ----------------------------------
+	// Single Connection
+	// ----------------------------------
+
+	UNetConnection* Connection = Actor->GetNetConnection();
+	if (Connection)
+	{
+		const bool bIsReliable = EnumHasAnyFlags(Function->FunctionFlags, FUNC_NetReliable);
+
+		// If we're saturated and it's not a reliable multicast, drop it.
+		if (!(bIsReliable || IsConnectionReady(Connection)))
+		{
+			return true;
+		}
+
+		// Route RPC calls to actual connection
+		if (Connection->GetUChildConnection())
+		{
+			Connection = ((UChildConnection*)Connection)->Parent;
+		}
+
+		if (Connection->GetConnectionState() == USOCK_Closed)
+		{
+			return true;
+		}
+
+		UActorChannel* Ch = Connection->FindActorChannelRef(Actor);
+		if (Ch == nullptr)
+		{
+			if (Actor->IsPendingKillPending() || !NetDriver->IsLevelInitializedForActor(Actor, Connection))
+			{
+				// We can't open a channel for this actor here
+				return true;
+			}
+
+			Ch = (UActorChannel*)Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally);
+			Ch->SetChannelActor(Actor, ESetChannelActorFlags::None);
+
+			if (UNetReplicationGraphConnection* ConnectionManager = Cast<UNetReplicationGraphConnection>(Connection->GetReplicationConnectionDriver()))
+			{
+				FConnectionReplicationActorInfo& ConnectionActorInfo = ConnectionManager->ActorInfoMap.FindOrAdd(Actor);
+				FGlobalActorReplicationInfo& GlobalInfo = GlobalActorReplicationInfoMap.Get(Actor);
+				UpdateActorChannelCloseFrameNum(Actor, ConnectionActorInfo, GlobalInfo, GetReplicationGraphFrame() + 1 /** Plus one to error on safe side. RepFrame num will be incremented in the next tick */, Connection);
+			}
+		}
+
+		NetDriver->ProcessRemoteFunctionForChannel(Ch, ClassCache, FieldCache, TargetObj, Connection, Function, Parameters, OutParms, Stack, true);
+	}
+	else
+	{
+		UE_LOG(LogNet, Warning, TEXT("UReplicationGraph::ProcessRemoteFunction: No owning connection for actor %s. Function %s will not be processed."), *Actor->GetName(), *Function->GetName());
+	}
+#endif // WITH_SERVER_CODE
+
+	// return true because we don't want the net driver to do anything else
+	return true;
 }
 
 int32 US1ReplicationGraph::ServerReplicateActors(float DeltaSeconds)
@@ -697,8 +1056,11 @@ void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForC
 	FGlobalActorReplicationInfoMap* GlobalRepMap = GraphGlobals.IsValid() ? GraphGlobals->GlobalActorReplicationInfoMap : nullptr;
 	const FActorRepListRefView& VisibleActorList = S1Graph->PotentiallyVisibleActorList;
 	/*
-	* Trouble Shooting : Weapon is early Visible, and following SpearmanCharacter.
-	* TODO : Find why
+	* Trouble Shooting (1) : Weapon is early Visible, and following SpearmanCharacter.
+	* Answer : It's about NetLoadonClient. make sure NetLoadonClient = false and 
+	* 
+	* Trouble Shooting (2) : hiding SpearmanCharacter is visible when it uses MulticastRPC
+	* TODO : Check Multicast Policy in here.
 	*/
 	if (UNLIKELY(CachedPawn.Get() == nullptr || VisibleActorList.IsEmpty()))
 	{ /* If this, MatchState::WaitingStart, not spawning yet. */
@@ -710,7 +1072,7 @@ void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForC
 	FCollisionQueryParams TraceParams;
 	TraceParams.AddIgnoredActor(CachedPawn.Get());
 	const UWorld* World = GetWorld();
-	const FVector TraceOffsetZ = FVector(0.f, 0.f, 180.f);
+	const FVector TraceOffsetZ = FVector(0.f, 0.f, 80.f);
 	const FVector TraceStart = CachedPawn->GetActorLocation() + TraceOffsetZ;
 
 	for (const auto& ActorToCheck : VisibleActorList)
@@ -721,21 +1083,35 @@ void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForC
 		}
 		
 		const FGlobalActorReplicationInfo& GlobalDataForActor = GlobalRepMap->Get(ActorToCheck);
-		const float DistSq = (GlobalDataForActor.WorldLocation - TraceStart).SizeSquared();
+		const float DistSq = ((GlobalDataForActor.WorldLocation + TraceOffsetZ) - TraceStart).SizeSquared();
 		
-		// 20m, @FIXME : replace "4'000'000" with "GlobalRepMap->GetClassInfo().GetCullDistanceSquared()"
+		// 20m, @FIXME : replace "4'000'000" with "GlobalRepMap->GetClassInfo().GetCullDistanceSquared()" <- have to tweak RepNodeMapping
 		if (DistSq > 4'000'000)
 		{
+			//if (Cast<ASpearmanCharacter>(CachedPawn)->IsWeaponEquipped() && Cast<ASpearmanCharacter>(ActorToCheck)->IsWeaponEquipped())
+			//{
+			//	UE_LOG(LogS1RepGraph, Warning, TEXT("DistSQ : %f"), DistSq);
+			//}
 			continue;
 		}
 
 		const FVector TraceEnd = GlobalDataForActor.WorldLocation + TraceOffsetZ;
 
+		DrawDebugLine(World, TraceStart, TraceEnd, FColor::Red, false, 1.f, 0, 1.f);
+
 		FHitResult HitResult;
 		World->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_FogOfWar, TraceParams);
+		
+		ASpearmanCharacter* VisibleCharacter = Cast<ASpearmanCharacter>(ActorToCheck);
 		if (HitResult.bBlockingHit == false)
 		{ // Visible
 			ReplicationActorList.Add(ActorToCheck);
+
+			S1Graph->VisibilityBookkeeping.Add(TPair<AActor*, AActor*>(CachedPawn.Get(), ActorToCheck), true);
+		}
+		else // Hide
+		{
+			S1Graph->VisibilityBookkeeping.Add(TPair<AActor*, AActor*>(CachedPawn.Get(), ActorToCheck), false);
 		}
 	}
 
@@ -762,11 +1138,11 @@ void US1ReplicationGraph::OnCharacterSwapWeapon(ASpearmanCharacter* Character, A
 		GlobalActorReplicationInfoMap.AddDependentActor(Character, NewWeapon);
 	}
 	else if (NewWeapon && !OldWeapon)
-	{ // Equip
+	{ // Equip Only
 		GlobalActorReplicationInfoMap.AddDependentActor(Character, NewWeapon);
 	}
 	else if (!NewWeapon && OldWeapon)
-	{ // UnEquip
+	{ // UnEquip Only
 		GlobalActorReplicationInfoMap.RemoveDependentActor(Character, OldWeapon);
 	}
 

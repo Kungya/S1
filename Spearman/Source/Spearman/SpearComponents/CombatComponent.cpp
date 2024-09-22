@@ -13,6 +13,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 
+#include "Spearman/GameMode/SpearmanGameMode.h"
+
 UCombatComponent::UCombatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
@@ -172,14 +174,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 { /* Server Only */
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
 
-	if (EquippedWeapon)
-	{ // Swap (Equip and UnEquip)
-		ASpearmanCharacter::NotifySwapWeapon.Broadcast(Character, WeaponToEquip, EquippedWeapon);
-	}
-	else if (!EquippedWeapon)
-	{ // Equip Only
-		ASpearmanCharacter::NotifySwapWeapon.Broadcast(Character, WeaponToEquip, nullptr);
-	}
+	ASpearmanCharacter::NotifySwapWeapon.Broadcast(Character, WeaponToEquip, EquippedWeapon);
 
 	DropEquippedWeapon();
 	EquippedWeapon = WeaponToEquip;
@@ -198,6 +193,12 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
+
+	// Just Temp code for NetCullDistance test. 
+	if (ASpearmanGameMode* SpearmanGameMode = Cast<ASpearmanGameMode>(UGameplayStatics::GetGameMode(this)))
+	{
+		SpearmanGameMode->SetCharacterAB(Character);
+	}
 }
 
 void UCombatComponent::OnRep_EquippedWeapon()
