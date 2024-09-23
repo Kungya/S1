@@ -888,6 +888,8 @@ bool US1ReplicationGraph::ProcessRemoteFunction(AActor* Actor, UFunction* Functi
 
 int32 US1ReplicationGraph::ServerReplicateActors(float DeltaSeconds)
 { /* Cache VisibleActors' WorldLocation. */
+	CachedDeltaSeconds = DeltaSeconds;
+	
 	for (const FActorRepListType& VisibleActor : PotentiallyVisibleActorList)
 	{
 		FGlobalActorReplicationInfo& ActorRepInfo = GlobalActorReplicationInfoMap.Get(VisibleActor);
@@ -1050,10 +1052,18 @@ void US1ReplicationGraphNode_VisibilityCheck_ForConnection::PrepareForReplicatio
 	CachedPawn = Cast<APawn>(ConnectionManager.Get()->NetConnection->ViewTarget);
 }
 
-/* GatherActorListsForConnection()
+/* GatherActorListsForConnection() - FogOfWar
+*	                # * <- BoundingBoxLeft (Upper/Lower)  *
+*                #    | <- Latency Offset                 *
+*             #       | <- Velocity Offset                *
+* Trace    #          @ <- Default Offset                 *
+* Start O-------------O TraceEnd                         *
+*          #          @ <- Default Offset                 *
+*             #       | <- Velocity Offset                *
+*                #    | <- Latency Offset                 *
+*                   # * <- BoundingBoxRight (Upper/Lower) *
 * Trouble Shooting (1) : Weapon is early Visible, and following SpearmanCharacter.
 * Answer : It's about NetLoadonClient. make sure NetLoadonClient = false and .../
-*
 * Trouble Shooting (2) : hiding SpearmanCharacter is visible when it uses MulticastRPC
 * Asnwer : Add Condition in Routing of MulticastRPC. */
 void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params)
@@ -1066,6 +1076,7 @@ void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForC
 	{ /* If this, MatchState::WaitingStart, not spawning yet. */
 		return;
 	}
+
 	ReplicationActorList.Reset();
 
 	FCollisionQueryParams TraceParams;
@@ -1080,44 +1091,28 @@ void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForC
 		{
 			continue;
 		}
+
 		const FGlobalActorReplicationInfo& GlobalDataForActor = GlobalRepMap->Get(ActorToCheck);
 		const float DistSq = ((GlobalDataForActor.WorldLocation + TraceOffsetZ) - TraceStart).SizeSquared();
-		
-		// 20m, Pre-culling
-		// @FIXME : replace "4'000'000" with "GlobalRepMap->GetClassInfo().GetCullDistanceSquared()" <- have to tweak RepNodeMapping
 		if (DistSq > 4'000'000)
-		{
+		{ // 20m : Pre-culling,  @FIXME : replace "4'000'000" with "GlobalRepMap->GetClassInfo().GetCullDistanceSquared()" <- have to tweak RepNodeMapping
 			continue;
 		}
-		/*
-		*	                ↗ * <- BoundingBoxLeft (Upper/Lower)  *
-		*                ↗    |                                   *
-		*             ↗       | <- LatencyFactor                  *
-		* Trace    ↗          |                                   *
-		* Start ○------------○ TraceEnd                          *
-		*          ↘          |                                   *
-		*             ↘       | <- LatencyFactor                  *
-		*                ↘    |                                   *
-		*                   ↘ * <- BoundingBoxRight (Upper/Lower) *
-		*/
+		/* Get Perpendicular Unit Vector to StartToEnd */
 		const FVector TraceEnd = GlobalDataForActor.WorldLocation + TraceOffsetZ;
-
-		const float LatencyFactor = 100.f;
-		
 		const FVector NormalizedStartToEnd = (TraceEnd - TraceStart).GetSafeNormal();
-		const FVector PerpendicularVec = FVector(-NormalizedStartToEnd.Y, NormalizedStartToEnd.X, 0.f);
-		
-		const FVector BoundingBoxLeftUpper = TraceEnd + FVector(0.f, 0.f, 20.f) - (PerpendicularVec * LatencyFactor);
-		const FVector BoundingBoxLeftLower = TraceEnd - FVector(0.f, 0.f, 130.f) - (PerpendicularVec * LatencyFactor);
+		const FVector OffsetUnit = FVector(-NormalizedStartToEnd.Y, NormalizedStartToEnd.X, 0.f); // TOOD : Z factor
 
-		const FVector BoundingBoxRightUpper = TraceEnd + FVector(0.f, 0.f, 20.f) + (PerpendicularVec * LatencyFactor);
-		const FVector BoundingBoxRightLower = TraceEnd - FVector(0.f, 0.f, 130.f) + (PerpendicularVec * LatencyFactor);
+		const FVector DefaultOffset = 40.f * OffsetUnit;
 
-		// DrawDebugLine(World, TraceStart, TraceEnd, FColor::Red, false, 1.f, 0, 1.f);
-		DrawDebugLine(World, TraceStart, BoundingBoxLeftUpper, FColor::Blue, false, 1.f, 0, 1.f);
-		DrawDebugLine(World, TraceStart, BoundingBoxLeftLower, FColor::Blue, false, 1.f, 0, 1.f);
-		DrawDebugLine(World, TraceStart, BoundingBoxRightUpper, FColor::Blue, false, 1.f, 0, 1.f);
-		DrawDebugLine(World, TraceStart, BoundingBoxRightLower, FColor::Blue, false, 1.f, 0, 1.f);
+		ASpearmanPlayerController* PC = Cast<ASpearmanCharacter>(CachedPawn.Get())->SpearmanPlayerController;
+		const float HalfRTT = PC ? PC->GetSingleTripTime() : 0.f;
+		const FVector LatencyOffset = 2.f * (OffsetUnit * ActorToCheck->GetVelocity().GetAbs()) * (S1Graph->CachedDeltaSeconds + HalfRTT);
+
+		const FVector BoundingBoxLeftUpper = TraceEnd + FVector(0.f, 0.f, 20.f) - (DefaultOffset + LatencyOffset);
+		const FVector BoundingBoxLeftLower = TraceEnd - FVector(0.f, 0.f, 130.f) - (DefaultOffset + LatencyOffset);
+		const FVector BoundingBoxRightUpper = TraceEnd + FVector(0.f, 0.f, 20.f) + (DefaultOffset + LatencyOffset);
+		const FVector BoundingBoxRightLower = TraceEnd - FVector(0.f, 0.f, 130.f) + (DefaultOffset + LatencyOffset);
 
 		FHitResult HitResult;
 		int32 ResultWriter = 0;
@@ -1125,9 +1120,8 @@ void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForC
 		ResultWriter += World->LineTraceSingleByChannel(HitResult, TraceStart, BoundingBoxLeftLower, ECC_FogOfWar, TraceParams);
 		ResultWriter += World->LineTraceSingleByChannel(HitResult, TraceStart, BoundingBoxRightUpper, ECC_FogOfWar, TraceParams);
 		ResultWriter += World->LineTraceSingleByChannel(HitResult, TraceStart, BoundingBoxRightLower, ECC_FogOfWar, TraceParams);
-		// 4개의 검사 중, 단 하나라도 bBlockingHit가 없다면? 보여야한다
-		ASpearmanCharacter* VisibleCharacter = Cast<ASpearmanCharacter>(ActorToCheck);
-		if (ResultWriter < 4) 
+
+		if (ResultWriter < 4)
 		{ // Visible
 			ReplicationActorList.Add(ActorToCheck);
 
@@ -1141,7 +1135,6 @@ void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForC
 
 	Params.OutGatheredReplicationLists.AddReplicationActorList(ReplicationActorList);
 }
-
 
 // Since we listen to global (static) events, we need to watch out for cross world broadcasts (PIE)
 #if WITH_EDITOR

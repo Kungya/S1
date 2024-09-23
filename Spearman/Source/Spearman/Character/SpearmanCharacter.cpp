@@ -217,6 +217,11 @@ void ASpearmanCharacter::PostInitializeComponents()
 		LagCompensation->AttackerSpearmanCharacter = this;
 	}
 
+	if (Controller)
+	{
+		SpearmanPlayerController = Cast<ASpearmanPlayerController>(Controller);
+	}
+
 	GetMesh()->HideBoneByName(TEXT("weapon"), EPhysBodyOp::PBO_None);
 
 	HitDamage->InitWidget();
@@ -277,15 +282,6 @@ void ASpearmanCharacter::Tick(float DeltaTime)
 	{
 		bTestAttack = false;
 		AttackButtonPressed();
-	}
-
-	if (HasAuthority())
-	{
-		FVector Velocity = GetVelocity();
-		if (Velocity.Size() > 10.f)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Velocity : %f : X:%f, Y:%f, Z:%f"), Velocity.Size(), Velocity.X, Velocity.Y, Velocity.Z);
-		}
 	}
 
 	TimeSinceLastMovementReplication += DeltaTime;

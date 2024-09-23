@@ -80,15 +80,15 @@ protected:
 
 	/* Sync time */
 
-	FTimerHandle RequestServerTimeHandle;
+	FTimerHandle RequestPingPongHandle;
 
-	void RequestServerTime();
+	void RequestPingPong();
 
 	UFUNCTION(Server, Reliable)
-	void ServerRequestServerTime(float ClientRequestTime);
+	void ServerPing(float ClientRequestTime);
 
 	UFUNCTION(Client, Reliable)
-	void ClientReportServerTime(float ClientRequestTime, float ServerReportTime, float ServerReportTickRate);
+	void ClientPong(float ClientRequestTime, float ServerReportTime, float ServerReportTickRate);
 	
 	float ClientServerDelta = 0.f;
 	float SingleTripTime = 0.f;

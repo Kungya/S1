@@ -46,10 +46,13 @@ public:
 	UPROPERTY()
 	TMap<UNetConnection*, US1ReplicationGraphNode_VisibilityCheck_ForConnection*> VisibilityCheckForConnectionNodes;
 
+	float CachedDeltaSeconds = 0.f;
+
 	/** Actors that could "potentially" become visible or hidden */
 	FActorRepListRefView PotentiallyVisibleActorList;
 
-	/** BookKeep mutual visibility in VisibilityCheck_ForConnection, {Server -> Client} may not be kept. **/
+	/** BookKeep mutual visibility in VisibilityCheck_ForConnection, 
+	*** {Server -> Client} may not be kept. cuz Server has not NetConnection. **/
 	TMap<TPair<AActor*, AActor*>, bool> VisibilityBookkeeping;
 
 	void OnCharacterSwapWeapon(ASpearmanCharacter* Character, AWeapon* NewWeapon, AWeapon* OldWeapon);

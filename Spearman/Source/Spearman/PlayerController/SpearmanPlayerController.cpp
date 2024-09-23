@@ -48,7 +48,7 @@ void ASpearmanPlayerController::BeginPlay()
 
 	if (IsLocalController())
 	{
-		GetWorldTimerManager().SetTimer(RequestServerTimeHandle, this, &ASpearmanPlayerController::RequestServerTime, 3.f, true, 6.f);
+		GetWorldTimerManager().SetTimer(RequestPingPongHandle, this, &ASpearmanPlayerController::RequestPingPong, 3.f, true, 6.f);
 	}
 
 	PlayerCameraManager->bClientSimulatingViewTarget = false;
@@ -94,7 +94,7 @@ void ASpearmanPlayerController::ReceivedPlayer()
 
 	if (IsLocalController())
 	{
-		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+		ServerPing(GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -378,18 +378,18 @@ void ASpearmanPlayerController::InitRenderTargetIfServer(APawn* InPawn)
 	}
 }
 
-void ASpearmanPlayerController::RequestServerTime()
+void ASpearmanPlayerController::RequestPingPong()
 {
-	ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+	ServerPing(GetWorld()->GetTimeSeconds());
 }
 
-void ASpearmanPlayerController::ServerRequestServerTime_Implementation(float ClientRequestTime)
+void ASpearmanPlayerController::ServerPing_Implementation(float ClientRequestTime)
 { /* Server Only */
 	const float ServerTime = GetWorld()->GetTimeSeconds();
-	ClientReportServerTime(ClientRequestTime, ServerTime, LocalTickRate);
+	ClientPong(ClientRequestTime, ServerTime, LocalTickRate);
 }
 
-void ASpearmanPlayerController::ClientReportServerTime_Implementation(float ClientRequestTime, float ServerReportTime, float ServerReportTickRate)
+void ASpearmanPlayerController::ClientPong_Implementation(float ClientRequestTime, float ServerReportTime, float ServerReportTickRate)
 { // CurrentServerTime = ServerTime + 1/2RTT;
 	const float RoundTripTime = GetWorld()->GetTimeSeconds() - ClientRequestTime;
 	SingleTripTime = (0.5f * RoundTripTime);
