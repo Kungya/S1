@@ -8,7 +8,7 @@
 #include "S1ReplicationGraphSettings.generated.h"
 
 /**
- * Default settings for the S1 replication graph, Not using FastShared untill now.
+ * Default settings for the S1 replication graph, Not using FastShared so far.
  */
 UCLASS(config = Game, MinimalAPI)
 class US1ReplicationGraphSettings : public UDeveloperSettingsBackedByCVars

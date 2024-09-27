@@ -84,8 +84,6 @@ void ASpearmanPlayerController::OnPossess(APawn* InPawn)
 
 	PlayerCameraManager->ViewPitchMin = -45.f;
 	PlayerCameraManager->ViewPitchMax = 45.f;
-
-	InitRenderTargetIfServer(InPawn);
 }
 
 void ASpearmanPlayerController::ReceivedPlayer()
@@ -104,6 +102,16 @@ void ASpearmanPlayerController::SetupInputComponent()
 	if (InputComponent == nullptr) return;
 
 	InputComponent->BindAction("Quit", IE_Pressed, this, &ASpearmanPlayerController::ShowReturnToMainMenu);
+}
+
+void ASpearmanPlayerController::SetPawn(APawn* InPawn)
+{
+	Super::SetPawn(InPawn);
+
+	if (InPawn)
+	{
+		InitRenderTarget(InPawn);
+	}
 }
 
 void ASpearmanPlayerController::SetHUDHp(float Hp, float MaxHp)
@@ -357,22 +365,26 @@ void ASpearmanPlayerController::SetHUDAlive()
 	}
 }
 
-void ASpearmanPlayerController::InitRenderTargetIfServer(APawn* InPawn)
+/* @See SetMaterialFromRenderTarget().  
+*  - InitRenderTarget
+*  -- SetMaterialFromRenderTraget
+*  Above Order should be followed. */
+void ASpearmanPlayerController::InitRenderTarget(APawn* InPawn)
 {
-	SpearmanCharacter = (SpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(InPawn) : SpearmanCharacter;
-	if (SpearmanCharacter && IsLocalController())
+	SpearmanCharacter = Cast<ASpearmanCharacter>(InPawn);
+	if (SpearmanCharacter == nullptr || SpearmanCharacter->RenderTargetMinimap)
 	{
-		SetHUDHp(SpearmanCharacter->GetHp(), SpearmanCharacter->GetMaxHp());
+		return;
+	}
 
+	if (IsLocalController())
+	{
 		UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>(this);
 		if (RenderTarget)
 		{
 			RenderTarget->InitAutoFormat(1024, 1024);
 			RenderTarget->UpdateResource();
 			SpearmanCharacter->RenderTargetMinimap = RenderTarget;
-		}
-		if (SpearmanCharacter->RenderTargetMinimap)
-		{
 			SpearmanCharacter->MinimapSceneCapture->TextureTarget = SpearmanCharacter->RenderTargetMinimap;
 		}
 	}
@@ -475,7 +487,7 @@ void ASpearmanPlayerController::HandleMatchHasStarted()
 		}
 
 		SpearmanHUD->AddCharacterOverlay();
-		HUDInit();
+		HUDInit();		
 
 		FInputModeGameOnly InputModeData;
 		SetInputMode(InputModeData);
@@ -671,11 +683,11 @@ void ASpearmanPlayerController::OnMatchStateSet(FName State)
 }
 
 void ASpearmanPlayerController::OnRep_MatchState()
-{ /* Owning Client Only */
-
+{
 	if (MatchState == MatchState::InProgress)
-	{
-		HandleMatchHasStarted();
+	{ // Lazy Init, this function init HUD lazily because Controller doesn't know about Pawn yet.
+		FTimerHandle HUDInitTimer;
+		GetWorldTimerManager().SetTimer(HUDInitTimer, this, &ASpearmanPlayerController::HandleMatchHasStarted, 0.5f);
 	}
 	else if (MatchState == MatchState::Cooldown)
 	{

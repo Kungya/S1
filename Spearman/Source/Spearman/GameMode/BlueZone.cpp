@@ -14,6 +14,9 @@ ABlueZone::ABlueZone()
 	ZoneMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ZoneMesh"));
 	ZoneMesh->SetIsReplicated(true);
 	SetRootComponent(ZoneMesh);
+
+	/* Route to AlwaysRelevant Node in Replication Graph. */
+	bAlwaysRelevant = true;
 }
 
 void ABlueZone::BeginPlay()

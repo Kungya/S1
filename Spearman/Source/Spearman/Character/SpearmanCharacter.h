@@ -40,10 +40,6 @@ class SPEARMAN_API ASpearmanCharacter : public ARewindableCharacter, public IWea
 public:
 	friend class UCombatComponent;
 	ASpearmanCharacter();
-	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	virtual void PostInitializeComponents() override;
 	virtual void OnRep_ReplicatedMovement() override;
 	void UpdateHUDHp();
 
@@ -80,6 +76,11 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void PostInitializeComponents() override;
+	virtual void PostNetInit() override;
 
 	void MoveForward(float Value);
 	void MoveRight(float Value);
@@ -117,8 +118,6 @@ protected:
 
 	void ShowHpBar();
 	void HideHpBar();
-
-	void InitRenderTargetIfOwningClient();
 
 	void TakeDamageIfNotInBlueZone();
 

@@ -3,6 +3,7 @@
 
 #include "SpearmanCharacterAnimInstance.h"
 #include "SpearmanCharacter.h"
+#include "Spearman/Weapon/Weapon.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Spearman/Weapon/Weapon.h"
 #include "Spearman/SpearComponents/CombatComponent.h"
@@ -56,7 +57,6 @@ void USpearmanCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	AO_Yaw = 0.f;
 	AO_Pitch = SpearmanCharacter->GetAO_Pitch();
 
-	EquippedWeapon = (EquippedWeapon == nullptr) ? SpearmanCharacter->GetCombat()->GetEquippedWeapon() : EquippedWeapon;
 	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && SpearmanCharacter->GetMesh())
 	{
 		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"));

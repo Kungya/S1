@@ -19,6 +19,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Spearman/Weapon/Weapon.h"
 #include "Spearman/SpearComponents/ItemSpawnerComponent.h"
+#include "Animation/AnimInstance.h"
+#include "GameFramework/DamageType.h"
 
 ABasicMonster::ABasicMonster()
 {

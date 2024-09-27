@@ -66,6 +66,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupInputComponent() override;
+	virtual void SetPawn(APawn* InPawn) override;
 
 	void SetHUDTime();
 	void HUDInit();
@@ -74,7 +75,7 @@ protected:
 	void SetHUDAlive();
 
 	void SetMaterialFromRenderTarget();
-	void InitRenderTargetIfServer(APawn* InPawn);
+	void InitRenderTarget(APawn* InPawn);
 
 	void ShowReturnToMainMenu();
 

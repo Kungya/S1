@@ -231,6 +231,12 @@ void ASpearmanCharacter::PostInitializeComponents()
 	HpBarWidget = Cast<UHpBarWidget>(HpBar->GetUserWidgetObject());
 }
 
+void ASpearmanCharacter::PostNetInit()
+{
+	Super::PostNetInit();
+
+}
+
 void ASpearmanCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -251,9 +257,7 @@ void ASpearmanCharacter::BeginPlay()
 
 	HpBarWidget->SetHpBar(GetHpRatio());
 	HpBarWidget->SetVisibility(ESlateVisibility::Collapsed);
-
-	InitRenderTargetIfOwningClient();
-
+	
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ASpearmanCharacter::OnAttacked);
@@ -263,8 +267,6 @@ void ASpearmanCharacter::BeginPlay()
 
 	/* Temporary, test for rewind */
 	GetWorldTimerManager().SetTimer(TestTimer, this, &ASpearmanCharacter::TestToggleVector, 2.f, true);
-
-	UE_LOG(LogTemp, Warning, TEXT("NetCullDist : %f"), NetCullDistanceSquared);
 }
 
 void ASpearmanCharacter::Tick(float DeltaTime)
@@ -493,25 +495,6 @@ void ASpearmanCharacter::HideHpBar()
 	if (HpBarWidget)
 	{
 		HpBarWidget->SetVisibility(ESlateVisibility::Collapsed);
-	}
-}
-
-void ASpearmanCharacter::InitRenderTargetIfOwningClient()
-{
-	SpearmanPlayerController = (SpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(Controller) : SpearmanPlayerController;
-	if (SpearmanPlayerController && SpearmanPlayerController->IsLocalController())
-	{
-		if (!HasAuthority())
-		{
-			RenderTargetMinimap = NewObject<UTextureRenderTarget2D>(this);
-			RenderTargetMinimap->InitAutoFormat(1024, 1024);
-			RenderTargetMinimap->UpdateResource();
-
-			if (RenderTargetMinimap)
-			{
-				MinimapSceneCapture->TextureTarget = RenderTargetMinimap;
-			}
-		}
 	}
 }
 

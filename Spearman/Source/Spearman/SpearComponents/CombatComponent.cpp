@@ -12,6 +12,7 @@
 #include "Spearman/HUD/SpearmanHUD.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+#include "Spearman/Character/SpearmanCharacterAnimInstance.h"
 
 #include "Spearman/GameMode/SpearmanGameMode.h"
 
@@ -30,7 +31,6 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 void UCombatComponent::SetHUDCrosshairs()
@@ -39,7 +39,7 @@ void UCombatComponent::SetHUDCrosshairs()
 
 	SpearmanPlayerController = Cast<ASpearmanPlayerController>(Character->Controller);
 
-	if (Character->Controller)
+	if (SpearmanPlayerController)
 	{
 		SpearmanHUD = Cast<ASpearmanHUD>(SpearmanPlayerController->GetHUD());
 
@@ -91,6 +91,7 @@ void UCombatComponent::DropEquippedWeapon()
 {
 	if (EquippedWeapon)
 	{
+		DroppedWeapon = EquippedWeapon;
 		EquippedWeapon->Dropped();
 	}
 }
@@ -178,6 +179,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 	DropEquippedWeapon();
 	EquippedWeapon = WeaponToEquip;
+	Cast<USpearmanCharacterAnimInstance>(Character->GetMesh()->GetAnimInstance())->EquippedWeapon = WeaponToEquip;
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
 	CombatState = ECombatState::ECS_Idle;
 	
@@ -195,11 +197,12 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	Character->bUseControllerRotationYaw = true;
 }
 
-void UCombatComponent::OnRep_EquippedWeapon()
+void UCombatComponent::OnRep_EquippedWeapon(AWeapon* UnEquippedWeapon)
 {
 	if (EquippedWeapon && Character)
 	{
 		EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+		Cast<USpearmanCharacterAnimInstance>(Character->GetMesh()->GetAnimInstance())->EquippedWeapon = EquippedWeapon;
 		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 		Character->bUseControllerRotationYaw = true;
 		const USkeletalMeshSocket* RightHandWeaponSocket = Character->GetMesh()->GetSocketByName(FName("WeaponSocket"));

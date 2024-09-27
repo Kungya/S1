@@ -187,7 +187,7 @@ EClassRepNodeMapping US1ReplicationGraph::GetClassNodeMapping(UClass* Class) con
 	{
 		return EClassRepNodeMapping::NotRouted;
 	}
-
+	
 	auto ShouldSpatialize = [](const AActor* CDO)
 	{ // Spatialize되지 않을려면 후행하는 3개의 조건 중에서 하나라도 충족해야 함.
 		return CDO->GetIsReplicated() && (!(CDO->bAlwaysRelevant || CDO->bOnlyRelevantToOwner || CDO->bNetUseOwnerRelevancy));
@@ -349,7 +349,7 @@ void US1ReplicationGraph::InitGlobalActorClassSettings()
 	CharacterClassRepInfo.StarvationPriorityScale = 1.f;
 	CharacterClassRepInfo.ActorChannelFrameTimeout = 4;
 	CharacterClassRepInfo.SetCullDistanceSquared(ASpearmanCharacter::StaticClass()->GetDefaultObject<ASpearmanCharacter>()->NetCullDistanceSquared);
-	UE_LOG(LogS1RepGraph, Error, TEXT("CDO CullDistance : %f"), ASpearmanCharacter::StaticClass()->GetDefaultObject<ASpearmanCharacter>()->NetCullDistanceSquared);
+	
 	/* ACharacter와 그걸 상속받는 클래스들은 전부 위의 ReplicationInfo를 가지겠습니다 라고 명시적으로 설정.. */
 	/* TODO : BasicMonster */
 	SetClassInfo(ASpearmanCharacter::StaticClass(), CharacterClassRepInfo);
@@ -369,7 +369,7 @@ void US1ReplicationGraph::InitGlobalActorClassSettings()
 
 	RPC_Multicast_OpenChannelForClass.Reset();
 	RPC_Multicast_OpenChannelForClass.Set(AActor::StaticClass(), true); // Open channels for multicast RPCs by default
-	RPC_Multicast_OpenChannelForClass.Set(AController::StaticClass(), false); // multicasts should never open channels on Controllers since opening a channel on a non-owner breaks the Controller's replication.
+	RPC_Multicast_OpenChannelForClass.Set(AController::StaticClass(), false); // Multicasts should never open channels on Controllers since opening a channel on a non-owner breaks the Controller's replication.
 	RPC_Multicast_OpenChannelForClass.Set(AServerStatReplicator::StaticClass(), false);
 	
 	for (const FRepGraphActorClassSettings& ActorClassSettings : S1RepGraphSettings->ClassSettings)
@@ -407,7 +407,7 @@ void US1ReplicationGraph::InitGlobalGraphNodes()
 	AlwaysRelevantNode = CreateNewNode<UReplicationGraphNode_ActorList>();
 	AddGlobalGraphNode(AlwaysRelevantNode);
 
-	// TODO : PlayerState Frequency Limiter if using GAS
+	// TODO : PlayerState Frequency Limiter
 
 	UE_LOG(LogS1RepGraph, Warning, TEXT("Called [InitGlobalGraphNodes] !"));
 }
@@ -424,7 +424,7 @@ void US1ReplicationGraph::InitConnectionGraphNodes(UNetReplicationGraphConnectio
 
 	AddConnectionGraphNode(AlwaysRelevantConnectionNode, RepGraphConnection);
 
-	/* [ VisibilityCheck_ForConnection ] Node */
+	/* [ VisibilityCheck_ForConnection ] Node*/
 	US1ReplicationGraphNode_VisibilityCheck_ForConnection* VisibilityCheckConnectionNode = CreateNewNode<US1ReplicationGraphNode_VisibilityCheck_ForConnection>();
 	
 	AddConnectionGraphNode(VisibilityCheckConnectionNode, RepGraphConnection);
@@ -456,7 +456,7 @@ void US1ReplicationGraph::RouteAddNetworkActorToNodes(const FNewReplicatedActorI
 {
 	EClassRepNodeMapping Policy = GetMappingPolicy(ActorInfo.Class);
 	
-	switch (Policy)
+ 	switch (Policy)
 	{
 		case EClassRepNodeMapping::NotRouted:
 		{ /* i.e : AWeapon, APlayerController */
@@ -564,8 +564,8 @@ void US1ReplicationGraph::RouteRemoveNetworkActorToNodes(const FNewReplicatedAct
 	}
 }
 
-/* @See UNetDriver::ProcessRemoteFunction(). ReplicationGraph::ProcessRemoteFunction essentially hijacks routing of MulticastRPC.  */
-/* @See below comment "Customize Condition of Routing MulticastRPC..." and This function is completely override Super. */
+/* @See UNetDriver::ProcessRemoteFunction(). ReplicationGraph::ProcessRemoteFunction essentially hijacks routing of MulticastRPC. */
+/* @See below comment "Customize Condition of Routing MulticastRPC..." and This function completely overrides Super. */
 bool US1ReplicationGraph::ProcessRemoteFunction(AActor* Actor, UFunction* Function, void* Parameters, FOutParmRec* OutParms, FFrame* Stack, UObject* SubObject)
 {
 #if WITH_SERVER_CODE
@@ -767,7 +767,7 @@ bool US1ReplicationGraph::ProcessRemoteFunction(AActor* Actor, UFunction* Functi
 						}
 					}
 
-					/* Customize Condition of Routing MulticastRPC. using VisibilityBookkeeping. */
+					/* Customize Condition of Routing MulticastRPC, using VisibilityBookkeeping.*/
 					/* {{Actor, Manager->NetConnection->ViewTarget}, bool}* */
 					if (*(VisibilityBookkeeping.Find({ Manager->NetConnection->ViewTarget, Actor })) == false)
 					{ // should not OpenChannel, ViewTarget doesn't know about Actor in Client. Actor is Hiding.
@@ -958,7 +958,7 @@ void US1ReplicationGraphNode_AlwaysRelevant_ForConnection::GatherActorListsForCo
 			}
 			// TODO : 5.2 Lyra 코드보고 연결고리가 맞는지 다시 분석해보기
 			FCachedAlwaysRelevantActorInfo& LastData = PastRelevantActorMap.FindOrAdd(CurViewer.Connection);
-
+			
 			if (ASpearmanCharacter* Pawn = Cast<ASpearmanCharacter>(PC->GetPawn()))
 			{ /* UpdateCachedRelevantActor : AlwaysRelevant For Connection에 해당하는 Pawn이 변경되었다면 CullDistance를 0->기존값으로 다시 바꿔치기하는 것.*/
 				UpdateCachedRelevantActor(Params, Pawn, LastData.LastViewer);
@@ -966,6 +966,11 @@ void US1ReplicationGraphNode_AlwaysRelevant_ForConnection::GatherActorListsForCo
 				if (Pawn != CurViewer.ViewTarget)
 				{ /* 이건 조건에 관한 의미를 아직 모르겠음. 현재 Pawn과 ViewTarget이 달라졌나요? */
 					ReplicationActorList.ConditionalAdd(Pawn);
+				}
+
+				if (AWeapon* Weapon = Pawn->GetCombat()->GetEquippedWeapon())
+				{
+					ReplicationActorList.ConditionalAdd(Weapon);
 				}
 			}
 
@@ -1052,32 +1057,31 @@ void US1ReplicationGraphNode_VisibilityCheck_ForConnection::PrepareForReplicatio
 	CachedPawn = Cast<APawn>(ConnectionManager.Get()->NetConnection->ViewTarget);
 }
 
-/* GatherActorListsForConnection() - FogOfWar
+/* US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForConnection() - FogOfWar
 *	                # * <- BoundingBoxLeft (Upper/Lower)  *
 *                #    | <- Latency Offset                 *
 *             #       | <- Velocity Offset                *
 * Trace    #          @ <- Default Offset                 *
-* Start O-------------O TraceEnd                         *
+* Start O-------------O TraceEnd                          *
 *          #          @ <- Default Offset                 *
 *             #       | <- Velocity Offset                *
 *                #    | <- Latency Offset                 *
 *                   # * <- BoundingBoxRight (Upper/Lower) *
-* Trouble Shooting (1) : Weapon is early Visible, and following SpearmanCharacter.
-* Answer : It's about NetLoadonClient. make sure NetLoadonClient = false and .../
+* Trouble Shooting (1) : Weapon remains after culling.
+* Answer : It's about NetLoadonClient. make sure NetLoadonClient = false and need to route Weapon as dormant and remove when unequipped.
 * Trouble Shooting (2) : hiding SpearmanCharacter is visible when it uses MulticastRPC
-* Asnwer : Add Condition in Routing of MulticastRPC. */
+* Answer : Add Condition in Routing of MulticastRPC. */
 void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params)
-{ // Check Visibility by Raycasting
+{
 	US1ReplicationGraph* S1Graph = CastChecked<US1ReplicationGraph>(GetOuter());
 	FGlobalActorReplicationInfoMap* GlobalRepMap = GraphGlobals.IsValid() ? GraphGlobals->GlobalActorReplicationInfoMap : nullptr;
 	const FActorRepListRefView& VisibleActorList = S1Graph->PotentiallyVisibleActorList;
+	ReplicationActorList.Reset();
 
 	if (UNLIKELY(CachedPawn.Get() == nullptr || VisibleActorList.IsEmpty()))
-	{ /* If this, MatchState::WaitingStart, not spawning yet. */
+	{ /* If true, MatchState::WaitingStart, Character not spawning yet. */
 		return;
 	}
-
-	ReplicationActorList.Reset();
 
 	FCollisionQueryParams TraceParams;
 	TraceParams.AddIgnoredActor(CachedPawn.Get());
@@ -1095,7 +1099,7 @@ void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForC
 		const FGlobalActorReplicationInfo& GlobalDataForActor = GlobalRepMap->Get(ActorToCheck);
 		const float DistSq = ((GlobalDataForActor.WorldLocation + TraceOffsetZ) - TraceStart).SizeSquared();
 		if (DistSq > 4'000'000)
-		{ // 20m : Pre-culling,  @FIXME : replace "4'000'000" with "GlobalRepMap->GetClassInfo().GetCullDistanceSquared()" <- have to tweak RepNodeMapping
+		{ // Pre-culling,  @FIXME : replace "4'000'000" with "GlobalRepMap->GetClassInfo().GetCullDistanceSquared()" <- have to tweak RepNodeMapping
 			continue;
 		}
 		/* Get Perpendicular Unit Vector to StartToEnd */
@@ -1121,14 +1125,14 @@ void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForC
 		ResultWriter += World->LineTraceSingleByChannel(HitResult, TraceStart, BoundingBoxRightUpper, ECC_FogOfWar, TraceParams);
 		ResultWriter += World->LineTraceSingleByChannel(HitResult, TraceStart, BoundingBoxRightLower, ECC_FogOfWar, TraceParams);
 
-		if (ResultWriter < 4)
-		{ // Visible
+		if (ResultWriter < 4) // Visible
+		{ 
 			ReplicationActorList.Add(ActorToCheck);
 
 			S1Graph->VisibilityBookkeeping.Add(TPair<AActor*, AActor*>(CachedPawn.Get(), ActorToCheck), true);
 		}
-		else
-		{ // Hide
+		else // Hide
+		{ 
 			S1Graph->VisibilityBookkeeping.Add(TPair<AActor*, AActor*>(CachedPawn.Get(), ActorToCheck), false);
 		}
 	}
@@ -1144,23 +1148,22 @@ void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForC
 #endif
 
 void US1ReplicationGraph::OnCharacterSwapWeapon(ASpearmanCharacter* Character, AWeapon* NewWeapon, AWeapon* OldWeapon)
-{
-	if (Character == nullptr) return;
-	
+{	
 	CHECK_WORLDS(Character);
 
-	if (NewWeapon && OldWeapon)
-	{ // Swap (Equip and UnEquip)
+	if (OldWeapon)
+	{
 		GlobalActorReplicationInfoMap.RemoveDependentActor(Character, OldWeapon);
-		GlobalActorReplicationInfoMap.AddDependentActor(Character, NewWeapon);
+		
+		FGlobalActorReplicationInfo& GlobalInfo = GlobalActorReplicationInfoMap.Get(OldWeapon);
+		RouteAddNetworkActorToNodes(FNewReplicatedActorInfo(OldWeapon), GlobalInfo);
 	}
-	else if (NewWeapon && !OldWeapon)
-	{ // Equip Only
+
+	if (NewWeapon)
+	{
 		GlobalActorReplicationInfoMap.AddDependentActor(Character, NewWeapon);
-	}
-	else if (!NewWeapon && OldWeapon)
-	{ // UnEquip Only
-		GlobalActorReplicationInfoMap.RemoveDependentActor(Character, OldWeapon);
+	
+		RouteRemoveNetworkActorToNodes(FNewReplicatedActorInfo(NewWeapon));
 	}
 
 	UE_LOG(LogS1RepGraph, Warning, TEXT("Called [OnCharacterSwapWeapon] !"));

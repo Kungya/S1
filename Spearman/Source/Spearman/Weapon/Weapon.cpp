@@ -108,13 +108,14 @@ void AWeapon::Tick(float DeltaTime)
 	// if (bUseReiwnd) : Client, else : Server */
 	if (bAttackCollisionTrace)
 	{
-		OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter;
-		if (OwnerSpearmanCharacter == nullptr || !OwnerSpearmanCharacter->IsLocallyControlled()) return;
-		if (!HasAuthority())
+		CachedOwnerCharacter = (!CachedOwnerCharacter.IsValid()) ? Cast<ASpearmanCharacter>(GetOwner()) : CachedOwnerCharacter;
+		if (!CachedOwnerCharacter.IsValid() || !CachedOwnerCharacter->IsLocallyControlled()) return;
+		
+		if (CachedOwnerCharacter->GetLocalRole() == ENetRole::ROLE_AutonomousProxy)
 		{
 			AttackCollisionCheckByRewind();
 		}
-		else
+		if (HasAuthority())
 		{
 			AttackCollisionCheckByServer();
 		}
@@ -122,43 +123,42 @@ void AWeapon::Tick(float DeltaTime)
 }
 
 void AWeapon::AttackCollisionCheckByRewind()
-{ /* Client Only */
+{ /* Autonomous Only */
 	FVector_NetQuantize Start = TraceStartBox->GetComponentLocation();
 	FVector_NetQuantize End = TraceEndBox->GetComponentLocation();
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
 	Params.AddIgnoredActor(GetOwner());
+	for (const auto& ActorToIgnore : HitSet)
+	{
+		Params.AddIgnoredActor(ActorToIgnore);
+	}	
 
 	if (!GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params)) return;
-
+	
 	if (HitResult.GetActor() == nullptr || HitSet.Contains(HitResult.GetActor())) return;
 	HitSet.Add(HitResult.GetActor());
-	
-	OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter;
-	if (OwnerSpearmanCharacter == nullptr) return;
-	OwnerSpearmanPlayerController = (OwnerSpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(OwnerSpearmanCharacter->GetController()) : OwnerSpearmanPlayerController;
-	if (OwnerSpearmanPlayerController == nullptr) return;
 	
 	ARewindableActor* HitWeapon = Cast<ARewindableActor>(HitResult.GetActor());
 	if (HitWeapon)
 	{ /* Parrying */
-		if (OwnerSpearmanCharacter && OwnerSpearmanCharacter->GetLagCompensation() && OwnerSpearmanPlayerController)
+		if (CachedOwnerCharacter.IsValid() && CachedOwnerCharacter->GetLagCompensation() && CachedOwnerController.IsValid())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Hit Weapon in Client"));
-			const float CurrentServerTime = OwnerSpearmanPlayerController->GetServerTime() - OwnerSpearmanPlayerController->GetSingleTripTime();
-			OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequestForParrying(HitWeapon, Start, HitResult.ImpactPoint, CurrentServerTime, this);
+			const float CurrentServerTime = CachedOwnerController->GetServerTime() - CachedOwnerController->GetSingleTripTime();
+			CachedOwnerCharacter->GetLagCompensation()->ServerRewindRequestForParrying(HitWeapon, Start, HitResult.ImpactPoint, CurrentServerTime, this);
 		}
 		return;
 	}
 	ARewindableCharacter* HitRewindableCharacter = Cast<ARewindableCharacter>(HitResult.GetActor());
 	if (HitRewindableCharacter)
 	{ /* Character Hit */
-		if (OwnerSpearmanCharacter && OwnerSpearmanCharacter->GetLagCompensation() && OwnerSpearmanPlayerController)
+		if (CachedOwnerCharacter.IsValid() && CachedOwnerCharacter->GetLagCompensation() && CachedOwnerController.IsValid())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Hit Character in Client"));
-			const float CurrentServerTime = OwnerSpearmanPlayerController->GetServerTime() - OwnerSpearmanPlayerController->GetSingleTripTime();
-			OwnerSpearmanCharacter->GetLagCompensation()->ServerRewindRequest(HitRewindableCharacter, Start, HitResult.ImpactPoint, CurrentServerTime, this);
+			const float CurrentServerTime = CachedOwnerController->GetServerTime() - CachedOwnerController->GetSingleTripTime();
+			CachedOwnerCharacter->GetLagCompensation()->ServerRewindRequest(HitRewindableCharacter, Start, HitResult.ImpactPoint, CurrentServerTime, this);
 		}
 	}
 }
@@ -173,15 +173,9 @@ void AWeapon::AttackCollisionCheckByServer()
 	Params.AddIgnoredActor(GetOwner());
 	
 	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
-	// DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.f);
 
 	if (HitResult.GetActor() == nullptr || HitSet.Contains(HitResult.GetActor())) return;
 	HitSet.Add(HitResult.GetActor());
-
-	OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter;
-	if (OwnerSpearmanCharacter == nullptr) return;
-	OwnerSpearmanPlayerController = (OwnerSpearmanPlayerController == nullptr) ? Cast<ASpearmanPlayerController>(OwnerSpearmanCharacter->GetController()) : OwnerSpearmanPlayerController;
-	if (OwnerSpearmanPlayerController == nullptr) return;
 	
 	AWeapon* HitWeaponParried = Cast<AWeapon>(HitResult.GetActor());
 	if (HitWeaponParried)
@@ -189,17 +183,16 @@ void AWeapon::AttackCollisionCheckByServer()
 		UE_LOG(LogTemp, Warning, TEXT("Hit Weapon in Server"));
 		
 		HitWeaponParried->CheckOwnerSpearmanCharacterIsValid();
-
 		if (HitWeaponParried->GetOwnerSpearmanCharacter()->GetCombat()->CombatState == ECombatState::ECS_Defending)
 		{
-			OwnerSpearmanCharacter->GetCombat()->CombatState = ECombatState::ECS_Stunned;
-			OwnerSpearmanCharacter->GetCombat()->MulticastParried(nullptr, HitResult.ImpactPoint);
+			CachedOwnerCharacter->GetCombat()->CombatState = ECombatState::ECS_Stunned;
+			CachedOwnerCharacter->GetCombat()->MulticastParried(nullptr, HitResult.ImpactPoint);
 		}
 		else if (HitWeaponParried->GetOwnerSpearmanCharacter()->GetCombat()->CombatState == ECombatState::ECS_Attacking)
 		{
-			OwnerSpearmanCharacter->GetCombat()->CombatState = ECombatState::ECS_Stunned;
+			CachedOwnerCharacter->GetCombat()->CombatState = ECombatState::ECS_Stunned;
 			HitWeaponParried->GetOwnerSpearmanCharacter()->GetCombat()->CombatState = ECombatState::ECS_Stunned;
-			HitWeaponParried->OwnerSpearmanCharacter->GetCombat()->MulticastParried(OwnerSpearmanCharacter, HitResult.ImpactPoint);
+			HitWeaponParried->CachedOwnerCharacter->GetCombat()->MulticastParried(CachedOwnerCharacter.Get(), HitResult.ImpactPoint);
 		}
 		return;
 	}
@@ -220,11 +213,10 @@ void AWeapon::AttackCollisionCheckByServer()
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("Hit Character By Server"));
-
-		const float Dist = FVector::Distance(OwnerSpearmanCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
+		const float Dist = FVector::Distance(CachedOwnerCharacter->GetActorLocation(), HitResult.GetActor()->GetActorLocation());
 		FVector2D InRange(60.f, 240.f), OutRange(HitPartDamage / 3.f, HitPartDamage);
 		const float InDamage = FMath::GetMappedRangeValueClamped(InRange, OutRange, Dist);
-		UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), OwnerSpearmanPlayerController, this, UDamageType::StaticClass());
+		UGameplayStatics::ApplyDamage(HitResult.GetActor(), FMath::RoundToFloat(InDamage), CachedOwnerController.Get(), this, UDamageType::StaticClass());
 		
 		MulticastHitEffect(HitResult.GetActor(), FMath::CeilToInt(InDamage), HitResult.ImpactPoint, bHeadShot);
 	}
@@ -270,12 +262,12 @@ void AWeapon::OnRep_WeaponState()
 {
 	switch (WeaponState)
 	{
-		case EWeaponState::EWS_Equipped:
+	case EWeaponState::EWS_Equipped:
 		ShowPickupWidget(false);
 		WeaponMesh->SetSimulatePhysics(false);
 		WeaponMesh->SetEnableGravity(false);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		case EWeaponState::EWS_Dropped:
+	case EWeaponState::EWS_Dropped:
 		WeaponMesh->SetSimulatePhysics(true);
 		WeaponMesh->SetEnableGravity(true);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
@@ -297,14 +289,21 @@ void AWeapon::Dropped()
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 	WeaponMesh->DetachFromComponent(DetachRules);
 	SetOwner(nullptr);
-	OwnerSpearmanCharacter = nullptr;
-	OwnerSpearmanPlayerController = nullptr;
+	CachedOwnerCharacter = nullptr;
+	CachedOwnerController = nullptr;
 }
 
 void AWeapon::TurnOnAttackCollision()
-{
+{ /* All Proxy */
+	ASpearmanCharacter* CachedOwner = CastChecked<ASpearmanCharacter>(GetOwner());;
+	CachedOwnerCharacter = CachedOwner;
+	if (CachedOwnerCharacter->IsLocallyControlled())
+	{
+		ASpearmanPlayerController* CachedController = CastChecked<ASpearmanPlayerController>(CachedOwnerCharacter->Controller);
+		CachedOwnerController = CachedController;
+	}
+
 	HitSet.Empty();
-	
 	bAttackCollisionTrace = true;
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }

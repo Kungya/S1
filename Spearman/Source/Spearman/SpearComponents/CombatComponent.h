@@ -71,7 +71,7 @@ protected:
 	void MulticastEndDefense();
 
 	UFUNCTION()
-	void OnRep_EquippedWeapon();
+	void OnRep_EquippedWeapon(AWeapon* UnEquippedWeapon);
 
 private:
 	UPROPERTY()
@@ -85,6 +85,8 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
+
+	AWeapon* DroppedWeapon;
 
 	FTimerHandle DashTimer;
 

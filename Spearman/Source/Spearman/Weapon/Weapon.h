@@ -106,20 +106,17 @@ private:
 	UPROPERTY(Replicated)
 	bool bAttackCollisionTrace = false;
 
-	UPROPERTY()
-	ASpearmanCharacter* OwnerSpearmanCharacter;
-
-	UPROPERTY()
-	ASpearmanPlayerController* OwnerSpearmanPlayerController;
+	TWeakObjectPtr<ASpearmanCharacter> CachedOwnerCharacter;
+	TWeakObjectPtr<ASpearmanPlayerController> CachedOwnerController;
 	
 public:
 	void SetWeaponState(EWeaponState State);
 	void SetbAttackCollisionTrace() { bAttackCollisionTrace = false; }
-	FORCEINLINE void CheckOwnerSpearmanCharacterIsValid() { OwnerSpearmanCharacter = (OwnerSpearmanCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : OwnerSpearmanCharacter; }
+	FORCEINLINE void CheckOwnerSpearmanCharacterIsValid() { CachedOwnerCharacter = (CachedOwnerCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : CachedOwnerCharacter; }
 	FORCEINLINE void SetWeaponVisibility(bool bNewVisibility) const { WeaponMesh->SetVisibility(bNewVisibility); }
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
 	FORCEINLINE float GetDamage() const { return Damage; }
 	FORCEINLINE float GetHeadShotDamage() const { return HeadShotDamage; }
 	FORCEINLINE UBoxComponent* GetAttackCollisionBox() const { return AttackCollisionBox; }
-	FORCEINLINE ASpearmanCharacter* GetOwnerSpearmanCharacter() const { return OwnerSpearmanCharacter; }
+	FORCEINLINE ASpearmanCharacter* GetOwnerSpearmanCharacter() { CachedOwnerCharacter = (CachedOwnerCharacter == nullptr) ? Cast<ASpearmanCharacter>(GetOwner()) : CachedOwnerCharacter; return CachedOwnerCharacter.Get(); }
 };
