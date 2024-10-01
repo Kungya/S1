@@ -1096,10 +1096,11 @@ void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForC
 			continue;
 		}
 
+		// @FIXME : replace "4'000'000" with "GlobalRepMap->GetClassInfo().GetCullDistanceSquared()" < -have to change RepNodeMapping
 		const FGlobalActorReplicationInfo& GlobalDataForActor = GlobalRepMap->Get(ActorToCheck);
 		const float DistSq = ((GlobalDataForActor.WorldLocation + TraceOffsetZ) - TraceStart).SizeSquared();
 		if (DistSq > 4'000'000)
-		{ // Pre-culling,  @FIXME : replace "4'000'000" with "GlobalRepMap->GetClassInfo().GetCullDistanceSquared()" <- have to tweak RepNodeMapping
+		{ // Pre-culling
 			continue;
 		}
 		/* Get Perpendicular Unit Vector to StartToEnd */
@@ -1109,9 +1110,12 @@ void US1ReplicationGraphNode_VisibilityCheck_ForConnection::GatherActorListsForC
 
 		const FVector DefaultOffset = 40.f * OffsetUnit;
 
-		ASpearmanPlayerController* PC = Cast<ASpearmanCharacter>(CachedPawn.Get())->SpearmanPlayerController;
-		const float HalfRTT = PC ? PC->GetSingleTripTime() : 0.f;
-		const FVector LatencyOffset = 2.f * (OffsetUnit * ActorToCheck->GetVelocity().GetAbs()) * (S1Graph->CachedDeltaSeconds + HalfRTT);
+		ASpearmanPlayerController* StartPC = CastChecked<ASpearmanCharacter>(CachedPawn.Get())->SpearmanPlayerController;
+		ASpearmanPlayerController* EndPC = CastChecked<ASpearmanCharacter>(ActorToCheck)->SpearmanPlayerController;
+		const float StartHalfRTT = StartPC ? StartPC->GetSingleTripTime() : 0.f;
+		const float EndHalfRTT = EndPC ? EndPC->GetSingleTripTime() : 0.f;
+
+		const FVector LatencyOffset = 2.f * (OffsetUnit * ActorToCheck->GetVelocity().GetAbs()) * (S1Graph->CachedDeltaSeconds + StartHalfRTT + EndHalfRTT);
 
 		const FVector BoundingBoxLeftUpper = TraceEnd + FVector(0.f, 0.f, 20.f) - (DefaultOffset + LatencyOffset);
 		const FVector BoundingBoxLeftLower = TraceEnd - FVector(0.f, 0.f, 130.f) - (DefaultOffset + LatencyOffset);

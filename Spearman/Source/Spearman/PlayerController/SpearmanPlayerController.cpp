@@ -368,7 +368,7 @@ void ASpearmanPlayerController::SetHUDAlive()
 /* @See SetMaterialFromRenderTarget().  
 *  - InitRenderTarget
 *  -- SetMaterialFromRenderTraget
-*  Above Order should be followed. */
+*  Above order should be followed. */
 void ASpearmanPlayerController::InitRenderTarget(APawn* InPawn)
 {
 	SpearmanCharacter = Cast<ASpearmanCharacter>(InPawn);

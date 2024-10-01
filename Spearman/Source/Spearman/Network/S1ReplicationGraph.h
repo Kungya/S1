@@ -134,9 +134,6 @@ public:
 	virtual void PrepareForReplication() override;
 	virtual void GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params) override;
 
-	void AddVisibleActor(const FNewReplicatedActorInfo& ActorInfo);
-	void RemoveVisibleActor(const FNewReplicatedActorInfo& ActorInfo);
-
 	TWeakObjectPtr<UNetReplicationGraphConnection> ConnectionManager;
 	TWeakObjectPtr<APawn> CachedPawn;
 
