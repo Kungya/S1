@@ -37,6 +37,9 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Spearman/DamageType/BlueZoneDamageType.h"
 
+#include "Engine/NetDriver.h"
+#include "Spearman/Network/S1ReplicationGraph.h"
+
 FOnSpearmanCharacterSwapWeapon ASpearmanCharacter::NotifySwapWeapon;
 
 ASpearmanCharacter::ASpearmanCharacter()
@@ -237,6 +240,23 @@ void ASpearmanCharacter::PostNetInit()
 
 }
 
+bool ASpearmanCharacter::IsReplicationPausedForConnection(const FNetViewer& ConnectionOwnerNetViewer)
+{ /* Server Only, @See UActorChannel::ReplicateActor() */
+	return bReplicationNewPaused ? true : false;
+}
+
+void ASpearmanCharacter::OnReplicationPausedChanged(bool bIsReplicationPaused)
+{ /* Client Only, Cabllback function when ReplicationPaused Changed, @See UActorChannel::ProcessBunch() */
+	GetMesh()->SetHiddenInGame(bIsReplicationPaused, false);
+	if (IsWeaponEquipped())
+	{
+		GetCombat()->GetEquippedWeapon()->GetWeaponMesh()->SetHiddenInGame(bIsReplicationPaused, false);
+	}
+	MinimapCursorSprite->SetHiddenInGame(bIsReplicationPaused, false);
+
+	SetActorEnableCollision(!bIsReplicationPaused);
+}
+
 void ASpearmanCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -267,6 +287,21 @@ void ASpearmanCharacter::BeginPlay()
 
 	/* Temporary, test for rewind */
 	GetWorldTimerManager().SetTimer(TestTimer, this, &ASpearmanCharacter::TestToggleVector, 2.f, true);
+
+	if (HasAuthority())
+	{
+		GetWorldTimerManager().SetTimer(TestTimer3, this, &ThisClass::RequestLineTraceCounter, 10.f, true, 15.f);
+	}
+}
+
+void ASpearmanCharacter::RequestLineTraceCounter()
+{
+	if (UNetDriver* NetDriver = GetWorld()->GetNetDriver())
+	{
+		US1ReplicationGraph* S1RepGraph = CastChecked<US1ReplicationGraph>(NetDriver->GetReplicationDriver());
+		UE_LOG(LogTemp, Warning, TEXT("LineTrace Count Last 10 Sec : %d"), S1RepGraph->LineTraceCounter);
+		S1RepGraph->LineTraceCounter = 0;
+	}
 }
 
 void ASpearmanCharacter::Tick(float DeltaTime)
@@ -285,6 +320,7 @@ void ASpearmanCharacter::Tick(float DeltaTime)
 		bTestAttack = false;
 		AttackButtonPressed();
 	}
+
 
 	TimeSinceLastMovementReplication += DeltaTime;
 	if (TimeSinceLastMovementReplication > 0.05f)

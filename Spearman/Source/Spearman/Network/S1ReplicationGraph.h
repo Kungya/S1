@@ -34,6 +34,8 @@ public:
 	void AddVisibleActor(const FNewReplicatedActorInfo& ActorInfo);
 	void RemoveVisibleActor(const FNewReplicatedActorInfo& ActorInfo);
 
+	void SetDynamicSpatialFrequencyNodeRepPeriod();
+
 	UPROPERTY()
 	TObjectPtr<UReplicationGraphNode_GridSpatialization2D> GridNode;
 
@@ -42,7 +44,7 @@ public:
 	
 	TMap<FName, FActorRepListRefView> AlwaysRelevantStreamingLevelActors;
 
-	/** Actors that are replicated, for specific connections, based on Visibility Check. */
+	/** Actors that are replicated for specific connections, based on Visibility Check. */
 	UPROPERTY()
 	TMap<UNetConnection*, US1ReplicationGraphNode_VisibilityCheck_ForConnection*> VisibilityCheckForConnectionNodes;
 
@@ -54,6 +56,8 @@ public:
 	/** BookKeep mutual visibility in VisibilityCheck_ForConnection, 
 	*** {Server -> Client} may not be kept. cuz Server has not NetConnection. **/
 	TMap<TPair<AActor*, AActor*>, bool> VisibilityBookkeeping;
+
+	int32 LineTraceCounter = 0;
 
 	void OnCharacterSwapWeapon(ASpearmanCharacter* Character, AWeapon* NewWeapon, AWeapon* OldWeapon);
 
@@ -139,4 +143,24 @@ public:
 
 private:
 	// Super::ReplicationList
+};
+
+UCLASS()
+class US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck : public UReplicationGraphNode_DynamicSpatialFrequency
+{
+	GENERATED_BODY()
+	
+public:
+	US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck();
+
+	virtual void PrepareForReplication() override;
+	virtual void GatherActorListsForConnection(const FConnectionGatherActorListParameters& Params) override;
+
+	TWeakObjectPtr<UNetReplicationGraphConnection> ConnectionManager;
+	TWeakObjectPtr<APawn> CachedPawn;
+
+private:
+
+	bool CalcVisibilityForActor(AActor* ActorToCheck, const FGlobalActorReplicationInfo& GlobalInfoForActor, US1ReplicationGraph* S1RepGraph);
+
 };

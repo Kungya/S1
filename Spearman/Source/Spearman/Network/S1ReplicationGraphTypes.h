@@ -9,7 +9,7 @@ UENUM()
 enum class EClassRepNodeMapping : uint32
 {
 	NotRouted,
-	VisibilityCheck_ForConnection, // Routes to VisibilityCheck_ForConnection
+	VisibilityChecked, // Added to PotentiallyVisibleActorList.
 	RelevantAllConnections, // Routes to an AlwaysRelevantNode or AlwaysRelevantStreamingLevelNode node
 
 	// --------------- ONLY SPATIALIZED Enums below here ! ----------------

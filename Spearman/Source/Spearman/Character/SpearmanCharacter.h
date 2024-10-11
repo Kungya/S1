@@ -74,6 +74,14 @@ public:
 
 	static FOnSpearmanCharacterSwapWeapon NotifySwapWeapon;
 
+	/* -------------- Used in S1ReplicationGraph -------------- */
+	bool bReplicationNewPaused = false;
+	
+	virtual bool IsReplicationPausedForConnection(const FNetViewer& ConnectionOwnerNetViewer) override;
+	// Callback function from 
+	virtual void OnReplicationPausedChanged(bool bIsReplicationPaused) override;
+	/* -------------------------------------------------------- */
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -327,6 +335,9 @@ private:
 	bool bTestAttack = false;
 	void StartAttackTest(){ GetWorld()->GetTimerManager().SetTimer(TestTimer2, this, &ASpearmanCharacter::TriggerAttack, 5.f, true, 5.f); }
 	void TriggerAttack() { bTestAttack = true; }
+
+	FTimerHandle TestTimer3;
+	void RequestLineTraceCounter();
 	//////////////////////////////////////////////////////////
 
 public:
