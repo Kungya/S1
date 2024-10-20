@@ -246,7 +246,7 @@ bool ASpearmanCharacter::IsReplicationPausedForConnection(const FNetViewer& Conn
 }
 
 void ASpearmanCharacter::OnReplicationPausedChanged(bool bIsReplicationPaused)
-{ /* Client Only, Cabllback function when ReplicationPaused Changed, @See UActorChannel::ProcessBunch() */
+{ /* Client Only, Callback function when ReplicationPaused Changed, @See UActorChannel::ProcessBunch() */
 	GetMesh()->SetHiddenInGame(bIsReplicationPaused, false);
 	if (IsWeaponEquipped())
 	{
@@ -298,9 +298,14 @@ void ASpearmanCharacter::RequestLineTraceCounter()
 {
 	if (UNetDriver* NetDriver = GetWorld()->GetNetDriver())
 	{
-		US1ReplicationGraph* S1RepGraph = CastChecked<US1ReplicationGraph>(NetDriver->GetReplicationDriver());
-		UE_LOG(LogTemp, Warning, TEXT("LineTrace Count Last 10 Sec : %d"), S1RepGraph->LineTraceCounter);
-		S1RepGraph->LineTraceCounter = 0;
+		if (US1ReplicationGraph* S1RepGraph = Cast<US1ReplicationGraph>(NetDriver->GetReplicationDriver()))
+		{
+			if (S1RepGraph && S1RepGraph->LineTraceCounter != 0)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("LineTrace Count Last 10 Sec : %d"), S1RepGraph->LineTraceCounter);
+				S1RepGraph->LineTraceCounter = 0;
+			}
+		}
 	}
 }
 

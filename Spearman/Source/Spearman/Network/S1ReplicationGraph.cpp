@@ -396,6 +396,9 @@ void US1ReplicationGraph::InitGlobalActorClassSettings()
 
 	ASpearmanCharacter::NotifySwapWeapon.AddUObject(this, &US1ReplicationGraph::OnCharacterSwapWeapon);
 	
+	/* @See DynamicSpatialFrequency_VisibilityCheck */
+	SetDynamicSpatialFrequencyNodeRepPeriod();
+
 	UE_LOG(LogS1RepGraph, Warning, TEXT("Called [InitGlobalActorClassSettings] !"));
 }
 
@@ -435,19 +438,19 @@ void US1ReplicationGraph::InitConnectionGraphNodes(UNetReplicationGraphConnectio
 	AddConnectionGraphNode(AlwaysRelevantConnectionNode, RepGraphConnection);
 
 	/* [ VisibilityCheck_ForConnection ] Node*/ // TODO : Set also LevelStreaming Delegate in VisibilityCheck_ForConnection ?
-	/*US1ReplicationGraphNode_VisibilityCheck_ForConnection* VisibilityCheckConnectionNode = CreateNewNode<US1ReplicationGraphNode_VisibilityCheck_ForConnection>();
+	US1ReplicationGraphNode_VisibilityCheck_ForConnection* VisibilityCheckConnectionNode = CreateNewNode<US1ReplicationGraphNode_VisibilityCheck_ForConnection>();
 
 	AddConnectionGraphNode(VisibilityCheckConnectionNode, RepGraphConnection);
 
 	VisibilityCheckForConnectionNodes.Add(RepGraphConnection->NetConnection, VisibilityCheckConnectionNode);
-	VisibilityCheckConnectionNode->ConnectionManager = RepGraphConnection;*/
+	VisibilityCheckConnectionNode->ConnectionManager = RepGraphConnection;
 
 	/* [ DynamicSpatialFrequency_VisibilityCheck ] Node, Notes : Use Only either VisibilityCheck or this. */
-	US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck* DynamicSpatialFrequencyVisibilityCheckConnectionNode = CreateNewNode<US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck>();
+	/*US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck* DynamicSpatialFrequencyVisibilityCheckConnectionNode = CreateNewNode<US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck>();
 
 	AddConnectionGraphNode(DynamicSpatialFrequencyVisibilityCheckConnectionNode, RepGraphConnection);
 
-	DynamicSpatialFrequencyVisibilityCheckConnectionNode->ConnectionManager = RepGraphConnection;
+	DynamicSpatialFrequencyVisibilityCheckConnectionNode->ConnectionManager = RepGraphConnection;*/
 
 
 	UE_LOG(LogS1RepGraph, Warning, TEXT("Called [InitConnectionGraphNodes], VisibilityCheckForConnectionNodes.Num() : %d"), VisibilityCheckForConnectionNodes.Num());
@@ -470,13 +473,13 @@ void US1ReplicationGraph::RemoveVisibleActor(const FNewReplicatedActorInfo& Acto
 	PotentiallyVisibleActorList.RemoveFast(ActorInfo.Actor);
 }
 
+/** Don't change these indices. @See DefaultSpatializationZones_NoFastShared() in ReplicationGraph.cpp */
 void US1ReplicationGraph::SetDynamicSpatialFrequencyNodeRepPeriod()
 {
-	/** Don't change these indices. @See DefaultSpatializationZones_NoFastShared() in ReplicationGraph.cpp */
 	const int32 Rear = 0;
 	const int32 Side = 1;
 	const int32 Front = 2;
-	
+
 	UReplicationGraphNode_DynamicSpatialFrequency::DefaultSettings.ZoneSettings_NonFastSharedActors[Rear].MinRepPeriod = 7;
 	UReplicationGraphNode_DynamicSpatialFrequency::DefaultSettings.ZoneSettings_NonFastSharedActors[Rear].MaxRepPeriod = 8;
 	UReplicationGraphNode_DynamicSpatialFrequency::DefaultSettings.ZoneSettings_NonFastSharedActors[Side].MinRepPeriod = 5;
@@ -1246,13 +1249,13 @@ void US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::GatherActo
 			int32 PossibleNumActors = PotentiallyVisibleActorList.Num();;
 
 			// Are we even over the limit?
-			//for (const FStreamingLevelActorListCollection::FStreamingLevelActors& StreamingList : StreamingLevelCollection.StreamingLevelLists)
-			//{
-			//	if (Params.CheckClientVisibilityForLevel(StreamingList.StreamingLevelName))
-			//	{
-			//		PossibleNumActors += StreamingList.ReplicationActorList.Num();
-			//	}
-			//}
+			for (const FStreamingLevelActorListCollection::FStreamingLevelActors& StreamingList : StreamingLevelCollection.StreamingLevelLists)
+			{
+				if (Params.CheckClientVisibilityForLevel(StreamingList.StreamingLevelName))
+				{
+					PossibleNumActors += StreamingList.ReplicationActorList.Num();
+				}
+			}
 
 			if (PossibleNumActors > MaxNearestActors)
 			{
@@ -1265,13 +1268,13 @@ void US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::GatherActo
 				// Go through all lists, calc distance and cache FGlobalActorInfo*
 				GatherActors_DistanceOnly(PotentiallyVisibleActorList, GlobalMap, ConnectionActorInfoMap, Params);
 
-				/*for (const FStreamingLevelActorListCollection::FStreamingLevelActors& StreamingList : StreamingLevelCollection.StreamingLevelLists)
+				for (const FStreamingLevelActorListCollection::FStreamingLevelActors& StreamingList : StreamingLevelCollection.StreamingLevelLists)
 				{
 					if (Params.CheckClientVisibilityForLevel(StreamingList.StreamingLevelName))
 					{
 						GatherActors_DistanceOnly(StreamingList.ReplicationActorList, GlobalMap, ConnectionActorInfoMap, Params);
 					}
-				}*/
+				}
 
 				ensure(PossibleNumActors == SortedReplicationList.Num());
 
@@ -1303,13 +1306,13 @@ void US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::GatherActo
 
 			GatherActors(PotentiallyVisibleActorList, GlobalMap, ConnectionActorInfoMap, Params, NetConnection);
 
-			/*for (const FStreamingLevelActorListCollection::FStreamingLevelActors& StreamingList : StreamingLevelCollection.StreamingLevelLists)
+			for (const FStreamingLevelActorListCollection::FStreamingLevelActors& StreamingList : StreamingLevelCollection.StreamingLevelLists)
 			{
 				if (Params.CheckClientVisibilityForLevel(StreamingList.StreamingLevelName))
 				{
 					GatherActors(StreamingList.ReplicationActorList, GlobalMap, ConnectionActorInfoMap, Params, NetConnection);
 				}
-			}*/
+			}
 
 			SortedReplicationList.Sort();
 		}
@@ -1365,7 +1368,7 @@ void US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::GatherActo
 			{
 				ASpearmanCharacter* SpearmanCharacter = CastChecked<ASpearmanCharacter>(Actor);
 				SpearmanCharacter->bReplicationNewPaused = CalcVisibilityForActor(Actor, GlobalInfo, S1RepGraph) ? false : true;
-				// for trigger check pause replication, @See ReplicateActor()
+				// copy to trigger check pause replication, @See ReplicateActor()
 				TArray<FNetViewer>& ConnectionViewers = GetWorld()->GetWorldSettings()->ReplicationViewers;
 				ConnectionViewers = Params.Viewers;
 				/* ------------ Original Code ------------ */
@@ -1404,6 +1407,15 @@ void US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::GatherActo
 #endif // WITH_SERVER_CODE
 }
 
+/*	                # * <- BoundingBoxLeft (Upper/Lower)  *
+*                #    | <- Latency Offset                 *
+*             #       | <- Velocity Offset                *
+* Trace    #          @ <- Default Offset                 *
+* Start O-------------O TraceEnd                          *
+*          #          @ <- Default Offset                 *
+*             #       | <- Velocity Offset                *
+*                #    | <- Latency Offset                 *
+*                   # * <- BoundingBoxRight (Upper/Lower) */
 bool US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::CalcVisibilityForActor(AActor* ActorToCheck, const FGlobalActorReplicationInfo& GlobalInfoForActor, US1ReplicationGraph* S1RepGraph)
 { // true : Visible, false : Hidden
 	if (UNLIKELY(CachedPawn.Get() == ActorToCheck))
@@ -1418,15 +1430,6 @@ bool US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::CalcVisibi
 	const FVector TraceOffsetZ = FVector(0.f, 0.f, 80.f);
 	const FVector TraceStart = CachedPawn->GetActorLocation() + TraceOffsetZ;
 
-	// @FIXME : replace "4'000'000" with "GetCullDistanceSquared()"
-	const float DistSq = ((GlobalInfoForActor.WorldLocation + TraceOffsetZ) - TraceStart).SizeSquared();
-	if (UNLIKELY(DistSq > 4'000'000.f))
-	{ // Pre-culling
-		
-		// if we do not anything here, CalcFrequencyForActor() should handled early, @See "// Skip if past cull distance"
-		// return false;
-	}
-
 	/* Get Perpendicular Unit Vector to StartToEnd */
 	const FVector TraceEnd = GlobalInfoForActor.WorldLocation + TraceOffsetZ;
 	const FVector NormalizedStartToEnd = (TraceEnd - TraceStart).GetSafeNormal();
@@ -1438,7 +1441,7 @@ bool US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::CalcVisibi
 	ASpearmanPlayerController* EndPC = CastChecked<ASpearmanCharacter>(ActorToCheck)->SpearmanPlayerController;
 	const float StartHalfRTT = StartPC ? StartPC->GetSingleTripTime() : 0.f;
 	const float EndHalfRTT = EndPC ? EndPC->GetSingleTripTime() : 0.f;
-	// TODO : not ActorToCheck for GetVelocity() , CachedPawn
+	
 	const FVector LatencyOffset = 2.f * (OffsetUnit * ActorToCheck->GetVelocity().GetAbs()) * (S1RepGraph->CachedDeltaSeconds + StartHalfRTT + EndHalfRTT);
 
 	const FVector BoundingBoxLeftUpper = TraceEnd + FVector(0.f, 0.f, 20.f) - (DefaultOffset + LatencyOffset);
@@ -1453,13 +1456,12 @@ bool US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::CalcVisibi
 	BoundingBoxes.Add(BoundingBoxRightUpper);
 	BoundingBoxes.Add(BoundingBoxRightLower);
 
-	// don't need to every 4 trace if early visible
 	for (const FVector& BoundingBox : BoundingBoxes)
 	{
-		// Visible
 		S1RepGraph->LineTraceCounter++;
 		if (!World->LineTraceTestByChannel(TraceStart, BoundingBox, ECC_FogOfWar, TraceParams))
 		{
+			// Visible, return : don't need to every 4 trace if early visible
 			S1RepGraph->VisibilityBookkeeping.Add(TPair<AActor*, AActor*>(CachedPawn.Get(), ActorToCheck), true);
 			return true;
 		}
