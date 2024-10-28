@@ -88,7 +88,6 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
-	virtual void PostNetInit() override;
 
 	void MoveForward(float Value);
 	void MoveRight(float Value);

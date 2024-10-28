@@ -233,13 +233,7 @@ void ASpearmanCharacter::PostInitializeComponents()
 	HpBar->InitWidget();
 	HpBarWidget = Cast<UHpBarWidget>(HpBar->GetUserWidgetObject());
 }
-
-void ASpearmanCharacter::PostNetInit()
-{
-	Super::PostNetInit();
-
-}
-
+/* @See S1ReplicationGraph*/
 bool ASpearmanCharacter::IsReplicationPausedForConnection(const FNetViewer& ConnectionOwnerNetViewer)
 { /* Server Only, @See UActorChannel::ReplicateActor() */
 	return bReplicationNewPaused ? true : false;

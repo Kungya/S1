@@ -1364,17 +1364,20 @@ void US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::GatherActo
 			//	Default Replication
 			// ------------------------------------------------------
 
+			// Use Pause Replication, @See ASpearmanCharacter::OnReplicationPausedChanged
 			if (ReadyForNextReplication(ConnectionInfo, GlobalInfo, FrameNum))
 			{
 				ASpearmanCharacter* SpearmanCharacter = CastChecked<ASpearmanCharacter>(Actor);
 				SpearmanCharacter->bReplicationNewPaused = CalcVisibilityForActor(Actor, GlobalInfo, S1RepGraph) ? false : true;
-				// copy to trigger check pause replication, @See ReplicateActor() in ActorChannel
+				// copy to trigger check Pause Replication, @See ReplicateActor() in ActorChannel
 				TArray<FNetViewer>& ConnectionViewers = GetWorld()->GetWorldSettings()->ReplicationViewers;
 				ConnectionViewers = Params.Viewers;
+				
 				/* ------------ Original Code start ------------ */
 				BitsWritten += S1RepGraph->ReplicateSingleActor(Actor, ConnectionInfo, GlobalInfo, ConnectionActorInfoMap, Params.ConnectionManager, FrameNum);
 				ConnectionInfo.FastPath_LastRepFrameNum = FrameNum; // Manually update this here, so that we don't fast rep next frame. When they line up, use default replication.
 				/* ------------ Original Code end ------------ */
+
 				// reset after rep (to reuse for connection)
 				SpearmanCharacter->bReplicationNewPaused = false;
 			}
