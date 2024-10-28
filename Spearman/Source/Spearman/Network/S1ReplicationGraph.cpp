@@ -437,20 +437,20 @@ void US1ReplicationGraph::InitConnectionGraphNodes(UNetReplicationGraphConnectio
 
 	AddConnectionGraphNode(AlwaysRelevantConnectionNode, RepGraphConnection);
 
-	/* [ VisibilityCheck_ForConnection ] Node*/ // TODO : Set also LevelStreaming Delegate in VisibilityCheck_ForConnection ?
-	US1ReplicationGraphNode_VisibilityCheck_ForConnection* VisibilityCheckConnectionNode = CreateNewNode<US1ReplicationGraphNode_VisibilityCheck_ForConnection>();
+	/* [ VisibilityCheck_ForConnection ] Node */
+	/*US1ReplicationGraphNode_VisibilityCheck_ForConnection* VisibilityCheckConnectionNode = CreateNewNode<US1ReplicationGraphNode_VisibilityCheck_ForConnection>();
 
 	AddConnectionGraphNode(VisibilityCheckConnectionNode, RepGraphConnection);
 
 	VisibilityCheckForConnectionNodes.Add(RepGraphConnection->NetConnection, VisibilityCheckConnectionNode);
-	VisibilityCheckConnectionNode->ConnectionManager = RepGraphConnection;
+	VisibilityCheckConnectionNode->ConnectionManager = RepGraphConnection;*/
 
-	/* [ DynamicSpatialFrequency_VisibilityCheck ] Node, Notes : Use Only either VisibilityCheck or this. */
-	/*US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck* DynamicSpatialFrequencyVisibilityCheckConnectionNode = CreateNewNode<US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck>();
+	/* [DynamicSpatialFrequency_VisibilityCheck] Node, Notes : Use Only either VisibilityCheck_ForConnection or this. */
+	US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck* DynamicSpatialFrequencyVisibilityCheckConnectionNode = CreateNewNode<US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck>();
 
 	AddConnectionGraphNode(DynamicSpatialFrequencyVisibilityCheckConnectionNode, RepGraphConnection);
 
-	DynamicSpatialFrequencyVisibilityCheckConnectionNode->ConnectionManager = RepGraphConnection;*/
+	DynamicSpatialFrequencyVisibilityCheckConnectionNode->ConnectionManager = RepGraphConnection;
 
 
 	UE_LOG(LogS1RepGraph, Warning, TEXT("Called [InitConnectionGraphNodes], VisibilityCheckForConnectionNodes.Num() : %d"), VisibilityCheckForConnectionNodes.Num());
