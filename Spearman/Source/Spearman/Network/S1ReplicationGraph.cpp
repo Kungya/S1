@@ -1215,6 +1215,7 @@ void US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::GatherActo
 	{ /* If true, MatchState::WaitingStart, Character is not spawned yet. */
 		return;
 	}
+
 	/* Pull Persistent ActorList from S1RepGraph */
 	const FActorRepListRefView& PotentiallyVisibleActorList = S1RepGraph->PotentiallyVisibleActorList;
 
@@ -1371,7 +1372,7 @@ void US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::GatherActo
 				SpearmanCharacter->bReplicationNewPaused = CalcVisibilityForActor(Actor, GlobalInfo, S1RepGraph) ? false : true;
 				// copy to trigger check Pause Replication, @See ReplicateActor() in ActorChannel
 				TArray<FNetViewer>& ConnectionViewers = GetWorld()->GetWorldSettings()->ReplicationViewers;
-				ConnectionViewers = Params.Viewers;
+				ConnectionViewers = Params.Viewers; // TODO : Tweak copy
 				
 				/* ------------ Original Code start ------------ */
 				BitsWritten += S1RepGraph->ReplicateSingleActor(Actor, ConnectionInfo, GlobalInfo, ConnectionActorInfoMap, Params.ConnectionManager, FrameNum);
@@ -1419,19 +1420,25 @@ void US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::GatherActo
 *             #       | <- Velocity Offset                *
 *                #    | <- Latency Offset                 *
 *                   # * <- BoundingBoxRight (Upper/Lower) */
+// true : Visible, false : Hidden
 bool US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::CalcVisibilityForActor(AActor* ActorToCheck, const FGlobalActorReplicationInfo& GlobalInfoForActor, US1ReplicationGraph* S1RepGraph)
-{ // true : Visible, false : Hidden
-	if (UNLIKELY(CachedPawn.Get() == ActorToCheck))
+{
+	// TOOD : minimize calling TWeakObjectPtr::Get()
+	APawn* StartingActor = CachedPawn.Get();
+
+	if (UNLIKELY(StartingActor == nullptr || StartingActor == ActorToCheck))
 	{
-		UE_LOG(LogS1RepGraph, Error, TEXT("ActorToCheck is same as CachedPawn. not filtered. Check CalcFrequencyForActor()"));
+		UE_LOG(LogS1RepGraph, Error, TEXT("CachedPawn was Destroyed || ActorToCheck is same as CachedPawn. not filtered. Check CalcFrequencyForActor()"));
 		return false;
 	}
 
+	const FGlobalActorReplicationInfo& StartingActorRepInfo = GraphGlobals->GlobalActorReplicationInfoMap->Get(StartingActor);
+
 	FCollisionQueryParams TraceParams;
-	TraceParams.AddIgnoredActor(CachedPawn.Get());
-	const UWorld* World = GetWorld();
+	TraceParams.AddIgnoredActor(StartingActor);
+	const UWorld* World = GraphGlobals->World;
 	const FVector TraceOffsetZ = FVector(0.f, 0.f, 80.f);
-	const FVector TraceStart = CachedPawn->GetActorLocation() + TraceOffsetZ;
+	const FVector TraceStart = StartingActorRepInfo.WorldLocation + TraceOffsetZ;
 
 	/* Get Perpendicular Unit Vector to StartToEnd */
 	const FVector TraceEnd = GlobalInfoForActor.WorldLocation + TraceOffsetZ;
@@ -1440,7 +1447,7 @@ bool US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::CalcVisibi
 
 	const FVector DefaultOffset = 40.f * OffsetUnit;
 
-	ASpearmanPlayerController* StartPC = CastChecked<ASpearmanCharacter>(CachedPawn.Get())->SpearmanPlayerController;
+	ASpearmanPlayerController* StartPC = CastChecked<ASpearmanCharacter>(StartingActor)->SpearmanPlayerController;
 	ASpearmanPlayerController* EndPC = CastChecked<ASpearmanCharacter>(ActorToCheck)->SpearmanPlayerController;
 	const float StartHalfRTT = StartPC ? StartPC->GetSingleTripTime() : 0.f;
 	const float EndHalfRTT = EndPC ? EndPC->GetSingleTripTime() : 0.f;
@@ -1454,10 +1461,10 @@ bool US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::CalcVisibi
 
 	TArray<FVector> BoundingBoxes;
 	BoundingBoxes.Reserve(4);
-	BoundingBoxes.Add(BoundingBoxLeftUpper);
-	BoundingBoxes.Add(BoundingBoxLeftLower);
-	BoundingBoxes.Add(BoundingBoxRightUpper);
-	BoundingBoxes.Add(BoundingBoxRightLower);
+	BoundingBoxes.Emplace(BoundingBoxLeftUpper);
+	BoundingBoxes.Emplace(BoundingBoxLeftLower);
+	BoundingBoxes.Emplace(BoundingBoxRightUpper);
+	BoundingBoxes.Emplace(BoundingBoxRightLower);
 
 	for (const FVector& BoundingBox : BoundingBoxes)
 	{
@@ -1465,13 +1472,13 @@ bool US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::CalcVisibi
 		if (!World->LineTraceTestByChannel(TraceStart, BoundingBox, ECC_FogOfWar, TraceParams))
 		{
 			// Visible, return : don't need to every 4 trace if early visible
-			S1RepGraph->VisibilityBookkeeping.Add(TPair<AActor*, AActor*>(CachedPawn.Get(), ActorToCheck), true);
+			S1RepGraph->VisibilityBookkeeping.Add(TPair<AActor*, AActor*>(StartingActor, ActorToCheck), true);
 			return true;
 		}
 	}
 	
 	// Hidden
-	S1RepGraph->VisibilityBookkeeping.Add(TPair<AActor*, AActor*>(CachedPawn.Get(), ActorToCheck), false);
+	S1RepGraph->VisibilityBookkeeping.Add(TPair<AActor*, AActor*>(StartingActor, ActorToCheck), false);
 	return false;
 }
 

@@ -57,6 +57,7 @@ public:
 	*** {Server -> Client} may not be kept. cuz Server has not NetConnection. **/
 	TMap<TPair<AActor*, AActor*>, bool> VisibilityBookkeeping;
 
+	/* For check performance */
 	int32 LineTraceCounter = 0;
 
 	void OnCharacterSwapWeapon(ASpearmanCharacter* Character, AWeapon* NewWeapon, AWeapon* OldWeapon);
