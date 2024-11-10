@@ -27,7 +27,7 @@ protected:
 	virtual bool ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 public:	
 
-	void AddItem(UItemInstance* InIntemInstance);
+	bool AddItem(UItemInstance* InIntemInstance);
 
 	void RemoveItem(const int32 IdxToRemove);
 
@@ -54,6 +54,9 @@ private:
 
 	UPROPERTY()
 	TArray<int32> CachedInvalidIndex;
+
+	// It isn't Num() of InventoryArray, Trace real count of ItemInstance except "nullptr" in InventoryArray
+	int32 InventorySize = 0;
 	
 	UFUNCTION()
 	void OnRep_InventoryArray(TArray<UItemInstance*> LastInventoryArray);
@@ -64,7 +67,7 @@ private:
 	UPROPERTY()
 	US1GameInstance* S1GameInstance;
 
-	/* You have to set Outer When you Add or Remove ItemInstance in Inventory, */
+	/* You have to set Outer as Actor When you Add or Remove ItemInstance in Inventory, */
 
 public:
 	FORCEINLINE void SetSpearmanCharacter(ASpearmanCharacter* InSpearmanCharacter) { SpearmanCharacter = InSpearmanCharacter; }

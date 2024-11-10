@@ -15,7 +15,6 @@ class UUniformGridPanel;
 class UCanvasPanel;
 
 
-
 UCLASS()
 class SPEARMAN_API US1InventorySlotsWidget : public US1UserWidget
 {

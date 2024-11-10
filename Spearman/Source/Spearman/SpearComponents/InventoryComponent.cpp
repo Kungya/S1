@@ -45,9 +45,10 @@ bool UInventoryComponent::ReplicateSubobjects(UActorChannel* Channel, FOutBunch*
 	return bWroteSomething;
 }
 
-void UInventoryComponent::AddItem(UItemInstance* InItemInstance)
+// false : fail to add item
+bool UInventoryComponent::AddItem(UItemInstance* InItemInstance)
 { /* Server Only */
-	if (InventoryArray.Num() >= 50 || OwnerSpearmanPlayerController == nullptr) return;
+	if (InventorySize >= 50 || OwnerSpearmanPlayerController == nullptr) return false;
 
 	// Change Outer from Item to InventoryComponent for Lifecycle
 	InItemInstance->Rename(nullptr, OwnerSpearmanPlayerController);
@@ -73,16 +74,36 @@ void UInventoryComponent::AddItem(UItemInstance* InItemInstance)
 			SlotsWidget->UpdateItemInfoWidget(InItemInstance->InventoryIdx);
 		}
 	}
+
+	if (InventorySize < 50)
+	{
+		++InventorySize;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("InventorySize >= 50, invalid state."));
+	}
+
+	return true;
 }
 
 void UInventoryComponent::RemoveItem(const int32 IdxToRemove)
-{
+{ /* Server Only */
 	InventoryArray[IdxToRemove] = nullptr;
 	CachedInvalidIndex.Push(IdxToRemove);
+
+	if (InventorySize > 0)
+	{
+		--InventorySize;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("InventorySize <= 0, invalid state."));
+	}
 }
 
 void UInventoryComponent::EmptyInventory()
-{
+{ /* Server Only */
 	for (int32 idx = 0; idx < InventoryArray.Num(); idx++)
 	{
 		if (InventoryArray[idx])

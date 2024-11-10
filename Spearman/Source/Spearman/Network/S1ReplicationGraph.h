@@ -53,7 +53,7 @@ public:
 	/** Actors that could "potentially" become visible or hidden */
 	FActorRepListRefView PotentiallyVisibleActorList;
 
-	/** BookKeep mutual visibility in VisibilityCheck_ForConnection, 
+	/** BookKeep mutual visibility in VisibilityCheck_ForConnection, @See ProcessRemoteFunction()
 	*** {Server -> Client} may not be kept. cuz Server has not NetConnection. **/
 	TMap<TPair<AActor*, AActor*>, bool> VisibilityBookkeeping;
 

@@ -17,6 +17,6 @@ void AItemSpawnerActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ItemSpawner->SpawnItemTimer();
+	ItemSpawner->SpawnItemTimer();
 }
 

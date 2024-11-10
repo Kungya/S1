@@ -847,16 +847,12 @@ void ASpearmanCharacter::ServerInteract_Implementation()
 
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Interact, Params))
 	{
-		AItem* Item = Cast<AItem>(HitResult.GetActor());
-		if (Item)
+		if (AItem* Item = Cast<AItem>(HitResult.GetActor()))
 		{
-			SpearmanPlayerController->GetInventory()->AddItem(Item->GetItemInstance());
-		}
-
-		IInteractableInterface* InteractableInterface = Cast<IInteractableInterface>(HitResult.GetActor());
-		if (InteractableInterface)
-		{
-			InteractableInterface->Interact();
+			if (SpearmanPlayerController->GetInventory()->AddItem(Item->GetItemInstance()))
+			{ // true : success AddItem()
+				Item->Destroy();
+			}
 		}
 	}
 }

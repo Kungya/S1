@@ -1423,7 +1423,7 @@ void US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::GatherActo
 // true : Visible, false : Hidden
 bool US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::CalcVisibilityForActor(AActor* ActorToCheck, const FGlobalActorReplicationInfo& GlobalInfoForActor, US1ReplicationGraph* S1RepGraph)
 {
-	// TOOD : minimize calling TWeakObjectPtr::Get()
+	// TODO : minimize calling TWeakObjectPtr::Get()
 	APawn* StartingActor = CachedPawn.Get();
 
 	if (UNLIKELY(StartingActor == nullptr || StartingActor == ActorToCheck))
@@ -1461,10 +1461,10 @@ bool US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::CalcVisibi
 
 	TArray<FVector> BoundingBoxes;
 	BoundingBoxes.Reserve(4);
-	BoundingBoxes.Emplace(BoundingBoxLeftUpper);
-	BoundingBoxes.Emplace(BoundingBoxLeftLower);
-	BoundingBoxes.Emplace(BoundingBoxRightUpper);
-	BoundingBoxes.Emplace(BoundingBoxRightLower);
+	BoundingBoxes.Add(BoundingBoxLeftUpper);
+	BoundingBoxes.Add(BoundingBoxLeftLower);
+	BoundingBoxes.Add(BoundingBoxRightUpper);
+	BoundingBoxes.Add(BoundingBoxRightLower);
 
 	for (const FVector& BoundingBox : BoundingBoxes)
 	{
