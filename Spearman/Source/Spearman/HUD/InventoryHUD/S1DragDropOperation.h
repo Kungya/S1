@@ -24,7 +24,9 @@ public:
 	FVector2D DeltaWidgetPos = FVector2D::ZeroVector;
 
 public:
+	UPROPERTY()
 	UItemInstance* ItemInstance;
+	UPROPERTY()
 	US1InventorySlotsWidget* InventorySlotsWidget;
 
 };

@@ -31,6 +31,7 @@ protected:
 	
 private:
 	/* Caching Owner PlayerController */
+	UPROPERTY()
 	ASpearmanPlayerController* SpearmanPlayerController;
 
 public:

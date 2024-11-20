@@ -280,7 +280,7 @@ void US1ReplicationGraph::AddClassRepInfo(UClass* Class, EClassRepNodeMapping Ma
 
 void US1ReplicationGraph::RegisterClassReplicationInfo(UClass* ReplicatedClass)
 { // Add to "Global"ActorReplicationInfoMap
-	FClassReplicationInfo ClassInfo;;
+	FClassReplicationInfo ClassInfo;
 	if (ConditionalInitClassReplicationInfo(ReplicatedClass, ClassInfo))
 	{
 		GlobalActorReplicationInfoMap.SetClassInfo(ReplicatedClass, ClassInfo);
@@ -1370,9 +1370,11 @@ void US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::GatherActo
 			{
 				ASpearmanCharacter* SpearmanCharacter = CastChecked<ASpearmanCharacter>(Actor);
 				SpearmanCharacter->bReplicationNewPaused = CalcVisibilityForActor(Actor, GlobalInfo, S1RepGraph) ? false : true;
-				// copy to trigger check Pause Replication, @See ReplicateActor() in ActorChannel
-				TArray<FNetViewer>& ConnectionViewers = GetWorld()->GetWorldSettings()->ReplicationViewers;
-				ConnectionViewers = Params.Viewers; // TODO : Tweak copy
+				if (SpearmanCharacter->bReplicationNewPaused)
+				{ // Inevitable copy to trigger Pause Replication, @See ReplicateActor() in ActorChannel. Something to consider.
+					TArray<FNetViewer>& ConnectionViewers = GetWorld()->GetWorldSettings()->ReplicationViewers;
+					ConnectionViewers = Params.Viewers;
+				}
 				
 				/* ------------ Original Code start ------------ */
 				BitsWritten += S1RepGraph->ReplicateSingleActor(Actor, ConnectionInfo, GlobalInfo, ConnectionActorInfoMap, Params.ConnectionManager, FrameNum);
@@ -1458,7 +1460,7 @@ bool US1ReplicationGraphNode_DynamicSpatialFrequency_VisibilityCheck::CalcVisibi
 	const FVector BoundingBoxLeftLower = TraceEnd - FVector(0.f, 0.f, 130.f) - (DefaultOffset + LatencyOffset);
 	const FVector BoundingBoxRightUpper = TraceEnd + FVector(0.f, 0.f, 20.f) + (DefaultOffset + LatencyOffset);
 	const FVector BoundingBoxRightLower = TraceEnd - FVector(0.f, 0.f, 130.f) + (DefaultOffset + LatencyOffset);
-
+	
 	TArray<FVector> BoundingBoxes;
 	BoundingBoxes.Reserve(4);
 	BoundingBoxes.Add(BoundingBoxLeftUpper);

@@ -65,7 +65,7 @@ bool UInventoryComponent::AddItem(UItemInstance* InItemInstance)
 		InItemInstance->InventoryIdx = InvalidIndex;
 		InventoryArray[InvalidIndex] = InItemInstance;
 	}
-
+	 
 	if (SpearmanCharacter && SpearmanCharacter->IsLocallyControlled())
 	{
 		US1InventorySlotsWidget* SlotsWidget = OwnerSpearmanPlayerController->GetSpearmanHUD()->CharacterOverlay->InventoryWidget->InventorySlotsWidget;

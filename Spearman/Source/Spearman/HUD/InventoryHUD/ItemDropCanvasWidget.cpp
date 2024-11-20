@@ -31,7 +31,7 @@ bool UItemDropCanvasWidget::NativeOnDrop(const FGeometry& InGeometry, const FDra
 		US1InventorySlotsWidget* InventorySlotsWidget = DragDrop->InventorySlotsWidget;
 
 		if (ItemInstanceToDrop == nullptr || InventorySlotsWidget == nullptr)
-			return false;		                               
+			return false;
 
 		InventorySlotsWidget->OnInventoryItemInfoChanged(ItemSlotPosToDrop, nullptr);
 		
