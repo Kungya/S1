@@ -1,8 +1,11 @@
 S1 : Multiplayer Spearman Project : TPS Melee PvPvE Extraction
+   <br/> ==================================================
    <br/> It Includes simple FogOfWar example code using replication graph (based on UE5 LyraReplicationGraph). 
    <br/> @see Network/S1ReplicationGraph.
    <br/> optimized raycast count using DynamicSpatialFrequency, and also used 'Pause Replication' to reduce server-side overhead for Spawn/Destroy Actor when relevancy is changed.
-   <br/> it's just 2nd phase of Valorant's FogOfWar.
+   <br/> it's just 2nd phase of Valorant's FogOfWar system.
+   <br/> ==================================================
+   
 ![Image](https://github.com/user-attachments/assets/6a749f0a-cd61-4d4e-81e2-13afe91682df)
 
    
